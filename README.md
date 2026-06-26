@@ -120,7 +120,7 @@ Suricata参考：[点击查看README](third_party/suricata/README.md)
 
 ### 2. 安装应用
 
-以dotcms为例，启动方式参考：[点击查看README](third_party/dotcms/README.md)
+以dotcms为例，启动方式参考：[点击查看README](third_party\dotcms\README.md)
 
 ### 3. 安装MCP Server
 
@@ -128,16 +128,16 @@ Suricata参考：[点击查看README](third_party/suricata/README.md)
 
 ### 4. 安装app侧组件
 
-[docker-compose-app.yml](deploy/docker-compose-app.yml)
+[docker-compose-app.yaml](deploy/docker-compose-app.yaml)
 
 启动方法：
 
 ```
 cd deploy
-docker-compose -f docker-compose-app.yml up -d
+docker-compose -f docker-compose-app.yaml up -d
 ```
 
-docker-compose-app.yml配置说明：
+docker-compose-app.yaml配置说明：
 [Required]为必须配置项，[Optional]为可选配置项，未做标记的保持默认值即可。
 注意：以下为关键配置片段，不是完整 compose 文件，完整配置以deploy目录为准。
 
@@ -258,7 +258,7 @@ services:
 **agent侧安装部署：**
 
 agent侧配置说明:
-[docker-compose-agent.yml](deploy/docker-compose-agent.yml)
+[docker-compose-agent.yaml](deploy/docker-compose-agent.yaml)
 
 ### 5. 安装agent侧组件
 
@@ -266,10 +266,10 @@ agent侧配置说明:
 
 ```
 cd deploy
-docker-compose -f docker-compose-agent.yml up -d
+docker-compose -f docker-compose-agent.yaml up -d
 ```
 
-docker-compose-agent.yml配置说明：
+docker-compose-agent.yaml配置说明：
 
 ```yaml
 services:
