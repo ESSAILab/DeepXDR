@@ -1,0 +1,49 @@
+filebeat.inputs:
+- type: log
+  enabled: true
+  paths:
+    - /var/log/dotcms-shared/tomcat-9.0.41/rasp/logs/alarm/alarm.log
+  # 关键配置 1: 从文件末尾开始读取（仅对从未采集过的新文件有效）
+  tail_files: true
+  # 关键配置 2: 忽略掉修改时间超过 24 小时的旧文件（防止扫到旧的备份文件）
+  ignore_older: 24h
+  fields:
+    log_source: openrasp
+  json.keys_under_root: true
+  json.overwrite_keys: true
+
+- type: log
+  enabled: true
+  paths:
+    - /var/log/falco/falco-alerts.json
+  # 关键配置 1: 从文件末尾开始读取（仅对从未采集过的新文件有效）
+  tail_files: true
+  # 关键配置 2: 忽略掉修改时间超过 24 小时的旧文件（防止扫到旧的备份文件）
+  ignore_older: 24h
+  fields:
+    log_source: falco
+  json.keys_under_root: true
+  json.overwrite_keys: true
+
+- type: log
+  enabled: true
+  paths:
+    - /var/log/suricata/eve.json
+  # 关键配置 1: 从文件末尾开始读取（仅对从未采集过的新文件有效）
+  tail_files: true
+  # 关键配置 2: 忽略掉修改时间超过 24 小时的旧文件（防止扫到旧的备份文件）
+  ignore_older: 24h
+  fields:
+    log_source: suricata
+  json.keys_under_root: true
+  json.overwrite_keys: true
+
+# 核心实时性优化：强制内存队列一旦有数据立即向下游推送
+queue.mem:
+  events: 4096
+  flush.min_events: 1       # 只要产生 1 条日志就立即发送
+  flush.timeout: 0s         # 彻底取消等待时间，实现零延迟刷新
+
+output.logstash:
+  hosts: ["app-logstash:5044"]
+  bulk_max_size: 1

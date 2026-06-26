@@ -1,0 +1,22 @@
+# Docker 构建排除文件
+Dockerfile
+.dockerignore
+
+# Python 缓存
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# 测试和日志
+.pytest_cache/
+*.log
+
+# Git
+.git/
+.gitignore
+
+# 环境配置（镜像内通过环境变量或挂载传入）注意，如果需要通过环境变量传入，请不要使用 .env 文件或者把以下内容注释掉
+.env
+.env.*

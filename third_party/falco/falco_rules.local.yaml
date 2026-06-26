@@ -1,0 +1,39 @@
+- list: dba_monitor_container_name
+  items: [app-dotcms]
+
+- macro: dba_is_monitor_container
+  condition: >
+    (container.name in (dba_monitor_container_name))
+- macro: dba_trusted_files
+  condition: (proc.name='OpenRASP Heartb' or fd.name contains '/rasp/logs/' or fd.name contains 'tomcat/logs' or fd.name contains '/usr/local/tomcat/conf/tomcat-users.xml')
+
+- macro: dba_trusted_directory
+  condition: (fd.name contains '/rasp/logs/' or fd.name contains 'tomcat/logs' or fd.name contains '/usr/local/tomcat/webapps' or fd.name contains '/usr/local/tomcat/conf/Catalina/localhost')
+
+- macro: open_directory
+  condition: (evt.type in (open,openat,openat2) and evt.is_open_read=true and fd.typechar='d' and fd.num>=0)
+
+- macro: open_write
+  condition: (evt.type in (open,openat,openat2) and evt.is_open_write=true and fd.typechar='f' and fd.num>=0)
+
+- rule: File_Write_Openat_Behavior_Collector
+  desc: Collect all openat events for baseline analysis
+  condition: open_write and dba_is_monitor_container and not dba_trusted_files
+  output: raw ebpf behavior | type:%evt.type | pid:%proc.pid | proc:%proc.name | proc_exepath:%proc.exepath | parent:%proc.ppid(%proc.pname) | gparent:%proc.aname[2] | ggparent:%proc.aname[3] | gggparent:%proc.aname[4]  | cmdline:'%proc.cmdline'| container:%container.id(%container.name) | user:%user.name | file:%fd.name[flags=%evt.arg.flags,mode=%evt.arg.mode] | k8s:%k8s.ns.name/%k8s.pod.name | proc_tty=%proc.tty
+  priority: INFO
+  tags: [behavior-collection]
+
+- rule: Directory_Openat_Behavior_Collector
+  desc: Collect all openat events for baseline analysis
+  condition: open_directory and dba_is_monitor_container and not dba_trusted_directory
+  output: raw ebpf behavior | type:%evt.type | pid:%proc.pid | proc:%proc.name | proc_exepath:%proc.exepath | parent:%proc.ppid(%proc.pname) | gparent:%proc.aname[2] | ggparent:%proc.aname[3] | gggparent:%proc.aname[4]  | cmdline:'%proc.cmdline'| container:%container.id(%container.name) | user:%user.name | file:%fd.name[flags=%evt.arg.flags,mode=%evt.arg.mode] | k8s:%k8s.ns.name/%k8s.pod.name | proc_tty=%proc.tty
+  priority: INFO
+  tags: [behavior-collection]
+  enabled: false
+
+- rule: Execve_Behavior_Collector
+  desc: Collect all execve events for baseline analysis
+  condition: spawned_process and dba_is_monitor_container and not dba_trusted_files
+  output: raw ebpf behavior | type:%evt.type | pid:%proc.pid | proc:%proc.name | proc_exepath:%proc.exepath | parent:%proc.ppid(%proc.pname) | gparent:%proc.aname[2] | ggparent:%proc.aname[3] | gggparent:%proc.aname[4]  | cmdline:'%proc.cmdline'| container:%container.id(%container.name) | user:%user.name | file:%fd.name[flags=%evt.arg.flags,mode=%evt.arg.mode] | k8s:%k8s.ns.name/%k8s.pod.name | terminal=%proc.tty
+  priority: INFO
+  tags: [behavior-collection]

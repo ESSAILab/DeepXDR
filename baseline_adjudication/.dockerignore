@@ -1,0 +1,28 @@
+# Git
+.git/
+.gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# 文档文件（Docker中不需要）
+doc/
+*.md
+CLAUDE.md
+
+# 本地配置文件（应通过环境变量传递）
+.env
+baseline.json
+anomalies.json
+
+# 其他
+*.log
+*.tmp
+.DS_Store

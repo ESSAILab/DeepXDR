@@ -1,0 +1,26 @@
+# Docker Compose 服务配置片段
+# 将以下内容添加到您的主 docker-compose.yml 文件中
+
+services:
+  # --- Elasticsearch MCP Server ---
+  elasticsearch-mcp-server:
+    image: 172.18.8.210:5000/library/elasticsearch-mcp-server:20260212
+    container_name: app-elasticsearch-mcp-server
+    environment:
+      - ELASTICSEARCH_HOSTS=http://172.18.8.175:9201
+      - VERIFY_CERTS=false
+      - DISABLE_HIGH_RISK_OPERATIONS=true
+      - EQL_MAX_FIELD_LENGTH=1000
+      - EQL_MAX_LIST_ITEMS=5
+    user: root
+    ports:
+      - "8000:8000"  # 宿主机 8000 映射到容器 8000
+    networks:
+      - logging_net
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 128M

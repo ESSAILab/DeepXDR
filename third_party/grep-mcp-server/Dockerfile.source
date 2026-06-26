@@ -1,0 +1,27 @@
+# 使用 Python 3.11 作为基础镜像
+FROM python:3.11-slim
+
+# 安装 Node.js (为了运行 npx/supergateway) 和系统级 grep
+RUN apt-get update && apt-get install -y \
+    curl \
+    grep \
+    && curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y nodejs \
+    && rm -rf /var/lib/apt/lists/*
+
+# 设置工作目录
+WORKDIR /app
+
+# 复制项目源码
+COPY . /app/
+
+# 使用源码本地安装 mcp-grep（替代 pip install）
+RUN pip install --no-cache-dir -e .
+
+# 暴露 Supergateway 默认端口
+EXPOSE 8000
+
+# 启动命令：使用 npx 运行 supergateway，将 mcp-grep-server 包装为 streamableHttp
+# 保持原始格式的同时，通过环境变量传递配置
+#ENTRYPOINT ["npx", "-y", "supergateway", "--stdio", "mcp-grep-server", "--outputTransport", "streamableHttp", "--port", "8000"]
+ENTRYPOINT ["npx", "-y", "supergateway", "--stdio", "mcp-grep-server", "--outputTransport", "ws", "--port", "8000", "--messagePath", "/message"]

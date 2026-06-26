@@ -1,0 +1,9 @@
+http.host: "0.0.0.0"
+path.config: /usr/share/logstash/pipeline
+path.logs: /var/log/logstash
+log.level: info
+queue.type: memory
+queue.max_bytes: 1024mb
+pipeline.workers: 2
+pipeline.batch.size: 1
+pipeline.batch.delay: 0

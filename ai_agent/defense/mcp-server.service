@@ -1,0 +1,37 @@
+[Unit]
+Description=MCP Server - Python Service
+After=network.target
+# 如果你的服务依赖 PostgreSQL，可以加上：
+# After=postgresql.service
+# Requires=postgresql.service
+
+[Service]
+# 执行用户（推荐非 root 用户，例如 ubuntu、youruser）
+User=root
+
+# 执行用户的主目录（确保路径正确）
+WorkingDirectory=/home/sj
+
+# 启动命令（请修改 python 路径和脚本路径）
+ExecStart=/usr/bin/python3 mcp_server.py
+
+# 可选：如果使用虚拟环境
+# ExecStart=/home/ubuntu/your_project_dir/venv/bin/python mcp_server.py
+
+# 重启策略
+Restart=always
+RestartSec=5
+
+# 日志输出
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=mcp-server
+
+# 环境变量（可选）
+# Environment=PYTHONPATH=/home/ubuntu/your_project_dir
+# Environment=DATABASE_URL=postgresql://user:pass@localhost:15432/security_db
+
+[Install]
+# 开机自启
+WantedBy=multi-user.target
+

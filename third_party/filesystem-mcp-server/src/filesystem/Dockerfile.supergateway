@@ -1,0 +1,28 @@
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+COPY package.json ./
+RUN npm install --ignore-scripts
+
+COPY . .
+RUN npm run build
+
+FROM node:20-alpine
+
+WORKDIR /app
+
+# 安装 supergateway
+RUN npm install -g supergateway
+
+# 复制构建产物和运行时依赖
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/node_modules ./node_modules
+
+# 暴露端口
+EXPOSE 8001
+
+# 使用 supergateway 包装本地 filesystem
+ENTRYPOINT ["supergateway"]
+CMD ["--stdio", "node /app/dist/index.js /srv/dotserver", "--port", "8001", "--outputTransport", "ws", "--messagePath", "/message"]

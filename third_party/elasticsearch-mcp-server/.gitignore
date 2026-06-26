@@ -1,0 +1,20 @@
+# IDE
+.idea
+.vscode
+.kiro
+
+# Python
+.venv
+dist
+__pycache__
+*.egg-info
+
+# Configuration and Credentials
+.env
+
+# Spring AI
+.gradle/
+build
+
+# MCP Registry
+.mcpregistry*

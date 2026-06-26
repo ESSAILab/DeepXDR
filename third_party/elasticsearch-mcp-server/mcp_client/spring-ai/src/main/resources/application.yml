@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: spring-ai-mcp
+  main:
+    web-application-type: none
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      base-url: ${OPENAI_BASE_URL:https://openrouter.ai/api}
+      chat:
+        options:
+          model: ${CHAT_MODEL:openai/gpt-4o}
+    mcp:
+      client:
+        stdio:
+          servers-configuration: classpath:mcp-servers-config.json

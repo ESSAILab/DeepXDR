@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mcp-grep"
+version = "0.2.1"
+description = "MCP Grep Server"
+readme = "README.md"
+authors = [
+    {name = "Ernie Brodeur", email = "ebrodeur@ujami.net"}
+]
+license = {text = "GPL 3.0+"}
+requires-python = ">=3.8"
+dependencies = [
+    "mcp"  # The official Model Context Protocol Python SDK
+]
+
+[project.scripts]
+mcp-grep-server = "mcp_grep.server:mcp.run"
+mcp-grep-inspector = "mcp_grep.inspector:run_inspector"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-bdd>=6.1.0",
+    "black>=23.0.0",
+    "isort>=5.0.0",
+]
+
+[tool.setuptools]
+packages = ["mcp_grep"]
+
+[tool.black]
+line-length = 88
+
+[tool.isort]
+profile = "black"

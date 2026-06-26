@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "elasticsearch-mcp-server": {
+      "command": "uvx",
+      "args": [
+        "elasticsearch-mcp-server"
+      ],
+      "env": {
+        "ELASTICSEARCH_HOSTS": "https://localhost:9200",
+        "ELASTICSEARCH_USERNAME": "elastic",
+        "ELASTICSEARCH_PASSWORD": "test123"
+      }
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "name": "@modelcontextprotocol/server-filesystem",
+  "private": false,
+  "version": "0.6.3",
+  "description": "MCP server for filesystem access",
+  "license": "SEE LICENSE IN LICENSE",
+  "author": "Model Context Protocol a Series of LF Projects, LLC.",
+  "homepage": "https://modelcontextprotocol.io",
+  "bugs": "https://github.com/modelcontextprotocol/servers/issues",
+  "type": "module",
+  "files": [],
+  "scripts": {
+    "build": "cd src/filesystem && npm run build",
+    "watch": "cd src/filesystem && npm run watch",
+    "test": "cd src/filesystem && npm test"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/server-filesystem": "*"
+  }
+}

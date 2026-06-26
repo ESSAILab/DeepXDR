@@ -1,0 +1,214 @@
+version: '3.5'
+
+networks:
+  db_net:
+  es_net:
+  logging_net:
+
+volumes:
+  cms-shared:
+    driver: local
+  dbdata:
+    driver: local
+  esdata:
+    driver: local
+  es_log_data:
+    driver: local
+  falco-logs-volume:
+
+services:
+  elasticsearch-mcp-server:
+    image: essaigroup/deepxdr-es-mcp-server:v0.3.0-alpha
+    container_name: app-elasticsearch-mcp-server
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9201
+      - VERIFY_CERTS=false
+      - DISABLE_HIGH_RISK_OPERATIONS=true
+      # [Optional]限制查询返回结果中单个字符串的最大长度，超出部分将被截断并以 `"..."` 后缀标识。设置为 `0` 表示禁用长度截断
+      - EQL_MAX_FIELD_LENGTH=1000
+      # [Optional]限制查询返回结果中字符串列表保留的最大长度，超出部分将被截断。设置为 `0` 表示禁用列表截断
+      - EQL_MAX_LIST_ITEMS=5
+    user: root
+    ports:
+      - "8000:8000"  
+    networks:
+      - logging_net
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 128M
+  
+  filesystem-mcp-server:
+    image: essaigroup/deepxdr-filesystem-mcp-server:v0.3.0-alpha
+    container_name: app-filesystem-mcp-server
+    user: root
+    tty: true
+    ports:
+      - "8001:8001"
+    volumes:
+      # [Required]cms-shared由dotcms应用共享出来，此处值应填入dotcms服务相同字段
+      - cms-shared:[your-app-workspace]
+    networks:
+      - logging_net
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 256M
+
+  grep-mcp-server:
+    image: essaigroup/deepxdr-grep-mcp-server:v0.3.0-alpha
+    container_name: app-grep-mcp-server
+    environment:
+      MCP_GREP_MAX_RESULTS: 10
+    user: root
+    ports:
+      - "8003:8000" 
+    volumes:
+      # [Required]cms-shared由dotcms应用共享出来，此处值应填入dotcms服务相同字段
+      - cms-shared:[your-app-workspace]
+    networks:
+      - logging_net
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 1G 
+  #[Optional]示例应用依赖的服务
+  dotcms-elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.9.1
+    container_name: app-elasticsearch
+    environment:
+      - cluster.name=elastic-cluster
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xmx1G"
+    ports:
+      - 9200:9200
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    networks:
+      - es_net
+  #[Required]示例应用，由dotcms、dotcms-elasticsearch、dotcms-db三个服务组成。用户可配置为自己的应用
+  dotcms:
+    image: essaigroup/deepxdr-dotcms:v0.3.0
+    container_name: app-dotcms
+    depends_on:
+      dotcms-elasticsearch:
+        condition: service_started
+      dotcms-db:
+        condition: service_started
+    entrypoint: ["sh"]
+    command:
+      - -c
+      - |
+        # 1. 执行 RASP 安装，如用户自行编译rasp安装包，则需在构建应用镜像时替换该包
+        cd /tmp/rasp-2025-08-05 && java -jar RaspInstall.jar -heartbeat 90 -appid a9a6bd08918c1c89ceb3ffaa73e32754dca718f4 -appsecret Jwltg_0Rb6ppBe-_6dvtdVjW74aO7H9N8-na4GWgSv0 -backendurl http://<agent-ip>:8086/ -install /srv/dotserver/tomcat-9.0.41
+        
+        # 2. 在 command 中直接修复权限，将 rasp 目录交给 dotcms 用户 (65001)
+        #chown -R 65001:65001 /srv/dotserver/tomcat-9.0.41/rasp
+        
+        # 3. 清理安装包并启动主程序
+        cd /tmp && rm -rf rasp-2025-08-05 && rm -rf rasp-java.tar.gz
+        exec /srv/entrypoint.sh
+    environment:
+        "CATALINA_OPTS": '-Xmx2g -Xms1g'
+        "DB_BASE_URL": "jdbc:postgresql://dotcms-db/dotcms"
+        "DB_USERNAME": 'dotcmsdbuser'
+        "DB_PASSWORD": 'password'
+        "DOT_ES_AUTH_BASIC_PASSWORD": 'admin'
+        "DOT_ES_ENDPOINTS": 'http://dotcms-elasticsearch:9200'
+        "DOT_INITIAL_ADMIN_PASSWORD": 'admin'
+        "CUSTOM_STARTER_URL": 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20211201/starter-20211201.zip'
+    volumes:
+      # [Required]将应用容器内的工作目录通过cms-shared卷共享出来，便于filesystem、grep等mcp操作该目录
+      - cms-shared:[your-app-workspace]
+    ports:
+      - "8080:8080"
+      - "8443:8443"
+    networks:
+      - db_net
+      - es_net
+  # [Optional]示例应用依赖的服务
+  dotcms-db:
+    image: postgres:13
+    container_name: app-db
+    command: postgres -c 'max_connections=400' -c 'shared_buffers=128MB'
+    environment:
+        "POSTGRES_USER": 'dotcmsdbuser'
+        "POSTGRES_PASSWORD": 'password'
+        "POSTGRES_DB": 'dotcms'
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+    networks:
+      - db_net
+
+  # 事件存储
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.19.5
+    container_name: es-log
+    environment:
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+      - xpack.security.enabled=false
+    ports:
+      - 9201:9200
+    volumes:
+      - es_log_data:/usr/share/elasticsearch/data
+    networks:
+      - logging_net
+
+  falco:
+    image: falcosecurity/falco:0.35.1
+    container_name: falco
+    privileged: true
+    volumes:
+      # [Required]自定义规则文件挂载，定义需要监控的容器和事件
+      - ../third_party/falco/falco_rules.local.yaml:/etc/falco/falco_rules.local.yaml
+      - ../third_party/falco/falco.yaml:/etc/falco/falco.yaml
+      - /var/run/docker.sock:/host/var/run/docker.sock
+      - /dev:/host/dev
+      - /proc:/host/proc:ro
+      - /boot:/host/boot:ro
+      - /lib/modules:/host/lib/modules:ro
+      - /usr:/host/usr:ro
+      - /etc:/host/etc:ro
+      - falco-logs-volume:/var/log/falco
+    networks:
+      - logging_net
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.19.5
+    container_name: app-logstash
+    user: root
+    ports:
+      - "5044:5044"
+    volumes:
+      # [Required]挂载 Logstash 的管道配置文件 `logstash.conf` 和主配置文件 `logstash.yml`。
+      # [Required]logstash.conf文件需替换`<agent-ip>`为agent侧kafka服务对应的实际ip地址，例如：172.19.9.192
+      - ../third_party/logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
+      - ../third_party/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
+    networks:
+      - logging_net
+    depends_on:
+      - elasticsearch
+
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.19.5
+    container_name: app-filebeat
+    user: root
+    volumes:
+      # [Required]通过共享卷形式抓取三类遥测源数据，分别为：`cms-shared` 卷（OpenRASP 日志）、`falco-logs-volume` 卷（Falco 日志）、以及宿主机 `/var/log/suricata` 目录（Suricata 日志）,具体路径名称需与三类遥测源在docker-compose.yaml中定义的volumes一致。
+      - ../third_party/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - cms-shared:/var/log/dotcms-shared:ro 
+      - falco-logs-volume:/var/log/falco:ro
+      - /var/log/suricata:/var/log/suricata:ro
+    networks:
+      - logging_net
+    depends_on:
+      - logstash

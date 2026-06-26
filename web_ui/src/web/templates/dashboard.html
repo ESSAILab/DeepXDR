@@ -1,0 +1,3169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TTP分析仪表盘</title>
+    <link rel="stylesheet" href="/static/css/full-tailwind.css">
+    <script src="/static/js/alpine.min.js" defer></script>
+    <script src="/static/js/chart.umd.js"></script>
+    <link rel="stylesheet" href="/static/css/fontawesome.min.css">
+    <script>
+        // 动态获取当前服务器地址作为API基础URL
+        function getBaseURL() {
+            const protocol = window.location.protocol;
+            const host = window.location.host;
+            return `${protocol}//${host}`;
+        }
+        
+        // 使用当前页面地址作为API基础URL
+        const API_BASE_URL = getBaseURL();
+    </script>
+    <style>
+        html, body {
+            overflow-x: auto;
+            min-width: 1100px;
+        }
+        .modern-input {
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            height: 38px; /* 减小输入框高度 */
+            box-sizing: border-box; /* 确保高度计算包含边框和内边距 */
+        }
+        .modern-input:focus {
+            border-color: #3b82f6;
+            outline: none;
+        }
+        /* 按钮高度统一 */
+        .btn-modern {
+            height: 38px; /* 与输入框高度保持一致 */
+            box-sizing: border-box;
+            border: 1px solid transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        /* 搜索区域对齐优化 */
+        .search-controls {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            gap: 0.875rem; /* 减小间距 */
+            padding-bottom: 1.2rem; /* 减小下边距，并保留警告提示空间 */
+            position: relative; /* 确保相对定位上下文 */
+        }
+        .search-item {
+            flex: 1;
+            min-width: 180px;
+        }
+        .button-item {
+            flex: 0 0 auto;
+            min-width: 200px;
+        }
+        .custom-time-item {
+            flex: 1;
+            min-width: 200px;
+        }
+        /* 响应式调整 */
+        @media (max-width: 1200px) {
+            .search-item {
+                min-width: 200px;
+            }
+            .custom-time-item {
+                min-width: 300px;
+            }
+        }
+        @media (max-width: 768px) {
+            .search-item {
+                min-width: 100%;
+            }
+            .button-item {
+                min-width: 100%;
+            }
+            .custom-time-item {
+                min-width: 100%;
+            }
+        }
+        /* 紧凑搜索样式 */
+        .compact-search {
+            position: absolute;
+            right: 2rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            background: rgba(255,255,255,0.95);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+        .search-trigger {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid #e5e7eb;
+        }
+        .search-trigger:hover {
+            background: #f3f4f6;
+            border-color: #d1d5db;
+        }
+        .search-popup {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            width: 320px;
+            max-width: 90vw;
+            background: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            padding: 1.5rem;
+            z-index: 1000;
+            margin-top: 0.5rem;
+            border: 1px solid #e5e7eb;
+        }
+        .compact-input {
+            height: 32px;
+            font-size: 0.875rem;
+            padding: 0.25rem 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            width: 100%;
+        }
+        .compact-input:focus {
+            border-color: #3b82f6;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(59,130,246,0.1);
+        }
+        .compact-btn {
+            height: 32px;
+            padding: 0 1rem;
+            font-size: 0.875rem;
+            border-radius: 0.375rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem;
+        }
+        .compact-btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+        .compact-btn-primary:hover {
+            background: #2563eb;
+        }
+        .compact-btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+        }
+        .compact-btn-secondary:hover {
+            background: #e5e7eb;
+        }
+        .compact-select {
+            height: 32px;
+            font-size: 0.875rem;
+            padding: 0.25rem 0.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            background: white;
+            cursor: pointer;
+        }
+        @media (max-width: 768px) {
+            .compact-search {
+                right: 1rem;
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            .search-popup {
+                width: 280px;
+                right: -50px;
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            .search-popup {
+                right: 50%;
+                transform: translateX(50%);
+                width: 380px;
+            }
+        }
+        /* 强制文本换行 */
+        .overflow-wrap-anywhere {
+            overflow-wrap: anywhere;
+            word-break: break-word;
+        }
+        /* 打开人工参与详情时隐藏页面滚动条 */
+        body.panel-open {
+            overflow: hidden !important;
+        }
+        body.panel-open::-webkit-scrollbar {
+            display: none !important;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div x-data="dashboardApp()" x-init="init()" class="min-h-screen">
+        <!-- Header -->
+        <header class="bg-white border-b border-gray-200 relative">
+            <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center py-2">
+                    <div class="flex items-end">
+                        <img src="/static/images/logo.jpg" alt="Logo" class="h-8 w-auto mr-2">
+                        <h1 class="text-2xl font-bold text-gray-900">DeepXDR</h1>
+                        <span class="text-gray-300 mx-2">|</span>
+                        <span class="text-base text-gray-500">TTP分析</span>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <!-- 紧凑搜索区域 -->
+                        <div class="relative">
+                            <div class="search-trigger" @click="toggleSearch()" title="搜索">
+                                <i class="fas fa-search text-gray-600"></i>
+                                <span class="text-sm text-gray-700 hidden sm:inline">搜索</span>
+                            </div>
+                        
+                            
+                            <!-- 搜索弹窗 -->
+                            <div x-show="showSearchPopup" class="search-popup" @click.away="showSearchPopup = false" 
+                                 x-transition:enter="transition ease-out duration-200" 
+                                 x-transition:enter-start="opacity-0 transform -translate-y-2"
+                                 x-transition:enter-end="opacity-100 transform translate-y-0"
+                                 x-transition:leave="transition ease-in duration-150"
+                                 x-transition:leave-start="opacity-100 transform translate-y-0"
+                                 x-transition:leave-end="opacity-0 transform -translate-y-2">
+                                <div class="space-y-4">
+                                    <!-- 快速搜索 -->
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">TTP ID搜索</label>
+                                        <div class="flex items-center border border-gray-300 rounded-lg px-3 py-2 bg-white focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500">
+                                            <i class="fas fa-search text-gray-400 text-sm mr-2"></i>
+                                            <input type="text" x-model="searchQuery" placeholder="输入TTP ID..." 
+                                                   class="flex-1 border-none outline-none text-sm bg-transparent" @keyup.enter="searchTTPs()">
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- 时间范围 -->
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">时间范围</label>
+                                            <select x-model="hours" @change="onTimeRangeChange()" class="compact-select w-full">
+                                                <option value="1">1小时</option>
+                                                <option value="24" selected>24小时</option>
+                                                <option value="72">3天</option>
+                                                <option value="168">7天</option>
+                                                <option value="custom">自定义</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <!-- 自定义时间 -->
+                                        <div x-show="hours === 'custom'">
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">自定义</label>
+                                            <div class="flex gap-1">
+                                                <input type="number" x-model="customHours" min="1" max="168" 
+                                                       class="compact-input flex-1" placeholder="小时" style="min-width: 60px;">
+                                                <select x-model="customUnit" class="compact-select" style="min-width: 50px;">
+                                                    <option value="hours">时</option>
+                                                    <option value="days">天</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- 操作按钮 -->
+                                    <div class="flex gap-2 pt-2">
+                                        <button @click="searchTTPs()" :disabled="loading"
+                                                class="compact-btn compact-btn-primary flex-1">
+                                            <i class="fas fa-search mr-1" x-show="!loading"></i>
+                                            <i class="fas fa-spinner fa-spin mr-1" x-show="loading"></i>
+                                            <span x-text="loading ? '搜索中...' : '搜索'"></span>
+                                        </button>
+                                        <button @click="clearSearch()" class="compact-btn compact-btn-secondary">
+                                            <i class="fas fa-times mr-1"></i>清除
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 状态指示器 -->
+                        <div class="flex items-center space-x-2">
+                            <div :class="connected ? 'bg-green-500' : 'bg-red-500'" class="w-2 h-2 rounded-full"></div>
+                            <span class="text-sm text-gray-600" x-text="connected ? '在线' : '离线'"></span>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-sm text-gray-600" x-text="new Date().toLocaleDateString()"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="max-w-full mx-auto px-3 sm:px-6 lg:px-8 py-3" style="min-width: 1000px;">
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-5 mb-3">
+                <div class="bg-white rounded-xl shadow-lg px-5 py-3">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-500">实时告警</h3>
+                            <p class="text-3xl font-bold text-blue-600 mt-1" x-text="stats.short_ttp_count || 0"></p>
+                        </div>
+                        <div class="p-2.5 bg-blue-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-bolt-lightning text-blue-600 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-lg px-5 py-3">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-500">高级持续性威胁</h3>
+                            <p class="text-3xl font-bold text-green-500 mt-1" x-text="stats.long_ttp_count || 0"></p>
+                        </div>
+                        <div class="p-2.5 bg-green-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-shield-alt text-green-500 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-lg px-5 py-3">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-500">总事件数</h3>
+                            <p class="text-3xl font-bold text-purple-500 mt-1" x-text="stats.total_events_processed || 0"></p>
+                        </div>
+                        <div class="p-2.5 bg-purple-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-chart-line text-purple-500 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-lg px-5 py-3">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-500">分析窗口</h3>
+                            <p class="text-3xl font-bold text-orange-500 mt-1" x-text="stats.windows_yielded || 0" style="color: #f97316 !important;"></p>
+                        </div>
+                        <div class="p-2.5 bg-yellow-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-window-maximize text-orange-500 text-xl" style="color: #f97316 !important;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Navigation -->
+            <div class="bg-white rounded-xl shadow-lg p-1.5 mb-3">
+                <nav class="flex space-x-1.5">
+                    <button @click="switchToShortTTPs()"
+                            :class="searchType === 'short' ? 'bg-blue-500 text-white shadow-md' : 'text-gray-600 hover:bg-gray-100'"
+                            class="flex-1 py-2 px-3 rounded-lg font-medium text-sm transition-all duration-200 flex items-center justify-center">
+                        <i class="fas fa-bolt mr-2"></i>
+                        实时告警
+                        <span class="ml-2 bg-white bg-opacity-20 text-white text-xs font-bold px-2 py-0.5 rounded-full"
+                              x-text="stats.short_ttp_count || 0"></span>
+                    </button>
+                    <button @click="switchToLongTTPs()"
+                            :class="searchType === 'long' ? 'bg-green-500 text-white shadow-md' : 'text-gray-600 hover:bg-gray-100'"
+                            class="flex-1 py-2 px-3 rounded-lg font-medium text-sm transition-all duration-200 flex items-center justify-center">
+                        <i class="fas fa-shield-alt mr-2"></i>
+                        高级持续性威胁
+                        <span class="ml-2 bg-white bg-opacity-20 text-white text-xs font-bold px-2 py-0.5 rounded-full"
+                              x-text="stats.long_ttp_count || 0"></span>
+                    </button>
+                </nav>
+            </div>
+
+            <!-- 已移除：搜索控件已移至头部区域 -->
+
+            <!-- TTPs Display -->
+            <div class="bg-white rounded-lg shadow px-6 py-4">
+                <h2 class="text-lg font-semibold text-gray-900 mb-2">
+                    <span x-show="searchType === 'short'" class="text-blue-600">实时告警</span>
+                    <span x-show="searchType === 'long'" class="text-green-500">高级持续性威胁</span>
+                    <span class="text-sm font-normal text-gray-600 ml-2" x-text="`(${searchType === 'short' ? (stats.short_ttp_count || 0) : (stats.long_ttp_count || 0)} items)`"></span>
+                </h2>
+
+                <div class="space-y-2">
+                    <!-- Short TTPs -->
+                    <div x-show="searchType === 'short'">
+                        <template x-for="ttp in shortTTPs" :key="ttp.id">
+                            <div class="ttp-card border border-gray-300 rounded-lg p-4 hover:shadow-md transition-shadow mb-2 relative" :class="hoveredTechnique ? 'z-50' : 'z-0'" x-data="{ hoveredTechnique: null, tooltipPos: { top: 0, left: 0 } }" @mouseleave="hoveredTechnique = null">
+                                <div @click="toggleTTPDetails(ttp.id, 'short')"
+                                     class="flex justify-between items-start cursor-pointer hover:border-blue-300 rounded-lg p-2 -m-2">
+                                    <div class="flex-1">
+                                        <!-- 战术技术网格 - 14列，第一行战术，第二、三行技术 -->
+                                        <div class="mb-1 relative">
+                                            <div class="mb-1 text-sm font-semibold text-gray-700">战术与技术 Tactics&Techniques</div>
+                                            <div class="overflow-x-auto pb-2">
+                                                <div class="grid gap-y-1 gap-x-1 min-w-[800px]" style="grid-template-columns: repeat(14, minmax(0, 1fr));">
+                                                    <!-- 第一行：14个战术箭头链 -->
+                                                    <template x-for="(tacticDef, index) in [
+                                                        {name: 'Reconnaissance'},
+                                                        {name: 'Resource Development'},
+                                                        {name: 'Initial Access'},
+                                                        {name: 'Execution'},
+                                                        {name: 'Persistence'},
+                                                        {name: 'Privilege Escalation'},
+                                                        {name: 'Defense Evasion'},
+                                                        {name: 'Credential Access'},
+                                                        {name: 'Discovery'},
+                                                        {name: 'Lateral Movement'},
+                                                        {name: 'Collection'},
+                                                        {name: 'Command and Control'},
+                                                        {name: 'Exfiltration'},
+                                                        {name: 'Impact'}
+                                                    ]" :key="tacticDef.name">
+                                                        <div class="flex justify-center items-center h-full z-0">
+                                                            <span :class="[
+                                                                isTacticIncluded(ttp, tacticDef.name)
+                                                                    ? 'bg-green-100 text-green-800 border-green-500'
+                                                                    : 'bg-gray-100 text-gray-400 border-gray-200',
+                                                                'px-2 text-xs font-medium border-2 w-full text-center flex items-center justify-center z-0'
+                                                            ]"
+                                                                  x-text="tacticDef.name"
+                                                                  :style="{
+                                                                      height: '38px',
+                                                                      clipPath: index === 0
+                                                                          ? 'polygon(0 0, calc(100% - 6px) 0, 100% 50%, calc(100% - 6px) 100%, 0 100%)'
+                                                                          : 'polygon(0 0, calc(100% - 6px) 0, 100% 50%, calc(100% - 6px) 100%, 0 100%, 6px 50%)',
+                                                                      borderLeft: 'none',
+                                                                      borderRight: 'none'
+                                                                  }"></span>
+                                                        </div>
+                                                    </template>
+
+                                                    <!-- 第一行技术 -->
+                                                    <template x-for="tacticDef in [
+                                                        {name: 'Reconnaissance'},
+                                                        {name: 'Resource Development'},
+                                                        {name: 'Initial Access'},
+                                                        {name: 'Execution'},
+                                                        {name: 'Persistence'},
+                                                        {name: 'Privilege Escalation'},
+                                                        {name: 'Defense Evasion'},
+                                                        {name: 'Credential Access'},
+                                                        {name: 'Discovery'},
+                                                        {name: 'Lateral Movement'},
+                                                        {name: 'Collection'},
+                                                        {name: 'Command and Control'},
+                                                        {name: 'Exfiltration'},
+                                                        {name: 'Impact'}
+                                                    ]" :key="tacticDef.name + '-row1'">
+                                                        <div class="pt-0.5 pb-0 flex justify-center items-center h-full">
+                                                            <template x-if="getTechniquesForTactic(ttp, tacticDef.name)[0]">
+                                                                <div class="relative px-0.5 w-full"
+                                                                      :x-ref="'tactic-' + tacticDef.name"
+                                                                      :style="{
+                                                                          height: '42px',
+                                                                          minHeight: '42px'
+                                                                      }">
+                                                                    <!-- 第二层：底层错位标签框 - 向右下错位3px，保持可见 -->
+                                                                    <template x-if="getTechniquesForTactic(ttp, tacticDef.name).length > 1">
+                                                                        <div class="absolute bg-blue-100 border border-blue-300 rounded text-center flex items-center justify-center w-full"
+                                                                              :style="{
+                                                                                  top: '4px',
+                                                                                  left: '3px',
+                                                                                  height: '38px',
+                                                                                  minHeight: '38px',
+                                                                                  zIndex: 1
+                                                                              }">
+                                                                        </div>
+                                                                    </template>
+                                                                    <!-- 第一层：顶层显示技术名称 -->
+                                                                    <div class="absolute bg-blue-50 text-blue-700 border border-blue-200 rounded text-center flex items-center justify-center w-full"
+                                                                          :style="{
+                                                                              top: 0,
+                                                                              left: 0,
+                                                                              height: '38px',
+                                                                              minHeight: '38px',
+                                                                              fontSize: getTechniquesForTactic(ttp, tacticDef.name)[0].name.length > 20 ? '10px' : '12px',
+                                                                              lineHeight: '1.3',
+                                                                              zIndex: 2
+                                                                          }"
+                                                                          @mouseenter="hoveredTechnique = tacticDef.name; const cardRect = $el.closest('.ttp-card').getBoundingClientRect(); const rect = $event.target.getBoundingClientRect(); tooltipPos.top = rect.bottom - cardRect.top + 8; tooltipPos.left = rect.left - cardRect.left + rect.width / 2;">
+                                                                        <span x-text="getTechniquesForTactic(ttp, tacticDef.name)[0].name"></span>
+                                                                    </div>
+                                                                </div>
+                                                            </template>
+                                                        </div>
+                                                    </template>
+
+                                                    <!-- 移除占位空行：现在只需要一行技术，减少总高度 -->
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- 悬停弹出：显示当前战术的全部技术 - 使用 absolute 定位 -->
+                                        <div x-show="hoveredTechnique && getTechniquesForTactic(ttp, hoveredTechnique).length > 1"
+                                             x-transition:enter="transition ease-out duration-200"
+                                             x-transition:enter-start="opacity-0 translate-y-1"
+                                             x-transition:enter-end="opacity-100 translate-y-0"
+                                             x-transition:leave="transition ease-in duration-150"
+                                             x-transition:leave-start="opacity-100 translate-y-0"
+                                             x-transition:leave-end="opacity-0 translate-y-1"
+                                             class="absolute z-[9999] pointer-events-none"
+                                             :style="{
+                                                 top: tooltipPos.top + 'px',
+                                                 left: tooltipPos.left + 'px',
+                                                 transform: 'translateX(-50%)'
+                                             }">
+                                            <div class="bg-white border border-gray-300 rounded-lg shadow-xl w-48 pointer-events-auto">
+                                                <!-- 内容 -->
+                                                <div class="p-3 text-center">
+                                                    <div class="text-xs font-semibold text-gray-700 mb-2" x-text="hoveredTechnique"></div>
+                                                    <div class="flex flex-col gap-1">
+                                                        <template x-for="(tech, index) in getTechniquesForTactic(ttp, hoveredTechnique)" :key="tech.id">
+                                                            <div class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs w-full text-center" x-text="tech.name"></div>
+                                                        </template>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="font-semibold text-gray-800 mb-2">
+                                            <span class="text-black cursor-default">
+                                                <span x-html="parseMarkdownToHTML(ttp.summary || ttp.analysis || '')"></span>
+                                            </span>
+                                        </div>
+                                        <div class="text-sm text-gray-500 flex justify-between items-center">
+                                            <div class="flex items-center gap-2">
+                                                <span x-text="formatDate(ttp.timestamp)"></span>
+                                                <template x-if="getSeverityLevel(ttp)">
+                                                    <span class="px-2 py-0.5 rounded-full text-xs font-medium border" 
+                                                          :style="getSeverityStyle(getSeverityLevel(ttp))"
+                                                          x-text="getSeverityLevel(ttp)"></span>
+                                                </template>
+                                                <span x-show="triggeringLongTTPs.has(ttp.id)" class="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-300">
+                                                    <i class="fas fa-spinner fa-spin mr-1"></i>
+                                                    <span x-text="'调查中...'"></span>
+                                                </span>
+                                            </div>
+                                            <div class="flex items-center gap-2">
+                                                <template x-for="alertType in getUniqueAlertTypes(ttp)" :key="alertType">
+                                                    <span class="inline-flex" x-show="eventTypeCache[Object.keys(eventTypeCache).find(id => eventTypeCache[id] === alertType)]">
+                                                        <span :style="getAlertTypeClass(alertType)" class="px-2 py-0.5 rounded-full text-xs font-medium" x-text="getAlertTypeName(alertType)"></span>
+                                                    </span>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="ml-4 flex items-center">
+                                        <i class="fas transition-transform text-gray-400" 
+                                           :class="isExpanded(ttp.id, 'short') ? 'fa-chevron-up rotate-180' : 'fa-chevron-down'"></i>
+                                    </div>
+                                </div>
+                                
+                                <div x-show="isExpanded(ttp.id, 'short')" class="mt-4 pt-4 border-t border-gray-200">
+                                    <div class="text-sm text-gray-600 space-y-2">
+                                        <div class="flex justify-start items-center gap-6 mb-2">
+                                            <button @click.stop="triggerLongTTP(ttp.id)"
+                                                    :disabled="triggeringLongTTPs.has(ttp.id)"
+                                                    :class="triggeringLongTTPs.has(ttp.id) ? 'bg-blue-400 cursor-not-allowed opacity-70' : 'bg-blue-400 hover:bg-blue-500'"
+                                                    class="px-4 py-1.5 text-xs text-white rounded transition-colors flex items-center whitespace-nowrap">
+                                                <i class="fas fa-play mr-1.5" x-show="!triggeringLongTTPs.has(ttp.id)"></i>
+                                                <i class="fas fa-spinner fa-spin mr-1.5" x-show="triggeringLongTTPs.has(ttp.id)"></i>
+                                                <span x-text="triggeringLongTTPs.has(ttp.id) ? '高级持续性威胁调查中...' : '启动高级持续性威胁调查'"></span>
+                                            </button>
+                                            
+                                            <!-- 人工参与勾选框 -->
+                                            <label class="flex items-center gap-1 cursor-pointer select-none">
+                                                <input type="checkbox"
+                                                       x-model="manualFeedbackEnabled"
+                                                       :disabled="triggeringLongTTPs.has(ttp.id)"
+                                                       class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                                                <span class="text-sm text-gray-700">人工参与</span>
+                                            </label>
+                                        </div>
+                                        <div><strong>ID:</strong> <code x-text="ttp.id"></code></div>
+
+                                        <!-- 战术技术过程层级结构 -->
+                                        <div class="mt-4">
+                                            <div class="font-semibold mb-2">TTPs层级:</div>
+                                            <div class="tactic-tree border border-gray-200 rounded-lg p-4 bg-gray-50">
+                                                <template x-for="tactic in getTacticTree(ttp)" :key="tactic.id">
+                                                    <div class="tactic-card mb-3 last:mb-0">
+                                                        <div class="flex items-center justify-between p-3 bg-white rounded border cursor-pointer hover:bg-gray-50" 
+                                                             @click.stop="toggleTactic(ttp.id + '-' + tactic.id)">
+                                                            <div class="flex items-center">
+                                                                <i :class="isTacticExpanded(ttp.id + '-' + tactic.id) ? 'fas fa-chevron-down' : 'fas fa-chevron-right'"
+                                                                   class="transition-transform"></i>
+                                                                <span class="ml-2 font-semibold text-blue-800" x-text="tactic.name"></span>
+                                                                <span class="ml-2 px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs" 
+                                                                      x-text="tactic.techniques.length + '个技术'"></span>
+                                                                <span class="ml-2 px-2 py-1 bg-red-100 text-red-800 rounded text-xs" 
+                                                                      x-show="tactic.event_ids && tactic.event_ids.length > 0"
+                                                                      x-text="tactic.event_ids.length + '个相关事件'"></span>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <div x-show="isTacticExpanded(ttp.id + '-' + tactic.id)" 
+                                                             x-transition class="mt-2 ml-6">
+                                                            <!-- 战术相关事件 -->
+                                                            <template x-for="technique in tactic.techniques" :key="technique.id">
+                                                                <div class="technique-item mb-2 last:mb-0">
+                                                                    <div class="flex items-center justify-between p-2 bg-blue-50 rounded cursor-pointer hover:bg-blue-100"
+                                                                         @click="toggleTechnique(tactic.id + '-' + technique.id)">
+                                                                        <div class="flex items-center">
+                                                                            <i :class="isTechniqueExpanded(tactic.id + '-' + technique.id) ? 'fas fa-chevron-down' : 'fas fa-chevron-right'"
+                                                                               class="transition-transform text-sm"></i>
+                                                                            <span class="ml-2 font-medium text-blue-700" x-text="technique.name"></span>
+                                                                            <span class="ml-2 px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs" 
+                                                                                  x-text="technique.procedures.length + '个过程'"></span>
+
+                                                                        </div>
+                                                                    </div>
+                                                                    
+                                                                    <div x-show="isTechniqueExpanded(tactic.id + '-' + technique.id)" 
+                                                                         x-transition class="mt-1 ml-4">
+                                                                        <template x-for="procedure in technique.procedures" :key="procedure.id">
+                                                                            <div class="procedure-item p-2 bg-yellow-50 rounded mb-1 last:mb-0 hover:bg-yellow-100">
+                                                                                <div class="flex items-center justify-between">
+                                                                                    <span class="text-sm text-yellow-800" x-text="procedure.name"></span>
+                                                                                </div>
+                                                                                <div x-show="procedure.description" 
+                                                                                     class="text-xs text-gray-600 mt-1" x-text="procedure.description"></div>
+                                                                            </div>
+                                                                        </template>
+                                                                    </div>
+                                                                </div>
+                                                            </template>
+                                                            
+                                                            <div class="mb-3 p-2 bg-red-50 rounded">
+                                                                <div class="text-sm font-semibold text-red-700 mb-1">
+                                                                    相关事件
+                                                                </div>
+                                                                <div class="flex flex-wrap gap-1">
+                                                                    <template x-for="(eventId, index) in tactic.event_ids.slice(0, 10)" :key="eventId">
+                                                                        <button @click="showEventDetailById(eventId, 'event' + (index + 1))" 
+                                                                                class="px-2 py-1 bg-red-100 text-red-800 rounded text-xs hover:bg-red-200 cursor-pointer transition-colors"
+                                                                                x-init="loadEventType(eventId)">
+                                                                            <span x-text="(eventTypeCache[eventId] ? getEventTypeDisplayName(eventTypeCache[eventId]) : '加载中...') + (index + 1)"></span>
+                                                                        </button>
+                                                                    </template>
+                                                                    <span x-show="tactic.event_ids && tactic.event_ids.length > 10" class="px-2 py-1 bg-red-50 text-red-800 rounded text-xs">
+                                                                        等<span x-text="tactic.event_ids.length - 10"></span>个
+                                                                    </span>
+                                                                    <span x-show="!tactic.event_ids || tactic.event_ids.length === 0" class="text-xs text-gray-500">
+                                                                        暂无相关事件
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </div>
+
+                                        
+                                        <!-- 全部信息 -->
+                                        <div class="mt-4">
+                                            <div class="font-semibold mb-2">实时告警详情:</div>
+                                            <button @click="const fullData = $event.target.nextElementSibling; fullData.style.display = fullData.style.display === 'none' ? 'block' : 'none'" 
+                                                    class="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200">
+                                                <i class="fas fa-code mr-1"></i>点击查看完整数据
+                                            </button>
+                                            <pre style="display: none;" class="text-xs mt-2 bg-gray-100 p-3 rounded overflow-x-auto" x-text="JSON.stringify(ttp, null, 2)"></pre>
+                                        </div>
+                                        
+
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                        
+                        <!-- 分页控件 -->
+                        <div class="flex justify-center items-center space-x-2 mt-6" x-show="sttpPagination.totalPages > 0">
+                            <button @click="changeShortTTPPage(sttpPagination.currentPage - 1)" 
+                                    :disabled="sttpPagination.currentPage <= 1"
+                                    class="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                                上一页
+                            </button>
+                            <span class="text-sm text-gray-600">
+                                第 <span x-text="sttpPagination.currentPage"></span> 页 / 共 <span x-text="sttpPagination.totalPages"></span> 页
+                            </span>
+                            <button @click="changeShortTTPPage(sttpPagination.currentPage + 1)" 
+                                    :disabled="sttpPagination.currentPage >= sttpPagination.totalPages"
+                                    class="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                                下一页
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Long TTPs -->
+                    <div x-show="searchType === 'long'">
+                        <template x-for="ttp in longTTPs" :key="ttp.id">
+                            <div class="ttp-card border border-gray-300 rounded-lg p-4 hover:shadow-md transition-shadow mb-2 relative" :class="hoveredTechnique ? 'z-50' : 'z-0'" x-data="{ hoveredTechnique: null, tooltipPos: { top: 0, left: 0 } }" @mouseleave="hoveredTechnique = null">
+                                <div @click="toggleTTPDetails(ttp.id, 'long')"
+                                     class="flex justify-between items-start cursor-pointer hover:border-blue-300 rounded-lg p-2 -m-2">
+                                    <div class="flex-1">
+                                        <!-- 战术技术网格 - 14列，第一行战术，第二、三行技术 -->
+                                        <div class="mb-1 relative">
+                                            <div class="mb-1 text-sm font-semibold text-gray-700">战术与技术 Tactics&Techniques</div>
+                                            <div class="overflow-x-auto pb-2">
+                                                <div class="grid gap-y-1 gap-x-1 min-w-[800px]" style="grid-template-columns: repeat(14, minmax(0, 1fr));">
+                                                    <!-- 第一行：14个战术箭头链 -->
+                                                    <template x-for="(tacticDef, index) in [
+                                                        {name: 'Reconnaissance'},
+                                                        {name: 'Resource Development'},
+                                                        {name: 'Initial Access'},
+                                                        {name: 'Execution'},
+                                                        {name: 'Persistence'},
+                                                        {name: 'Privilege Escalation'},
+                                                        {name: 'Defense Evasion'},
+                                                        {name: 'Credential Access'},
+                                                        {name: 'Discovery'},
+                                                        {name: 'Lateral Movement'},
+                                                        {name: 'Collection'},
+                                                        {name: 'Command and Control'},
+                                                        {name: 'Exfiltration'},
+                                                        {name: 'Impact'}
+                                                    ]" :key="tacticDef.name">
+                                                        <div class="flex justify-center items-center h-full z-0">
+                                                            <span :class="[
+                                                                isTacticIncluded(ttp, tacticDef.name)
+                                                                    ? 'bg-green-100 text-green-800 border-green-500'
+                                                                    : 'bg-gray-100 text-gray-400 border-gray-200',
+                                                                'px-2 text-xs font-medium border-2 w-full text-center flex items-center justify-center z-0'
+                                                            ]"
+                                                                  x-text="tacticDef.name"
+                                                                  :style="{
+                                                                      height: '38px',
+                                                                      clipPath: index === 0
+                                                                          ? 'polygon(0 0, calc(100% - 6px) 0, 100% 50%, calc(100% - 6px) 100%, 0 100%)'
+                                                                          : 'polygon(0 0, calc(100% - 6px) 0, 100% 50%, calc(100% - 6px) 100%, 0 100%, 6px 50%)',
+                                                                      borderLeft: 'none',
+                                                                      borderRight: 'none'
+                                                                  }"></span>
+                                                        </div>
+                                                    </template>
+
+                                                    <!-- 第一行技术 -->
+                                                    <template x-for="tacticDef in [
+                                                        {name: 'Reconnaissance'},
+                                                        {name: 'Resource Development'},
+                                                        {name: 'Initial Access'},
+                                                        {name: 'Execution'},
+                                                        {name: 'Persistence'},
+                                                        {name: 'Privilege Escalation'},
+                                                        {name: 'Defense Evasion'},
+                                                        {name: 'Credential Access'},
+                                                        {name: 'Discovery'},
+                                                        {name: 'Lateral Movement'},
+                                                        {name: 'Collection'},
+                                                        {name: 'Command and Control'},
+                                                        {name: 'Exfiltration'},
+                                                        {name: 'Impact'}
+                                                    ]" :key="tacticDef.name + '-row1'">
+                                                        <div class="pt-0.5 pb-0 flex justify-center items-center h-full">
+                                                            <template x-if="getTechniquesForTactic(ttp, tacticDef.name)[0]">
+                                                                <div class="relative px-0.5 w-full"
+                                                                      :x-ref="'tactic-' + tacticDef.name"
+                                                                      :style="{
+                                                                          height: '42px',
+                                                                          minHeight: '42px'
+                                                                      }">
+                                                                    <!-- 第二层：底层错位标签框 - 向右下错位3px，保持可见 -->
+                                                                    <template x-if="getTechniquesForTactic(ttp, tacticDef.name).length > 1">
+                                                                        <div class="absolute bg-blue-100 border border-blue-300 rounded text-center flex items-center justify-center w-full"
+                                                                              :style="{
+                                                                                  top: '4px',
+                                                                                  left: '3px',
+                                                                                  height: '38px',
+                                                                                  minHeight: '38px',
+                                                                                  zIndex: 1
+                                                                              }">
+                                                                        </div>
+                                                                    </template>
+                                                                    <!-- 第一层：顶层显示技术名称 -->
+                                                                    <div class="absolute bg-blue-50 text-blue-700 border border-blue-200 rounded text-center flex items-center justify-center w-full"
+                                                                          :style="{
+                                                                              top: 0,
+                                                                              left: 0,
+                                                                              height: '38px',
+                                                                              minHeight: '38px',
+                                                                              fontSize: getTechniquesForTactic(ttp, tacticDef.name)[0].name.length > 20 ? '10px' : '12px',
+                                                                              lineHeight: '1.3',
+                                                                              zIndex: 2
+                                                                          }"
+                                                                          @mouseenter="hoveredTechnique = tacticDef.name; const cardRect = $el.closest('.ttp-card').getBoundingClientRect(); const rect = $event.target.getBoundingClientRect(); tooltipPos.top = rect.bottom - cardRect.top + 8; tooltipPos.left = rect.left - cardRect.left + rect.width / 2;">
+                                                                        <span x-text="getTechniquesForTactic(ttp, tacticDef.name)[0].name"></span>
+                                                                    </div>
+                                                                </div>
+                                                            </template>
+                                                        </div>
+                                                    </template>
+
+                                                    <!-- 移除占位空行：现在只需要一行技术，减少总高度 -->
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- 悬停弹出：显示当前战术的全部技术 - 使用 absolute 定位 -->
+                                        <div x-show="hoveredTechnique && getTechniquesForTactic(ttp, hoveredTechnique).length > 1"
+                                             x-transition:enter="transition ease-out duration-200"
+                                             x-transition:enter-start="opacity-0 translate-y-1"
+                                             x-transition:enter-end="opacity-100 translate-y-0"
+                                             x-transition:leave="transition ease-in duration-150"
+                                             x-transition:leave-start="opacity-100 translate-y-0"
+                                             x-transition:leave-end="opacity-0 translate-y-1"
+                                             class="absolute z-[9999] pointer-events-none"
+                                             :style="{
+                                                 top: tooltipPos.top + 'px',
+                                                 left: tooltipPos.left + 'px',
+                                                 transform: 'translateX(-50%)'
+                                             }">
+                                            <div class="bg-white border border-gray-300 rounded-lg shadow-xl w-48 pointer-events-auto">
+                                                <!-- 内容 -->
+                                                <div class="p-3 text-center">
+                                                    <div class="text-xs font-semibold text-gray-700 mb-2" x-text="hoveredTechnique"></div>
+                                                    <div class="flex flex-col gap-1">
+                                                        <template x-for="(tech, index) in getTechniquesForTactic(ttp, hoveredTechnique)" :key="tech.id">
+                                                            <div class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs w-full text-center" x-text="tech.name"></div>
+                                                        </template>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- 分析报告标题 - 从 final_report 提取第一行 -->
+                                        <div class="font-semibold text-gray-800 mb-2" x-show="ttp.final_report">
+                                            <span class="text-black cursor-default" x-text="ttp.final_report ? ttp.final_report.split('\n')[0].replace(/^#\s*/, '') : ''"></span>
+                                        </div>
+                                        <div class="text-sm text-gray-500 flex justify-between items-center">
+                                            <div class="flex items-center gap-2">
+                                                <span x-text="formatDate(ttp.timestamp)"></span>
+                                                <template x-if="getSeverityLevel(ttp)">
+                                                    <span class="px-2 py-0.5 rounded-full text-xs font-medium border"
+                                                          :style="getSeverityStyle(getSeverityLevel(ttp))"
+                                                          x-text="getSeverityLevel(ttp)"></span>
+                                                </template>
+                                                <!-- 人工参与按钮 - 仅在 mode === 'feedback' 时显示 -->
+                                                <button @click.stop="showFeedbackDetail(ttp)"
+                                                        x-show="ttp.mode === 'feedback' && ttp.session_id"
+                                                        :class="feedbackStatus[ttp.session_id]?.isInterrupt ?
+                                                            'px-2 py-1 text-xs bg-yellow-500 text-white rounded hover:bg-yellow-600 transition-colors flex items-center animate-pulse' :
+                                                            'px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition-colors flex items-center'">
+                                                    <i class="fas fa-user-circle mr-1"></i>
+                                                    <span x-text="feedbackStatus[ttp.session_id]?.isInterrupt ? '等待反馈' : '人工参与'"></span>
+                                                </button>
+                                                <!-- 触发源按钮 -->
+                                                <button @click.stop="loadAndShowShortTTP(ttp.short_ttp_id)"
+                                                        x-show="ttp.short_ttp_id"
+                                                        class="px-3 py-1 text-xs bg-blue-400 text-white rounded hover:bg-blue-500 transition-colors flex items-center">
+                                                    <i class="fas fa-link mr-1.5"></i>触发源
+                                                </button>
+                                            </div>
+                                            <div class="flex items-center gap-2">
+                                                <span x-show="ttp.error_message" class="px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-300">
+                                                    <i class="fas fa-exclamation-triangle mr-1"></i>生成出错
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="ml-4 flex items-center">
+                                        <i class="fas transition-transform text-gray-400"
+                                           :class="isExpanded(ttp.id, 'long') ? 'fa-chevron-up rotate-180' : 'fa-chevron-down'"></i>
+                                    </div>
+                                </div>
+
+                                <div x-show="isExpanded(ttp.id, 'long')" class="mt-4 pt-4 border-t border-gray-200">
+                                    <div class="text-sm text-gray-600 space-y-2">
+                                        <!-- ID 和删除按钮同一行 -->
+                                        <div class="flex items-center justify-between">
+                                            <div><strong>ID:</strong> <code x-text="ttp.id"></code></div>
+                                            <!-- 删除按钮 -->
+                                            <button @click.stop="deleteLongTTP(ttp.id)"
+                                                    :disabled="ttp.generation_status !== 'completed' && ttp.generation_status !== 'error' && !feedbackStatus[ttp.session_id]?.isInterrupt"
+                                                    :class="ttp.generation_status === 'completed' || ttp.generation_status === 'error' || feedbackStatus[ttp.session_id]?.isInterrupt
+                                                        ? 'p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors'
+                                                        : 'p-1 text-gray-300 cursor-not-allowed rounded'"
+                                                    title="删除">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </div>
+                                        <div x-show="ttp.error_message"><strong>错误信息:</strong> <span class="text-red-600" x-text="ttp.error_message"></span></div>
+
+                                        <!-- ATT&CK 战术技术层级结构 -->
+                                        <div class="mt-4">
+                                            <div class="font-semibold mb-2">ATT&CK 战术技术详情:</div>
+                                            <div class="tactic-tree border border-gray-200 rounded-lg p-4 bg-gray-50">
+                                                <template x-for="tactic in getTacticTree(ttp)" :key="tactic.id">
+                                                    <div class="tactic-card mb-3 last:mb-0">
+                                                        <div class="flex items-center justify-between p-3 bg-white rounded border cursor-pointer hover:bg-gray-50"
+                                                             @click.stop="toggleTactic(ttp.id + '-' + tactic.id)">
+                                                            <div class="flex items-center">
+                                                                <i :class="isTacticExpanded(ttp.id + '-' + tactic.id) ? 'fas fa-chevron-down' : 'fas fa-chevron-right'"
+                                                                   class="transition-transform"></i>
+                                                                <span class="ml-2 font-semibold text-blue-800" x-text="tactic.name"></span>
+                                                                <span class="ml-2 px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs"
+                                                                      x-text="(tactic.techniques ? tactic.techniques.length : 0) + '个技术'"></span>
+                                                                <span class="ml-2 px-2 py-1 bg-red-100 text-red-800 rounded text-xs"
+                                                                      x-show="tactic.event_ids && tactic.event_ids.length > 0"
+                                                                      x-text="tactic.event_ids.length + '个相关事件'"></span>
+                                                            </div>
+                                                        </div>
+
+                                                        <div x-show="isTacticExpanded(ttp.id + '-' + tactic.id)"
+                                                             x-transition class="mt-2 ml-6">
+                                                            <template x-for="technique in tactic.techniques" :key="technique.id">
+                                                                <div class="technique-item mb-2 last:mb-0">
+                                                                    <div class="flex items-center justify-between p-2 bg-blue-50 rounded cursor-pointer hover:bg-blue-100"
+                                                                         @click="toggleTechnique(tactic.id + '-' + technique.id)">
+                                                                        <div class="flex items-center">
+                                                                            <i :class="isTechniqueExpanded(tactic.id + '-' + technique.id) ? 'fas fa-chevron-down' : 'fas fa-chevron-right'"
+                                                                               class="transition-transform text-sm"></i>
+                                                                            <span class="ml-2 font-medium text-blue-700" x-text="technique.name"></span>
+                                                                            <span class="ml-2 px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs" 
+                                                                                  x-text="(technique.procedures ? technique.procedures.length : 0) + '个过程'"></span>
+                                                                        </div>
+                                                                    </div>
+                                                                    
+                                                                    <div x-show="isTechniqueExpanded(tactic.id + '-' + technique.id)" 
+                                                                         x-transition class="mt-1 ml-4">
+                                                                        <template x-for="procedure in technique.procedures" :key="procedure.id">
+                                                                            <div class="procedure-item p-2 bg-yellow-50 rounded mb-1 last:mb-0 hover:bg-yellow-100">
+                                                                                <span class="text-sm text-yellow-800" x-text="procedure.name"></span>
+                                                                            </div>
+                                                                        </template>
+                                                                    </div>
+                                                                </div>
+                                                            </template>
+                                                            
+                                                            <!-- 战术相关事件 -->
+                                                            <div class="mb-3 p-2 bg-red-50 rounded">
+                                                                <div class="text-sm font-semibold text-red-700 mb-1">
+                                                                    相关事件
+                                                                </div>
+                                                                <div class="flex flex-wrap gap-1">
+                                                                    <template x-for="(eventId, index) in tactic.event_ids.slice(0, 10)" :key="eventId">
+                                                                        <button @click="showEventDetailById(eventId, 'event' + (index + 1))" 
+                                                                                class="px-2 py-1 bg-red-100 text-red-800 rounded text-xs hover:bg-red-200 cursor-pointer transition-colors"
+                                                                                x-init="loadEventType(eventId)">
+                                                                            <span x-text="(eventTypeCache[eventId] ? getEventTypeDisplayName(eventTypeCache[eventId]) : '加载中...') + (index + 1)"></span>
+                                                                        </button>
+                                                                    </template>
+                                                                    <span x-show="tactic.event_ids && tactic.event_ids.length > 10" class="px-2 py-1 bg-red-50 text-red-800 rounded text-xs">
+                                                                        等<span x-text="tactic.event_ids.length - 10"></span>个
+                                                                    </span>
+                                                                    <span x-show="!tactic.event_ids || tactic.event_ids.length === 0" class="text-xs text-gray-500">
+                                                                        暂无相关事件
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </div>
+
+                                        <!-- 分析报告 -->
+                                        <div x-show="ttp.final_report" class="mt-4">
+                                            <div class="font-semibold mb-2">分析报告:</div>
+                                            <div class="structured-report space-y-0.5 bg-gray-50 p-3 rounded" x-html="parseMarkdownToHTML(ttp.final_report)"></div>
+                                        </div>
+                                        
+                                        <!-- 全部信息 -->
+                                        <div class="mt-4">
+                                            <div class="font-semibold mb-2">高级持续性威胁详情:</div>
+                                            <button @click="const fullData = $event.target.nextElementSibling; fullData.style.display = fullData.style.display === 'none' ? 'block' : 'none'" 
+                                                    class="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200">
+                                                <i class="fas fa-code mr-1"></i>点击查看完整数据
+                                            </button>
+                                            <div style="display: none;" class="mt-2 bg-gray-100 p-3 rounded overflow-x-auto">
+                                                <pre class="text-xs" x-text="JSON.stringify(ttp, null, 2)"></pre>
+                                            </div>
+                                        </div>
+                                        
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                        
+                        <!-- 分页控件 -->
+                        <div class="flex justify-center items-center space-x-2 mt-6" x-show="lttpPagination.totalPages > 0">
+                            <button @click="changeLongTTPPage(lttpPagination.currentPage - 1)" 
+                                    :disabled="lttpPagination.currentPage <= 1"
+                                    class="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                                上一页
+                            </button>
+                            <span class="text-sm text-gray-600">
+                                第 <span x-text="lttpPagination.currentPage"></span> 页 / 共 <span x-text="lttpPagination.totalPages"></span> 页
+                            </span>
+                            <button @click="changeLongTTPPage(lttpPagination.currentPage + 1)" 
+                                    :disabled="lttpPagination.currentPage >= lttpPagination.totalPages"
+                                    class="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                                下一页
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div x-show="(searchType === 'short' && shortTTPs.length === 0) || (searchType === 'long' && longTTPs.length === 0)" 
+                     class="text-center py-12">
+                    <i class="fas fa-inbox text-gray-400 text-4xl mb-4"></i>
+                    <p class="text-gray-500 text-lg" x-text="loading ? '加载中...' : '暂无数据'"></p>
+                </div>
+            </div>
+        </main>
+
+        <!-- 人工参与详情面板（右侧滑出） -->
+        <div x-show="showFeedbackPanel"
+             x-transition:enter="transform transition ease-out duration-300"
+             x-transition:enter-start="translate-x-full"
+             x-transition:enter-end="translate-x-0"
+             x-transition:leave="transform transition ease-in duration-300"
+             x-transition:leave-start="translate-x-0"
+             x-transition:leave-end="translate-x-full"
+             class="fixed inset-y-0 right-0 w-3/4 bg-white shadow-2xl z-50 flex flex-col border-l border-gray-200">
+
+            <!-- 面板头部 -->
+            <div class="shrink-0 bg-white border-b px-6 py-3 flex justify-between items-center">
+                <h3 class="font-semibold text-lg text-gray-800">人工参与详情</h3>
+                <button @click="closeFeedbackPanel()" class="text-gray-500 hover:text-gray-700 px-2 py-1 rounded hover:bg-gray-100">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <!-- 面板内容 -->
+            <div class="flex-1 overflow-y-auto p-4">
+                <!-- Session ID 信息 -->
+                <div class="mb-4 px-24">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-gray-500">Session ID：</span>
+                        <span class="text-sm font-mono text-gray-700 break-all" x-text="selectedFeedbackSession || '-'"></span>
+                    </div>
+                </div>
+
+                <!-- 加载中状态 -->
+                <template x-if="!feedbackDetailData[selectedFeedbackSession]">
+                    <div class="text-center py-8 text-gray-500 px-8">
+                        <i class="fas fa-spinner fa-spin mr-2"></i>加载中...
+                    </div>
+                </template>
+
+                <!-- 数据展示 -->
+                <template x-if="feedbackDetailData[selectedFeedbackSession]">
+                    <div class="space-y-4 px-16">
+                        <!-- 状态 -->
+                        <div class="flex items-center gap-2">
+                            <span class="text-sm text-gray-500 pl-8">状态：</span>
+                            <span class="px-3 py-1 rounded text-xs font-medium"
+                                  :class="{
+                                      'bg-yellow-100 text-yellow-800': feedbackDetailData[selectedFeedbackSession]?.status === 'pending',
+                                      'bg-green-100 text-green-800': feedbackDetailData[selectedFeedbackSession]?.status === 'completed',
+                                      'bg-red-100 text-red-800': feedbackDetailData[selectedFeedbackSession]?.status === 'failed' || feedbackDetailData[selectedFeedbackSession]?.status === 'error',
+                                      'bg-blue-100 text-blue-800': feedbackDetailData[selectedFeedbackSession]?.status === 'generating',
+                                      'bg-purple-100 text-purple-800': feedbackDetailData[selectedFeedbackSession]?.status === 'responded'
+                                  }"
+                                  x-text="feedbackDetailData[selectedFeedbackSession]?.status || 'unknown'">
+                            </span>
+                        </div>
+
+                        <div class="border-t border-gray-200"></div>
+
+                        <!-- feedback_history 交互历史展示 -->
+                        <template x-if="feedbackDetailData[selectedFeedbackSession]?.feedback_history?.length > 0">
+                            <div class="space-y-3">
+                                <!-- 原始需求展示（作为用户消息气泡） -->
+                                <div class="px-8"
+                                     x-show="extractOriginalRequirement(feedbackDetailData[selectedFeedbackSession]?.feedback_history?.[0]?.question)"
+                                     x-cloak>
+                                    <div class="flex items-start gap-3 justify-end mb-4">
+                                        <div class="bg-green-50 rounded-2xl rounded-tr-sm p-3 max-w-[85%]">
+                                            <div class="text-sm text-gray-700"
+                                                 x-html="parseMarkdownToHTML(extractOriginalRequirement(feedbackDetailData[selectedFeedbackSession]?.feedback_history?.[0]?.question))"></div>
+                                        </div>
+                                        <div class="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center flex-shrink-0">
+                                            <i class="fas fa-user text-green-400 text-base"></i>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <template x-for="(item, index) in (feedbackDetailData[selectedFeedbackSession]?.feedback_history || [])" :key="index">
+                                    <div class="space-y-4 w-full px-8">
+                                        <!-- Question 气泡（左侧，AI） -->
+                                        <div class="flex items-start gap-3 justify-start w-full">
+                                            <div class="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center flex-shrink-0">
+                                                <i class="fas fa-robot text-indigo-400 text-base"></i>
+                                            </div>
+                                            <div class="bg-indigo-50 rounded-2xl rounded-tl-sm p-3" style="width: 50vw; max-width: calc(100% - 3rem);">
+                                                <div class="text-sm text-gray-700" style="word-break: break-all; overflow-wrap: anywhere;" x-html="parseMarkdownToHTML(formatThinkingHeaders(getStepDeltaQuestion(item.question, item.step, feedbackDetailData[selectedFeedbackSession]?.feedback_history || [], index)))"></div>
+                                                <div class="text-xs text-indigo-300 mt-1" x-text="formatDateBeijing(item.timestamp)"></div>
+                                            </div>
+                                        </div>
+                                        <!-- User Feedback 气泡（右侧，用户） -->
+                                        <div class="flex items-start gap-3 justify-end" x-show="item.user_feedback">
+                                            <div class="bg-green-50 rounded-2xl rounded-tr-sm p-3 max-w-[85%]">
+                                                <div class="text-sm text-gray-700" x-text="item.user_feedback"></div>
+                                                <div class="text-xs text-green-400 mt-1 text-right" x-text="formatDateBeijing(item.responded_at || item.timestamp)"></div>
+                                            </div>
+                                            <div class="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center flex-shrink-0">
+                                                <i class="fas fa-user text-green-400 text-base"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+            </div>
+
+            <!-- 聊天输入区域（固定在底部） -->
+            <div class="shrink-0 border-t bg-white px-28 py-4">
+                <div class="flex gap-3 items-center">
+                    <textarea x-model="feedbackInputData[selectedFeedbackSession].inputText"
+                              :placeholder="feedbackDetailData[selectedFeedbackSession]?.status === 'completed' ? '调查已完成' : (feedbackInputData[selectedFeedbackSession]?.isWaitingForInput ? '参与讨论，或输入/finish结束调查并生成报告' : '系统正在调查中，请稍候...')"
+                              class="flex-1 bg-gray-100 rounded-2xl p-3 resize-none h-20 text-sm border-0 focus:ring-2 focus:ring-blue-300 focus:outline-none"
+                              :disabled="feedbackDetailData[selectedFeedbackSession]?.status === 'completed' || !feedbackInputData[selectedFeedbackSession]?.isWaitingForInput || feedbackInputData[selectedFeedbackSession]?.isSending"></textarea>
+                    <!-- 发送按钮 -->
+                    <button @click="sendFeedback(selectedFeedbackSession)"
+                            :disabled="feedbackDetailData[selectedFeedbackSession]?.status === 'completed' || !feedbackInputData[selectedFeedbackSession]?.isWaitingForInput || !feedbackInputData[selectedFeedbackSession]?.inputText?.trim() || feedbackInputData[selectedFeedbackSession]?.isSending"
+                            class="w-12 h-12 rounded-full bg-blue-500 text-white flex items-center justify-center hover:bg-blue-600 disabled:opacity-50 flex-shrink-0">
+                        <i class="fas fa-paper-plane text-base" x-show="!feedbackInputData[selectedFeedbackSession]?.isSending"></i>
+                        <i class="fas fa-spinner fa-spin text-sm" x-show="feedbackInputData[selectedFeedbackSession]?.isSending"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 遮罩层 -->
+        <div x-show="showFeedbackPanel"
+             @click="closeFeedbackPanel()"
+             class="fixed inset-0 bg-black bg-opacity-30 z-40"
+             x-transition.opacity>
+        </div>
+
+        <!-- STTP Details Modal -->
+        <div x-show="showShortTTPModal" x-transition class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" @click="showShortTTPModal = false; selectedShortTTP = null">
+            <div class="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[80vh] overflow-y-auto mx-4 mt-8 mb-8" style="min-width: 672px;" @click.stop x-data="draggableModal()" @mousedown="startDrag" @mousemove="drag" @mouseup="stopDrag" @mouseleave="stopDrag">
+                <div class="flex justify-between items-center mb-4 cursor-move" style="user-select: none; cursor: grab;" @mousedown.stop="startDrag">
+                    <div class="flex items-center">
+                        <div class="w-1 h-6 bg-gray-300 rounded mr-3"></div>
+                        <h2 class="text-xl font-bold text-gray-900">实时告警详情</h2>
+                    </div>
+                    <button @click="showShortTTPModal = false; selectedShortTTP = null" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                
+                <div class="space-y-4 overflow-y-auto" x-show="selectedShortTTP" style="max-height: calc(70vh - 120px);">
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <div class="text-sm text-gray-600 space-y-2">
+                            <div><strong>ID:</strong> <code x-text="selectedShortTTP?.id || '未知'"></code></div>
+                            <div><strong>摘要:</strong> <span x-text="selectedShortTTP?.summary || selectedShortTTP?.analysis || '无描述'"></span></div>
+                            <div><strong>置信度:</strong> <span x-text="selectedShortTTP?.confidence ? (selectedShortTTP.confidence * 100).toFixed(1) + '%' : 'N/A'"></span></div>
+                            <div><strong>时间:</strong> <span x-text="formatDate(selectedShortTTP?.timestamp)"></span></div>
+                            
+
+
+                            <!-- 战术技术过程层级结构 -->
+                            <div class="mt-4">
+                                <div class="font-semibold mb-2">战术-技术-过程层级结构:</div>
+                                <div class="space-y-2">
+                                    <template x-for="tactic in getTacticTree(selectedShortTTP)" :key="tactic.id">
+                                        <div class="border border-gray-200 rounded-lg p-3">
+                                            <!-- 战术卡片 -->
+                                            <div class="flex items-center justify-between cursor-pointer" @click="toggleTactic(tactic.id)">
+                                                <div class="flex items-center">
+                                                    <i :class="isTacticExpanded(tactic.id) ? 'fas fa-chevron-down' : 'fas fa-chevron-right'" 
+                                                       class="text-gray-500 w-4 mr-2"></i>
+                                                    <span class="font-semibold text-red-700" x-text="tactic.name"></span>
+                                                    <span class="ml-2 text-xs text-gray-500" x-text="tactic.description"></span>
+                                                </div>
+                                                <span class="text-xs text-gray-500" x-text="tactic.techniques.length + ' 个技术'"></span>
+                                            </div>
+                                            
+                                            <!-- 技术列表 -->
+                                            <div x-show="isTacticExpanded(tactic.id)" class="ml-6 mt-3 space-y-2">
+                                                <template x-for="technique in tactic.techniques" :key="technique.id">
+                                                    <div class="border-l-2 border-yellow-300 pl-3">
+                                                        <div class="flex items-center justify-between cursor-pointer" @click="toggleTechnique(technique.id)">
+                                                            <div class="flex items-center">
+                                                                <i :class="isTechniqueExpanded(technique.id) ? 'fas fa-chevron-down' : 'fas fa-chevron-right'"
+                                                                   class="text-gray-500 w-4 mr-2"></i>
+                                                                <span class="font-medium text-yellow-700" x-text="technique.name"></span>
+                                                            </div>
+                                                            <span class="text-xs text-gray-500" x-text="technique.procedures.length + ' 个过程'"></span>
+                                                        </div>
+                                                        
+                                                        <!-- 过程列表 -->
+                                                        <div x-show="isTechniqueExpanded(technique.id)" class="ml-6 mt-2 space-y-1">
+                                                            <template x-for="procedure in technique.procedures" :key="procedure.id">
+                                                                <div class="border-l-2 border-purple-300 pl-3 py-1">
+                                                                    <div class="text-sm font-medium text-purple-700" x-text="procedure.name"></div>
+                                                                    <div class="text-xs text-gray-600" x-text="procedure.description"></div>
+
+                                                                </div>
+                                                            </template>
+                                                        </div>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                            
+
+                            
+                            <!-- 完整数据 - 可折叠 -->
+                            <div class="mt-4">
+                                <div class="flex items-center justify-between cursor-pointer" @click="showFullData = !showFullData">
+                                    <div class="font-semibold">完整数据:</div>
+                                    <svg class="w-4 h-4 transform transition-transform" :class="{ 'rotate-180': showFullData }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </div>
+                                <div x-show="showFullData" x-transition class="mt-2">
+                                    <pre class="text-xs bg-gray-100 p-3 rounded overflow-x-auto max-h-[60vh] overflow-y-auto" x-text="JSON.stringify(selectedShortTTP, null, 2)"></pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div x-show="!selectedShortTTP" class="text-center py-8">
+                    <i class="fas fa-spinner fa-spin text-gray-400 text-2xl mb-2"></i>
+                    <p class="text-gray-500">加载中...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Event Details Modal -->
+        <div x-show="showEventModal" x-transition class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" @click="showEventModal = false; selectedEvent = null">
+            <div class="bg-white rounded-lg p-6 w-full max-w-4xl h-[90vh] flex flex-col mx-4" @click.stop>
+                <div class="flex justify-between items-center mb-4 flex-shrink-0">
+                    <h2 class="text-xl font-bold text-gray-900" x-text="'事件' + (selectedEvent?.index || 1) + '详情'"></h2>
+                    <button @click="showEventModal = false; selectedEvent = null" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                
+                <div class="flex-1 overflow-y-auto min-h-0">
+                    <div class="space-y-4" x-show="selectedEvent">
+                        <!-- 错误状态显示 -->
+                        <div x-show="selectedEvent?.error" class="bg-red-50 border border-red-200 rounded-lg p-4">
+                            <div class="flex items-center">
+                                <i class="fas fa-exclamation-circle text-red-500 mr-2"></i>
+                                <div>
+                                    <h3 class="text-red-800 font-semibold" x-text="selectedEvent?.error"></h3>
+                                    <p class="text-red-600 text-sm" x-text="selectedEvent?.message"></p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 正常事件详情显示 -->
+                        <div x-show="!selectedEvent?.error" class="bg-gray-50 p-4 rounded-lg">
+                            
+                            <div class="space-y-3 text-sm">
+                                <div class="flex items-start">
+                                    <strong class="flex-shrink-0 mr-2 w-20">事件ID：</strong>
+                                    <code class="flex-1 bg-gray-200 px-2 py-1 rounded text-xs break-all font-mono" 
+                                          x-text="selectedEvent?.event_id || selectedEvent?.id || selectedEvent?.upsert_id"></code>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div class="flex items-center">
+                                        <strong class="flex-shrink-0 mr-2 w-20">类型：</strong>
+                                        <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs whitespace-nowrap" 
+                                              x-text="selectedEvent?.type || selectedEvent?.event_type"></span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <strong class="flex-shrink-0 mr-2 w-20">来源：</strong>
+                                        <span class="text-gray-700 truncate" 
+                                              x-text="selectedEvent?.source || selectedEvent?.event_source"></span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <strong class="flex-shrink-0 mr-2 w-20">时间：</strong>
+                                        <span class="text-gray-700 truncate" 
+                                              x-text="formatDate(selectedEvent?.received_time || selectedEvent?.timestamp || selectedEvent?.event_time)"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div x-show="selectedEvent?.description || selectedEvent?.event_description" class="mt-4">
+                                <strong>描述：</strong>
+                                <p class="text-gray-700 mt-1 break-words" x-text="selectedEvent?.description || selectedEvent?.event_description"></p>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <strong>完整数据：</strong>
+                                <div class="mt-2 bg-gray-100 rounded border max-h-96 overflow-auto">
+                                    <pre class="text-xs p-3 break-all whitespace-pre-wrap" x-text="JSON.stringify(selectedEvent, null, 2)"></pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 确保Alpine.js正确加载
+        document.addEventListener('alpine:init', () => {
+            console.log('Alpine.js initialized');
+        });
+        
+        function draggableModal() {
+            return {
+                isDragging: false,
+                position: { x: 0, y: 0 },
+                startX: 0,
+                startY: 0,
+                
+                startDrag(e) {
+                    this.isDragging = true;
+                    this.startX = e.clientX - this.position.x;
+                    this.startY = e.clientY - this.position.y;
+                    document.addEventListener('mousemove', this.drag);
+                    document.addEventListener('mouseup', this.stopDrag);
+                },
+                
+                drag(e) {
+                    if (this.isDragging) {
+                        this.position.x = e.clientX - this.startX;
+                        this.position.y = e.clientY - this.startY;
+                    }
+                },
+                
+                stopDrag() {
+                    this.isDragging = false;
+                    document.removeEventListener('mousemove', this.drag);
+                    document.removeEventListener('mouseup', this.stopDrag);
+                }
+            };
+        }
+        
+        function dashboardApp() {
+            return {
+                connected: false,
+                stats: {short_ttp_count: 0, long_ttp_count: 0, total_events_processed: 0, windows_yielded: 0},
+                searchType: 'short',
+                shortTTPs: [],
+                longTTPs: [],
+                // 分页相关状态
+                sttpPagination: {
+                    currentPage: 1,
+                    itemsPerPage: 10,
+                    totalPages: 1
+                },
+                lttpPagination: {
+                    currentPage: 1,
+                    itemsPerPage: 10,
+                    totalPages: 1
+                },
+                searchQuery: '',
+                hours: '24',
+                customHours: 24,
+                customUnit: 'hours',
+                loading: false,
+                isSearching: false,  // 搜索状态标记
+                showSearchPopup: false, // 搜索弹窗状态
+                expandedTTPs: new Set(),
+                expandedTactics: {},
+                expandedTechniques: {},
+                expandedAttackChains: {},
+                showEventModal: false,
+                selectedEvent: null,
+                showShortTTPModal: false,
+                selectedShortTTP: null,
+                showFullData: false,
+                eventTypeCache: {},
+                triggeringLongTTPs: new Set(),  // 改为 Set 支持多个同时调查
+                generationStatus: {},
+                generationTimers: {},
+                longTTPTimer: null,  // Long TTP 轮询定时器
+                manualFeedbackEnabled: false,  // 人工参与开关状态
+                // 人工参与面板相关状态
+                showFeedbackPanel: false,  // 是否显示右侧面板
+                selectedFeedbackSession: null,  // 当前选中的 session
+                selectedShortTTPId: null,  // 当前选中的 short TTP ID
+                selectedLongTTP: null,  // 当前选中的 Long TTP 对象
+                feedbackDetailData: {},  // 各 session 的反馈数据
+                feedbackInputData: {},  // 各 session 的输入状态
+                feedbackTimers: {},  // 面板轮询定时器
+                feedbackStatus: {},  // 各 session 的反馈状态（用于卡片显示）
+                cardFeedbackTimers: {},  // 卡片轮询定时器
+
+                init() {
+                    this.loadData();
+                    this.connectWebSocket();
+                    this.handleUrlParams();
+                    // 确保所有战术和技术默认闭合
+                    this.resetAllExpansions();
+
+                    // 页面卸载时清理WebSocket连接和轮询定时器
+                    window.addEventListener('beforeunload', () => {
+                        if (this.ws) {
+                            console.log('页面卸载，关闭WebSocket连接');
+                            this.ws.close();
+                            this.ws = null;
+                        }
+                        // 清理所有生成状态轮询定时器
+                        Object.keys(this.generationTimers).forEach(shortTTPId => {
+                            clearInterval(this.generationTimers[shortTTPId]);
+                        });
+                        this.generationTimers = {};
+                        // 清理 Long TTP 轮询定时器
+                        if (this.longTTPTimer) {
+                            clearInterval(this.longTTPTimer);
+                            this.longTTPTimer = null;
+                        }
+                    });
+                },
+
+                resetAllExpansions() {
+                    // 默认展开战术层，收起技术和攻击链
+                    this.expandedTactics = {};
+                    this.expandedTechniques = {};
+                    this.expandedAttackChains = {};
+                    
+                    // 自动展开所有战术层
+                    const allTTPs = [...this.shortTTPs, ...this.longTTPs];
+                    allTTPs.forEach(ttp => {
+                        const tacticTree = this.getTacticTree(ttp);
+                        if (tacticTree && tacticTree.length > 0) {
+                            tacticTree.forEach(tactic => {
+                                this.expandedTactics[ttp.id + '-' + tactic.id] = true;
+                            });
+                        }
+                    });
+                },
+
+                // 触发Long TTP生成
+                async triggerLongTTP(shortTTPId) {
+                    try {
+                        if (this.manualFeedbackEnabled) {
+                            // 人工参与模式 - 快速触发，不等待返回
+                            fetch(`/api/proxy/trigger-long-ttp-feedback/${shortTTPId}`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                }
+                            }).catch(err => console.error('触发人工参与请求失败:', err));
+
+                            // 重置人工参与勾选状态
+                            this.manualFeedbackEnabled = false;
+
+                            // 启动人工参与模式轮询（不依赖返回的 session_id）
+                            this.startGenerationPolling(shortTTPId, 'manual');
+                        } else {
+                            // 普通模式
+                            const response = await fetch(`/api/proxy/trigger-long-ttp/${shortTTPId}`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                }
+                            });
+
+                            if (!response.ok) throw new Error('请求失败');
+
+                            // 启动普通模式轮询
+                            this.startGenerationPolling(shortTTPId, 'normal');
+                        }
+                    } catch (error) {
+                        console.error('生成Long TTP失败:', error);
+                        alert('触发失败: ' + error.message);
+                        this.triggeringLongTTPs.delete(shortTTPId);
+                    }
+                },
+
+                // 开始轮询生成状态
+                startGenerationPolling(shortTTPId, mode = 'normal') {
+                    // 清除已有的定时器
+                    if (this.generationTimers[shortTTPId]) {
+                        clearInterval(this.generationTimers[shortTTPId]);
+                    }
+
+                    // 设置正在生成状态（这会禁用按钮并显示标签）
+                    this.triggeringLongTTPs.add(shortTTPId);
+                    this.generationStatus = Object.assign({}, this.generationStatus, {
+                        [shortTTPId]: {
+                            isGenerating: true,
+                            isCompleted: false,
+                            mode: mode
+                        }
+                    });
+
+                    // 立即查询一次
+                    this.checkGenerationStatus(shortTTPId, mode);
+
+                    // 每3秒轮询一次
+                    this.generationTimers[shortTTPId] = setInterval(() => {
+                        this.checkGenerationStatus(shortTTPId, mode);
+                    }, 3000);
+                },
+
+                // 查询生成状态
+                async checkGenerationStatus(shortTTPId, mode) {
+                    try {
+                        const response = await fetch(`/api/proxy/generation-status/${shortTTPId}`);
+                        if (!response.ok) throw new Error('查询状态失败');
+
+                        const data = await response.json();
+
+                        // 保留原有 mode（优先使用已存储的 mode）
+                        const currentStatus = this.generationStatus[shortTTPId] || {};
+                        const preservedMode = currentStatus.mode || mode;
+
+                        // 更新状态（注意：不要展开 data，避免覆盖 mode）
+                        this.generationStatus = Object.assign({}, this.generationStatus, {
+                            [shortTTPId]: {
+                                isGenerating: data.is_generating,
+                                isCompleted: data.is_completed,
+                                mode: preservedMode
+                            }
+                        });
+
+                        // 如果生成完成或没有正在生成，停止轮询
+                        if (!data.is_generating) {
+                            this.stopGenerationPolling(shortTTPId);
+                            // 只有在真正完成时才从 triggeringLongTTPs 中删除
+                            // interrupt 状态时不删除，保持 mode 信息
+                            if (data.is_completed) {
+                                this.triggeringLongTTPs.delete(shortTTPId);
+                            }
+                            this.loadData();
+                        }
+                    } catch (error) {
+                        console.error('查询生成状态失败:', error);
+                    }
+                },
+
+                // 停止轮询
+                stopGenerationPolling(shortTTPId) {
+                    if (this.generationTimers[shortTTPId]) {
+                        clearInterval(this.generationTimers[shortTTPId]);
+                        delete this.generationTimers[shortTTPId];
+                    }
+                },
+
+                // 删除 Long TTP
+                async deleteLongTTP(longTTPId) {
+                    if (!confirm('确认删除此高级持续性威胁吗？此操作不可恢复！')) {
+                        return;
+                    }
+                    try {
+                        const response = await fetch(`/api/proxy/longttp/${longTTPId}`, {
+                            method: 'DELETE'
+                        });
+                        if (!response.ok) {
+                            throw new Error('删除失败');
+                        }
+                        // 从列表中移除
+                        this.longTTPs = this.longTTPs.filter(ttp => ttp.id !== longTTPId);
+                    } catch (error) {
+                        console.error('删除失败:', error);
+                        alert('删除失败: ' + error.message);
+                    }
+                },
+
+                // ========== 人工参与面板相关方法 ==========
+
+                // 显示人工参与详情面板
+                async showFeedbackDetail(ttp) {
+                    this.selectedLongTTP = ttp;
+                    this.selectedFeedbackSession = ttp.session_id;
+                    this.selectedShortTTPId = ttp.short_ttp_id;
+                    this.showFeedbackPanel = true;
+                    
+                    // 添加类名隐藏页面滚动条
+                    document.body.classList.add('panel-open');
+
+                    // 预先初始化 feedbackInputData，避免模板访问 undefined
+                    // 使用默认值，后续 loadFeedbackData 会更新为正确值
+                    if (!this.feedbackInputData[ttp.session_id]) {
+                        this.feedbackInputData[ttp.session_id] = {
+                            isWaitingForInput: false,
+                            inputText: '',
+                            isSending: false
+                        };
+                    }
+
+                    // 判断数据来源：
+                    // 1. 如果已生成完成且有 feedback_history，直接解析本地数据（API 数据可能已清理）
+                    // 2. 如果未完成，通过 API 轮询获取实时数据
+                    if (ttp.generation_status === 'completed' && ttp.feedback_history && ttp.feedback_history.length > 0) {
+                        // 从 feedback_history 构建显示数据
+                        this.feedbackDetailData[ttp.session_id] = {
+                            status: 'completed',
+                            source: 'local',  // 标记数据来源为本地
+                            feedback_history: ttp.feedback_history,
+                            short_ttp_id: ttp.short_ttp_id,
+                            long_ttp_id: ttp.id
+                        };
+                        // 调查已完成，禁用输入框
+                        this.feedbackInputData[ttp.session_id].isWaitingForInput = false;
+                        // 已完成的数据不启动轮询，直接使用本地数据
+                    } else if (ttp.generation_status !== 'completed') {
+                        // 未完成时，先设置初始空数据，避免模板报错
+                        this.feedbackDetailData[ttp.session_id] = {
+                            status: 'pending',
+                            source: 'api',
+                            feedback_history: [],
+                            short_ttp_id: ttp.short_ttp_id,
+                            long_ttp_id: ttp.id
+                        };
+                        // 通过 API 获取反馈数据并等待完成，确保 isWaitingForInput 正确设置
+                        await this.loadFeedbackData(ttp.session_id);
+                        // 启动轮询（每3秒）
+                        this.startFeedbackPolling(ttp.session_id);
+                    } else {
+                        // 已完成但没有 feedback_history，显示空状态
+                        this.feedbackDetailData[ttp.session_id] = {
+                            status: 'completed',
+                            source: 'local',
+                            feedback_history: [],
+                            short_ttp_id: ttp.short_ttp_id,
+                            long_ttp_id: ttp.id,
+                            message: '无交互历史数据'
+                        };
+                        // 调查已完成，禁用输入框
+                        this.feedbackInputData[ttp.session_id].isWaitingForInput = false;
+                    }
+                },
+
+                // 检查反馈状态（轻量级，用于卡片显示）
+                async checkFeedbackStatus(sessionId) {
+                    try {
+                        const response = await fetch(`/api/proxy/feedback/${sessionId}`);
+                        if (!response.ok) return;
+
+                        const data = await response.json();
+                        const history = data.feedback_history || [];
+                        const lastStep = history[history.length - 1];
+
+                        // 存储状态
+                        this.feedbackStatus[sessionId] = {
+                            isInterrupt: lastStep && lastStep.status === 'interrupt' && !lastStep.user_feedback,
+                            step: lastStep?.step || 0,
+                            timestamp: Date.now()
+                        };
+                    } catch (e) {
+                        console.error('检查反馈状态失败:', e);
+                    }
+                },
+
+                // 启动卡片反馈状态轮询
+                startCardFeedbackPolling(sessionId) {
+                    // 如果已在轮询，不重复启动
+                    if (this.cardFeedbackTimers[sessionId]) return;
+
+                    // 立即检查一次
+                    this.checkFeedbackStatus(sessionId);
+
+                    // 每5秒轮询
+                    this.cardFeedbackTimers[sessionId] = setInterval(() => {
+                        this.checkFeedbackStatus(sessionId);
+                    }, 5000);
+                },
+
+                // 停止卡片反馈状态轮询
+                stopCardFeedbackPolling(sessionId) {
+                    if (this.cardFeedbackTimers[sessionId]) {
+                        clearInterval(this.cardFeedbackTimers[sessionId]);
+                        delete this.cardFeedbackTimers[sessionId];
+                    }
+                },
+
+                // 加载反馈数据
+                async loadFeedbackData(sessionId) {
+                    try {
+                        const response = await fetch(`/api/proxy/feedback/${sessionId}`);
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.feedbackDetailData[sessionId] = data;
+
+                            // 检查最后一步是否是 interrupt 状态
+                            const history = data.feedback_history || [];
+                            const lastStep = history[history.length - 1];
+                            const isInterrupt = lastStep && lastStep.status === 'interrupt' && !lastStep.user_feedback;
+
+                            // 初始化输入数据存储（如未初始化）
+                            if (!this.feedbackInputData[sessionId]) {
+                                this.feedbackInputData[sessionId] = {
+                                    isWaitingForInput: false,
+                                    inputText: '',
+                                    isSending: false
+                                };
+                            }
+
+                            // 更新等待输入状态
+                            this.feedbackInputData[sessionId].isWaitingForInput = isInterrupt;
+
+                            // 如果状态为 completed，停止轮询
+                            if (data.status === 'completed' || data.is_completed) {
+                                this.stopFeedbackPolling(sessionId);
+                            }
+                        }
+                    } catch (error) {
+                        console.error('加载反馈数据失败:', error);
+                    }
+                },
+
+                // 启动面板轮询
+                startFeedbackPolling(sessionId) {
+                    // 清除已有轮询
+                    if (this.feedbackTimers[sessionId]) {
+                        clearInterval(this.feedbackTimers[sessionId]);
+                    }
+
+                    // 每3秒轮询
+                    this.feedbackTimers[sessionId] = setInterval(() => {
+                        this.loadFeedbackData(sessionId);
+                    }, 3000);
+                },
+
+                // 停止面板轮询
+                stopFeedbackPolling(sessionId) {
+                    if (this.feedbackTimers[sessionId]) {
+                        clearInterval(this.feedbackTimers[sessionId]);
+                        delete this.feedbackTimers[sessionId];
+                    }
+                },
+
+                // 关闭面板
+                closeFeedbackPanel() {
+                    // 停止轮询
+                    if (this.selectedFeedbackSession) {
+                        this.stopFeedbackPolling(this.selectedFeedbackSession);
+                    }
+                    // 先清理数据，再隐藏面板
+                    this.selectedFeedbackSession = null;
+                    this.selectedShortTTPId = null;
+                    this.showFeedbackPanel = false;
+                    
+                    // 移除类名恢复页面滚动条
+                    document.body.classList.remove('panel-open');
+                },
+
+                // 发送用户反馈
+                async sendFeedback(sessionId) {
+                    console.log('sendFeedback called with sessionId:', sessionId);
+                    console.log('feedbackInputData:', this.feedbackInputData);
+                    console.log('feedbackInputData[sessionId]:', this.feedbackInputData[sessionId]);
+                    
+                    const inputData = this.feedbackInputData[sessionId];
+                    if (!inputData || !inputData.inputText?.trim()) {
+                        console.log('Early return - inputData:', inputData, 'inputText:', inputData?.inputText);
+                        return;
+                    }
+
+                    inputData.isSending = true;
+
+                    try {
+                        const response = await fetch(`/api/proxy/feedback/${sessionId}`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ feedback: inputData.inputText.trim() })
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('发送反馈失败');
+                        }
+
+                        // 清空输入框
+                        inputData.inputText = '';
+
+                        // 立即刷新状态
+                        await this.loadFeedbackData(sessionId);
+                    } catch (error) {
+                        console.error('发送反馈失败:', error);
+                        alert('发送失败: ' + error.message);
+                    } finally {
+                        inputData.isSending = false;
+                    }
+                },
+
+                // 判断是否正在生成中
+                isGenerating(shortTTPId) {
+                    const status = this.generationStatus[shortTTPId];
+                    return status && status.isGenerating && !status.isCompleted;
+                },
+
+                // 检查所有Short TTP的生成状态
+                async checkAllGenerationStatus(shortTTPs) {
+                    for (const ttp of shortTTPs) {
+                        try {
+                            const response = await fetch(`/api/proxy/generation-status/${ttp.id}`);
+                            if (!response.ok) continue;
+
+                            const data = await response.json();
+
+                            // 如果正在生成中，设置状态并开始轮询
+                            if (data.is_generating && !data.is_completed) {
+                                // 保留原有的 mode（如果是人工参与模式）
+                                const currentStatus = this.generationStatus[ttp.id] || {};
+                                const mode = currentStatus.mode || 'normal';
+                                this.generationStatus = Object.assign({}, this.generationStatus, {
+                                    [ttp.id]: { isGenerating: true, isCompleted: false, mode: mode }
+                                });
+                                this.triggeringLongTTPs.add(ttp.id);
+                                this.startGenerationPolling(ttp.id, mode);
+                            }
+                        } catch (error) {
+                            console.error(`检查TTP ${ttp.id} 生成状态失败:`, error);
+                        }
+                    }
+                },
+
+                // 切换到实时告警标签页
+                async switchToShortTTPs() {
+                    // 重置短告警分页状态
+                    this.sttpPagination.currentPage = 1;
+                    this.searchType = 'short';
+                    await this.loadShortTTPs();
+                    // 停止 Long TTP 轮询
+                    this.stopLongTTPPolling();
+                },
+
+                // 切换到高级持续性威胁标签页
+                async switchToLongTTPs() {
+                    // 重置长威胁分页状态
+                    this.lttpPagination.currentPage = 1;
+                    this.searchType = 'long';
+                    await this.loadLongTTPs();
+                    // 启动 Long TTP 轮询
+                    this.startLongTTPPolling();
+                },
+
+                // 启动 Long TTP 轮询
+                startLongTTPPolling() {
+                    // 先清除已有的定时器
+                    if (this.longTTPTimer) {
+                        clearInterval(this.longTTPTimer);
+                        this.longTTPTimer = null;
+                    }
+                    // 每30秒刷新一次 Long TTP 列表
+                    this.longTTPTimer = setInterval(() => {
+                        this.loadLongTTPs();
+                    }, 30000);
+                },
+
+                // 停止 Long TTP 轮询
+                stopLongTTPPolling() {
+                    if (this.longTTPTimer) {
+                        clearInterval(this.longTTPTimer);
+                        this.longTTPTimer = null;
+                    }
+                },
+
+                // 获取当前 hours 参数值
+                getCurrentHours() {
+                    if (this.hours === 'custom' && this.customHours) {
+                        return this.customUnit === 'days' ? this.customHours * 24 : this.customHours;
+                    }
+                    return this.hours && this.hours !== 'custom' ? parseInt(this.hours) : null;
+                },
+
+                async loadData() {
+                    try {
+                        this.loading = true;
+
+                        // 获取当前 hours 参数（与列表加载逻辑一致）
+                        const hours = this.getCurrentHours();
+                        const statsUrl = hours ? `/api/stats?hours=${hours}` : '/api/stats';
+                        const statsResponse = await fetch(statsUrl);
+                        this.stats = await statsResponse.json();
+
+                        // 使用分页参数加载数据
+                        await Promise.all([
+                            this.loadShortTTPs(),
+                            this.loadLongTTPs()
+                        ]);
+                    } catch (error) {
+                        console.error('Error loading data:', error);
+                        this.shortTTPs = [];
+                        this.longTTPs = [];
+                        this.stats = {short_ttp_count: 0, long_ttp_count: 0, total_events_processed: 0, windows_yielded: 0};
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                isTacticExpanded(tacticId) {
+                    return this.expandedTactics[tacticId] || false;
+                },
+
+                toggleTactic(tacticId) {
+                    this.expandedTactics[tacticId] = !this.expandedTactics[tacticId];
+                },
+
+                isTechniqueExpanded(techniqueId) {
+                    return this.expandedTechniques[techniqueId] || false;
+                },
+
+                toggleTechnique(techniqueId) {
+                    this.expandedTechniques[techniqueId] = !this.expandedTechniques[techniqueId];
+                },
+
+                async searchTTPs() {
+                    try {
+                        this.loading = true;
+                        
+                        // 设置搜索状态 - 如果有搜索查询则为搜索模式
+                        this.isSearching = !!(this.searchQuery && this.searchQuery.trim());
+                        
+                        // 搜索时同步更新统计，确保统计数据与搜索条件一致
+                        this.updateStats();
+                        
+                        // 检查是否输入了TTP ID（UUID格式）
+                        const ttpIdPattern = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
+                        const isTtpIdSearch = this.searchQuery && ttpIdPattern.test(this.searchQuery.trim());
+                        
+                        if (isTtpIdSearch) {
+                            // 如果是TTP ID搜索，直接调用详情接口
+                            const ttpId = this.searchQuery.trim();
+                            try {
+                                const response = await fetch(`/api/ttp/${ttpId}`);
+                                if (response.ok) {
+                                    const ttpData = await response.json();
+                                    
+                                    // 根据返回的TTP类型更新对应的数据数组
+                                    if (ttpData.type === 'short') {
+                                        this.shortTTPs = [this.processTTPData(ttpData, 'short')];
+                                        this.longTTPs = [];
+                                        this.searchType = 'short';
+                                    } else if (ttpData.type === 'long') {
+                                        this.longTTPs = [this.processTTPData(ttpData, 'long')];
+                                        this.shortTTPs = [];
+                                        this.searchType = 'long';
+                                    }
+                                    
+                                    // 重置分页
+                                    this.sttpPagination.currentPage = 1;
+                                    this.sttpPagination.totalPages = 1;
+                                    this.lttpPagination.currentPage = 1;
+                                    this.lttpPagination.totalPages = 1;
+                                    
+                                    this.loading = false;
+                                    return;
+                                    
+                                } else if (response.status === 404) {
+                                    // TTP ID不存在
+                                    this.shortTTPs = [];
+                                    this.longTTPs = [];
+                                    
+                                    alert(`未找到TTP ID: ${ttpId}`);
+                                    this.loading = false;
+                                    return;
+                                }
+                            } catch (error) {
+                                console.error('TTP ID查询失败:', error);
+                                // TTP ID查询失败，继续执行普通搜索
+                            }
+                        }
+                        
+                        // 非TTP ID搜索或TTP ID查询失败，使用普通搜索
+                        // 重置分页到第一页
+                        this.sttpPagination.currentPage = 1;
+                        this.lttpPagination.currentPage = 1;
+                        
+                        // 调用专门的加载方法
+                        await Promise.all([
+                            this.loadShortTTPs(),
+                            this.loadLongTTPs()
+                        ]);
+                        
+                    } catch (error) {
+                        console.error('搜索失败:', error);
+                        this.shortTTPs = [];
+                        this.longTTPs = [];
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                // 搜索弹窗相关方法
+                toggleSearch() {
+                    this.showSearchPopup = !this.showSearchPopup;
+                },
+
+                clearSearch() {
+                    this.searchQuery = '';
+                    this.isSearching = false;  // 重置搜索状态
+                    this.hours = '24';
+                    this.customHours = 24;
+                    this.customUnit = 'hours';
+                    this.showSearchPopup = false; // 关闭搜索弹窗
+                    
+                    // 清除搜索时，重新加载数据并更新统计
+                    this.loadShortTTPs();
+                    this.loadLongTTPs();
+                    this.updateStats();
+                    
+                    // 通过WebSocket发送筛选参数更新
+                    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                        this.ws.send(JSON.stringify({
+                            type: 'set_filter',
+                            hours: this.hours,
+                            customHours: this.customHours,
+                            customUnit: this.customUnit
+                        }));
+                    }
+                },
+
+                async updateStats() {
+                    try {
+                        // 构建统计API参数，包含时间范围
+                        const params = new URLSearchParams();
+                        
+                        // 搜索模式下，使用搜索时的时间范围参数
+                        let hoursValue;
+                        if (this.hours === 'custom') {
+                            // 处理自定义时间范围
+                            let totalHours;
+                            if (this.customUnit === 'days') {
+                                totalHours = this.customHours * 24;
+                            } else {
+                                totalHours = this.customHours;
+                            }
+                            
+                            // 验证时间范围不超过7天
+                            if (totalHours > 168) {
+                                return;
+                            }
+                            
+                            hoursValue = totalHours.toString();
+                        } else {
+                            // 处理固定时间范围
+                            hoursValue = this.hours;
+                        }
+                        
+                        if (hoursValue) {
+                            params.append('hours', hoursValue);
+                        }
+                        
+                        // 搜索模式下添加搜索参数
+                        if (this.searchQuery && this.searchQuery.trim()) {
+                            params.append('q', this.searchQuery.trim());
+                        }
+                        
+                        const url = `/api/stats${params.toString() ? '?' + params.toString() : ''}`;
+                        const response = await fetch(url);
+                        const statsData = await response.json();
+                        
+                        // 更新统计数据
+                        this.stats = {
+                            ...this.stats,
+                            ...statsData
+                        };
+                    } catch (error) {
+                        // 统计更新失败
+                    }
+                },
+
+                onTimeRangeChange() {
+                    // 重新加载两个标签页的数据
+                    this.loadShortTTPs();
+                    this.loadLongTTPs();
+                    // 同步更新统计窗口
+                    this.updateStats();
+                    
+                    // 通过WebSocket发送筛选参数更新
+                    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                        this.ws.send(JSON.stringify({
+                            type: 'set_filter',
+                            hours: this.hours,
+                            customHours: this.customHours,
+                            customUnit: this.customUnit
+                        }));
+                    }
+                },
+
+                onCustomTimeChange() {
+                    if (this.hours === 'custom') {
+                        // 重新加载两个标签页的数据
+                        this.loadShortTTPs();
+                        this.loadLongTTPs();
+                        // 同步更新统计窗口
+                        this.updateStats();
+                    }
+                    
+                    // 通过WebSocket发送筛选参数更新
+                    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                        this.ws.send(JSON.stringify({
+                            type: 'set_filter',
+                            hours: this.hours,
+                            customHours: this.customHours,
+                            customUnit: this.customUnit
+                        }));
+                    }
+                },
+
+
+
+                // 获取时间参数（通用方法）
+                getTimeParams() {
+                    if (this.hours === 'custom' && this.customHours) {
+                        const totalHours = this.customUnit === 'days' ? this.customHours * 24 : this.customHours;
+                        if (totalHours > 168) { // 7天 = 168小时
+                            alert('自定义时间范围不能超过7天（168小时）');
+                            return null;
+                        }
+                        return totalHours;
+                    }
+                    const hoursNum = this.hours && this.hours !== 'custom' ? parseInt(this.hours) : null;
+                    return hoursNum && hoursNum <= 168 ? hoursNum : null;
+                },
+
+                // 构建TTP查询参数（通用方法）
+                buildTTPParams(pagination) {
+                    const params = new URLSearchParams();
+                    params.append('page', pagination.currentPage);
+                    params.append('size', pagination.itemsPerPage);
+
+                    if (this.searchQuery && this.searchQuery.trim()) {
+                        params.append('q', this.searchQuery.trim());
+                    }
+
+                    const hours = this.getTimeParams();
+                    if (hours) {
+                        params.append('hours', hours);
+                    }
+
+                    return params;
+                },
+
+                async loadShortTTPs() {
+                    try {
+                        this.loading = true;
+
+                        const params = this.buildTTPParams(this.sttpPagination);
+                        if (this.hours === 'custom' && !params.has('hours')) {
+                            // 验证失败，已alert
+                            return;
+                        }
+
+                        const url = `/api/short-ttps?${params.toString()}`;
+                        const response = await fetch(url);
+                        const result = await response.json();
+
+                        const items = result.items || result.data || [];
+                        const total = result.total || result.total_items || 0;
+
+                        this.shortTTPs = items.map(ttp => this.processTTPData(ttp, 'short')).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                        this.sttpPagination.totalPages = Math.ceil(total / this.sttpPagination.itemsPerPage);
+                        setTimeout(() => this.checkAllGenerationStatus(this.shortTTPs), 0);
+                    } catch (error) {
+                        this.shortTTPs = [];
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                async loadLongTTPs() {
+                    try {
+                        this.loading = true;
+
+                        const params = this.buildTTPParams(this.lttpPagination);
+                        if (this.hours === 'custom' && !params.has('hours')) {
+                            // 验证失败，已alert
+                            return;
+                        }
+
+                        const url = `/api/long-ttps?${params.toString()}`;
+                        const response = await fetch(url);
+                        const result = await response.json();
+
+                        const items = result.items || result.data || [];
+                        const total = result.total || result.total_items || 0;
+
+                        this.longTTPs = items.map(ttp => this.processTTPData(ttp, 'long')).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                        this.lttpPagination.totalPages = Math.ceil(total / this.lttpPagination.itemsPerPage);
+
+                        // 从 generationStatus 恢复 mode 到 longTTPs
+                        // 因为 mode 是前端本地状态，API 返回的数据不包含它
+                        this.longTTPs.forEach(ttp => {
+                            const status = this.generationStatus[ttp.id];
+                            if (status && status.mode === 'manual') {
+                                ttp.mode = 'feedback';
+                            }
+                        });
+
+                        // 为未完成的 feedback 模式 Long TTP 启动状态轮询，已完成的停止轮询
+                        this.longTTPs.forEach(ttp => {
+                            if (ttp.mode === 'feedback' && ttp.session_id) {
+                                if (ttp.generation_status === 'completed') {
+                                    // 已完成，停止卡片轮询
+                                    this.stopCardFeedbackPolling(ttp.session_id);
+                                } else {
+                                    // 未完成，启动卡片轮询
+                                    this.startCardFeedbackPolling(ttp.session_id);
+                                }
+                            }
+                        });
+
+                    } catch (error) {
+                        console.error('加载Long TTP失败:', error);
+                        this.longTTPs = [];
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                async changeShortTTPPage(page) {
+                    if (page < 1 || page > this.sttpPagination.totalPages) return;
+                    this.sttpPagination.currentPage = page;
+                    await this.loadShortTTPs();
+                },
+
+                async changeLongTTPPage(page) {
+                    if (page < 1 || page > this.lttpPagination.totalPages) return;
+                    this.lttpPagination.currentPage = page;
+                    await this.loadLongTTPs();
+                },
+
+                toggleTTPDetails(ttpId, type) {
+                    const key = `${type}_${ttpId}`;
+                    if (this.expandedTTPs.has(key)) {
+                        this.expandedTTPs.delete(key);
+                    } else {
+                        this.expandedTTPs.add(key);
+                        // 只在展开长TTP时重置分页状态，短TTP保持当前分页
+                        if (type === 'long') {
+                            this.resetSTTPPagination();
+                        }
+                    }
+                },
+
+                isExpanded(ttpId, type = null) {
+                    const key = type ? `${type}_${ttpId}` : `${this.searchType}_${ttpId}`;
+                    return this.expandedTTPs.has(key);
+                },
+
+
+
+                processTTPData(ttp, type) {
+                    // 深拷贝对象
+                    const processed = {...ttp};
+
+                    // 注意：timestamp 字段已由后端 ensure_timestamp 统一处理，前端无需重复处理
+
+                    // 确保tactics和techniques是数组（仅当实际存在时处理）
+                    ['tactics', 'techniques'].forEach(field => {
+                        if (processed[field]) {
+                            if (typeof processed[field] === 'string') {
+                                try {
+                                    processed[field] = JSON.parse(processed[field]);
+                                } catch (e) {
+                                    processed[field] = [];
+                                }
+                            }
+                        }
+                    });
+
+                    // 程序字段处理（仅当实际存在时处理）
+                    if (processed.procedures) {
+                        if (typeof processed.procedures === 'string') {
+                            try {
+                                processed.procedures = JSON.parse(processed.procedures);
+                            } catch (e) {
+                                processed.procedures = [];
+                            }
+                        }
+                    }
+
+                    // 长TTP专用字段 - 处理final_ttps
+                    if (type === 'long') {
+                        // 处理final_ttps字段（新的ATT&CK战术技术数据）
+                        let final_ttps = processed.final_ttps || [];
+                        if (typeof final_ttps === 'string') {
+                            try {
+                                final_ttps = JSON.parse(final_ttps);
+                            } catch (e) {
+                                final_ttps = [];
+                            }
+                        }
+                        // 确保final_ttps是数组
+                        if (!Array.isArray(final_ttps)) {
+                            final_ttps = [];
+                        }
+                        processed.final_ttps = final_ttps;
+                    }
+
+                    // 确保confidence是数字
+                    if (typeof processed.confidence === 'string') {
+                        processed.confidence = parseFloat(processed.confidence) || 0;
+                    }
+
+                    return processed;
+                },
+
+                async loadEventType(eventId) {
+                    if (this.eventTypeCache[eventId]) {
+                        return this.eventTypeCache[eventId];
+                    }
+                    
+                    try {
+                        const response = await fetch(`${API_BASE_URL}/api/proxy/events/${eventId}`);
+                        if (response.ok) {
+                            const eventData = await response.json();
+                            const eventType = eventData.data.event_type;
+                            this.eventTypeCache[eventId] = eventType;
+                            return eventType;
+                        }
+                    } catch (error) {
+                        console.error('Error loading event type for', eventId, error);
+                    }
+                    
+                    // Fallback to prefix+suffix detection if API fails
+                    const idLower = eventId.toLowerCase();
+                    let prefix = '';
+                    let suffix = '';
+                    
+                    // 检查前缀
+                    if (idLower.includes('openrasp')) {
+                        prefix = 'openrasp';
+                    } else if (idLower.includes('falco')) {
+                        prefix = 'falco';
+                    } else if (idLower.includes('suricata')) {
+                        prefix = 'suricata';
+                    }
+                    
+                    // 检查后缀
+                    if (idLower.endsWith('_alert')) {
+                        suffix = '_alert';
+                    } else if (idLower.endsWith('_raw')) {
+                        suffix = '_raw';
+                    } else {
+                        suffix = '_raw'; // 默认后缀
+                    }
+                    
+                    const fallbackType = prefix ? prefix + suffix : (suffix === '_alert' ? 'event_alert' : 'event_raw');
+                    this.eventTypeCache[eventId] = fallbackType;
+                    return fallbackType;
+                },
+
+                getEventTypeDisplayName(eventType) {
+                    if (!eventType) return '未知类型';
+                    
+                    const type = eventType.toLowerCase();
+                    const typeMap = {
+                        'openrasp_alert': 'OpenRasp告警事件',
+                        'openrasp_raw': 'OpenRasp可疑事件',
+                        'openrasp_raw_sql': 'OpenRasp可疑事件',
+                        'falco_alert': 'Falco告警事件',
+                        'falco_raw': 'Falco可疑事件',
+                        'suricata_alert': 'Suricata告警事件',
+                        'suricata_raw': 'Suricata可疑事件',
+                    };
+                    
+                    return typeMap[type] || (type.endsWith('_raw') ? '可疑事件' : (type.endsWith('_alert') ? '告警事件' : '事件'));
+                },
+
+                showEventDetail(event, index = 1) {
+                    this.selectedEvent = {
+                        ...event,
+                        index: index
+                    };
+                    this.showEventModal = true;
+                },
+
+                async showEventDetailById(eventId, eventLabel) {
+                    try {
+                        this.loading = true;
+                        const response = await fetch(`/api/proxy/events/${eventId}`);
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        const responseData = await response.json();
+                        const eventData = responseData.data || responseData;
+                        
+                        // 从eventLabel中提取索引数字
+                        const index = parseInt(eventLabel.replace('event', '')) || 1;
+                        
+                        // 添加标签信息和索引到事件数据
+                        eventData.label = eventLabel;
+                        eventData.index = index;
+                        this.selectedEvent = eventData;
+                        this.showEventModal = true;
+                    } catch (error) {
+                        console.error('Error fetching event detail:', error);
+                        // 显示错误提示
+                        this.selectedEvent = {
+                            event_id: eventId,
+                            label: eventLabel,
+                            error: '无法加载事件详情',
+                            message: error.message
+                        };
+                        this.showEventModal = true;
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                formatDate(dateString) {
+                    if (!dateString) return 'N/A';
+                    try {
+                        const date = new Date(dateString);
+                        return date.toLocaleString('zh-CN', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                    } catch (e) {
+                        return dateString;
+                    }
+                },
+
+                // 格式化时间为北京时间（+8小时）- 用于人工参与详情
+                formatDateBeijing(dateString) {
+                    if (!dateString) return 'N/A';
+                    try {
+                        const date = new Date(dateString);
+                        // 加8小时转换为北京时间
+                        const beijingDate = new Date(date.getTime() + 8 * 60 * 60 * 1000);
+                        return beijingDate.toLocaleString('zh-CN', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                    } catch (e) {
+                        return dateString;
+                    }
+                },
+
+                // 提取原始需求部分（从"原始需求"到"当前调查思路"之间，去掉标题和末尾的#标记）
+                extractOriginalRequirement(question) {
+                    if (!question) return '';
+                    // 匹配"原始需求"到"当前调查思路"之间的内容（限制长度防止回溯）
+                    const match = question.length > 10000 ? null : question.match(/原始需求([\s\S]*?)(?=当前调查思路|$)/);
+                    if (!match) return '';
+
+                    // 去掉开头的"原始需求"标题和多余的换行
+                    let content = match[1].trim();
+
+                    // 去掉末尾的 # 标记（##、### 等，限制长度防止回溯）
+                    content = content.length > 1000 ? content : content.replace(/\s*#{2,}\s*$/, '').trim();
+
+                    return content;
+                },
+
+                // 获取步骤的增量 question 内容（只显示新增的思考）
+                getStepDeltaQuestion(question, stepNumber, allHistory, currentIndex) {
+                    if (!question) return '';
+
+                    // 步骤1：只显示从【思考1】开始的内容（跳过调研阶段完成、原始需求、当前调查思路）
+                    if (stepNumber === 1 || currentIndex === 0) {
+                        const firstThink = question.match(/【思考\s*1】/);
+                        if (firstThink) {
+                            return question.substring(firstThink.index).trim();
+                        }
+                        return question;
+                    }
+
+                    // 获取前一个步骤的 question
+                    const prevQuestion = allHistory[currentIndex - 1].question;
+
+                    // 统计前一个步骤有多少个【思考】
+                    const prevThinkMatches = prevQuestion.match(/【思考/g) || [];
+                    const prevThinkCount = prevThinkMatches.length;
+
+                    // 找到当前步骤中所有【思考 x】
+                    const thinkMatches = question.match(/【思考\s*\d+】/g) || [];
+
+                    // 如果当前思考数 <= 之前，说明没有新增，返回全部（兼容处理）
+                    if (thinkMatches.length <= prevThinkCount) {
+                        return question;
+                    }
+
+                    // 找到新增的第一个【思考】
+                    const startThink = thinkMatches[prevThinkCount];
+
+                    // 找到该【思考】在字符串中的位置
+                    const startPos = question.indexOf(startThink);
+                    if (startPos === -1) {
+                        return question;
+                    }
+
+                    // 从该位置截取到结尾，就是新增内容
+                    return question.substring(startPos).trim();
+                },
+
+                // 格式化思考标题：第一个思考直接移除，后续思考换成横线
+                formatThinkingHeaders(content) {
+                    if (!content) return '';
+
+                    // 找到第一个 【思考 x】 的位置
+                    const firstThinkMatch = content.match(/【思考\s*\d+】/);
+                    if (firstThinkMatch) {
+                        // 第一个思考标题直接移除（不产生横线）
+                        const beforeFirst = content.slice(0, firstThinkMatch.index);
+                        let afterFirst = content.slice(firstThinkMatch.index + firstThinkMatch[0].length);
+
+                        // 移除第一个思考标题后的空白字符
+                        afterFirst = afterFirst.replace(/^\s*/, '');
+
+                        // 后面的思考标题替换成横线
+                        const afterFirstReplaced = afterFirst.replace(/【思考\s*\d+】/g, '\n\n---\n\n');
+
+                        content = beforeFirst + afterFirstReplaced;
+                    }
+
+                    return content;
+                },
+
+                // 解析 Markdown 格式为 HTML
+                parseMarkdownToHTML(markdown) {
+                    if (!markdown) return '';
+
+                    let html = markdown;
+
+                    // 限制总长度，防止正则回溯（超长文本跳过复杂格式处理）
+                    const MAX_HTML_LENGTH = 10000;
+                    if (html.length <= MAX_HTML_LENGTH) {
+                        // 去掉开头的 # 标题标记（一级标题）
+                        html = html.replace(/^#\s+(.+)$/gm, '<h2 class="text-lg font-bold text-gray-800 mt-3 mb-1">$1</h2>');
+
+                        // 处理标题 (## 标题)
+                        html = html.replace(/^##\s+(.+)$/gm, '<h3 class="text-base font-bold text-gray-800 mt-2 mb-1">$1</h3>');
+                        html = html.replace(/^###\s+(.+)$/gm, '<h4 class="text-sm font-semibold text-gray-700 mt-2 mb-1">$1</h4>');
+
+                        // 处理加粗 (**文本**)
+                        html = html.replace(/\*\*(.+?)\*\*/g, '<strong class="text-gray-800">$1</strong>');
+
+                        // 处理斜体 (*文本*)
+                        html = html.replace(/\*(.+?)\*/g, '<em class="text-gray-600">$1</em>');
+
+                        // 处理代码块 (```代码```)
+                        html = html.replace(/```([\s\S]*?)```/g, '<pre class="bg-gray-800 text-green-400 p-2 rounded text-xs whitespace-pre-wrap break-words my-1"><code>$1</code></pre>');
+                    }
+
+                    // 处理行内代码 (`代码`)
+                    html = html.replace(/`([^`]+)`/g, '<code class="bg-gray-200 text-red-600 px-1 rounded text-xs">$1</code>');
+
+                    // 处理无序列表 (- 项目 或 * 项目) 和有序列表 (1. 项目) - 按段落分组处理
+                    let lines = html.split('\n');
+                    let result = [];
+                    let currentUnorderedList = [];
+                    let currentOrderedList = [];
+                    let inUnorderedList = false;
+                    let inOrderedList = false;
+
+                    for (let i = 0; i < lines.length; i++) {
+                        let line = lines[i];
+                        let unorderedMatch = line.match(/^[\s]*[-*]\s+(.+)$/);
+                        let orderedMatch = line.match(/^[\s]*(\d+)\.\s+(.+)$/);
+                        
+                        if (unorderedMatch) {
+                            // 是无序列表项
+                            if (inOrderedList) {
+                                // 临时结束当前有序列表
+                                const startAttr = currentOrderedList._startNum ? ` start="${currentOrderedList._startNum}"` : '';
+                                result.push(`<ol${startAttr} class="list-decimal my-0.5 space-y-1">${currentOrderedList.join('')}</ol>`);
+                                currentOrderedList = [];
+                                inOrderedList = false;
+                            }
+                            if (!inUnorderedList) {
+                                // 开始新的无序列表
+                                inUnorderedList = true;
+                                currentUnorderedList = [];
+                            }
+                            currentUnorderedList.push(`<li class="ml-4 text-sm text-gray-700 leading-snug">${unorderedMatch[1]}</li>`);
+                        } else if (orderedMatch) {
+                            // 是有序列表项
+                            if (inUnorderedList) {
+                                // 结束当前无序列表
+                                result.push(`<ul class="list-disc my-0.5 space-y-1">${currentUnorderedList.join('')}</ul>`);
+                                currentUnorderedList = [];
+                                inUnorderedList = false;
+                            }
+                            if (!inOrderedList) {
+                                // 开始新的有序列表
+                                inOrderedList = true;
+                                currentOrderedList = [];
+                                // 使用原始数据中的序号作为 start 属性
+                                const originalNum = parseInt(orderedMatch[1], 10);
+                                if (originalNum > 1) {
+                                    currentOrderedList._startNum = originalNum;
+                                }
+                            }
+                            currentOrderedList.push(`<li class="ml-4 text-sm text-gray-700 leading-snug">${orderedMatch[2]}</li>`);
+                        } else {
+                            // 不是列表项
+                            // 检查是否是空行（列表项之间的空行应该被忽略，保持列表连续性）
+                            const isEmptyLine = line.trim() === '';
+                            
+                            if (isEmptyLine) {
+                                // 空行：如果在列表中，暂时保留但不结束列表
+                                if (inUnorderedList || inOrderedList) {
+                                    // 跳过空行，保持列表连续性
+                                    continue;
+                                }
+                                // 不在列表中，保留空行
+                                result.push(line);
+                            } else {
+                                // 真正的非列表内容，结束当前列表
+                                if (inUnorderedList) {
+                                    // 结束当前无序列表
+                                    result.push(`<ul class="list-disc my-0.5 space-y-1">${currentUnorderedList.join('')}</ul>`);
+                                    currentUnorderedList = [];
+                                    inUnorderedList = false;
+                                }
+                                if (inOrderedList) {
+                                    // 结束当前有序列表，重置状态
+                                    const startAttr = currentOrderedList._startNum ? ` start="${currentOrderedList._startNum}"` : '';
+                                    result.push(`<ol${startAttr} class="list-decimal my-0.5 space-y-1">${currentOrderedList.join('')}</ol>`);
+                                    currentOrderedList = [];
+                                    inOrderedList = false;
+                                }
+                                result.push(line);
+                            }
+                        }
+                    }
+
+                    // 处理最后可能未结束的列表
+                    if (inUnorderedList && currentUnorderedList.length > 0) {
+                        result.push(`<ul class="list-disc my-0.5 space-y-1">${currentUnorderedList.join('')}</ul>`);
+                    }
+                    if (inOrderedList && currentOrderedList.length > 0) {
+                        const startAttr = currentOrderedList._startNum ? ` start="${currentOrderedList._startNum}"` : '';
+                        result.push(`<ol${startAttr} class="list-decimal my-0.5 space-y-1">${currentOrderedList.join('')}</ol>`);
+                    }
+
+                    // 合并被分割的有序列表，使用 start 属性保持连续性
+                    html = result.join('\n');
+
+                    // 处理链接 ([文本](URL))
+                    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" class="text-blue-600 hover:underline">$1</a>');
+
+                    // 处理引用 (> 文本)
+                    html = html.replace(/^>\s+(.+)$/gm, '<blockquote class="border-l-4 border-gray-400 pl-3 my-1 text-gray-600 italic">$1</blockquote>');
+
+                    // 处理水平线 (--- 或 ***)
+                    html = html.replace(/^(---+|\*\*\*)$/gm, '<hr class="my-4 border-gray-400">');
+
+                    // 处理段落（将换行转换为段落）
+                    const paragraphs = html.split('\n\n');
+                    html = paragraphs.map(p => {
+                        p = p.trim();
+                        if (!p) return '';
+                        // 如果已经包含 HTML 标签，不再包装
+                        if (p.match(/^<[a-zA-Z]/)) return p;
+                        return `<p class="text-sm text-gray-700 my-0.5 leading-snug">${p}</p>`;
+                    }).join('');
+
+                    // 处理剩余的换行
+                    html = html.replace(/\n/g, '<br class="leading-snug">');
+
+                    return html;
+                },
+
+                // 加载并显示关联的 Short TTP
+                async loadAndShowShortTTP(shortTTPId) {
+                    if (!shortTTPId) {
+                        alert('未找到关联的实时告警');
+                        return;
+                    }
+                    
+                    // 先在已加载的 shortTTPs 中查找
+                    const cachedTTP = this.shortTTPs.find(ttp => ttp.id === shortTTPId);
+                    if (cachedTTP) {
+                        this.selectedShortTTP = cachedTTP;
+                        this.showShortTTPModal = true;
+                        return;
+                    }
+                    
+                    // 如果未找到，调用 API
+                    try {
+                        this.loading = true;
+                        // 使用现有的 /api/ttp/{ttp_id} 接口
+                        const response = await fetch(`/api/ttp/${shortTTPId}`);
+                        
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        
+                        const result = await response.json();
+                        
+                        // 检查结果类型
+                        if (result && result.type === 'short') {
+                            this.selectedShortTTP = this.processTTPData(result, 'short');
+                            this.showShortTTPModal = true;
+                        } else {
+                            alert('未找到关联的实时告警详情');
+                        }
+                    } catch (error) {
+                        console.error('加载 Short TTP 失败:', error);
+                        alert('加载关联实时告警失败: ' + error.message);
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                resetSTTPPagination() {
+                    this.sttpPagination.currentPage = 1;
+                },
+
+                isAttackChainExpanded(ttpId) {
+                    return this.expandedAttackChains[ttpId] || false;
+                },
+                
+                toggleAttackChain(ttpId) {
+                    this.expandedAttackChains[ttpId] = !this.expandedAttackChains[ttpId];
+                },
+                
+                getTacticTree(ttp) {
+                    if (!ttp) return [];
+                    
+                    const tacticTree = [];
+                    
+                    // 获取实际的战术技术过程数据
+                    // Long TTP 使用 final_ttps，Short TTP 使用 ttps
+                    const ttps = ttp.final_ttps || ttp.ttps || [];
+                    
+                    // 遍历战术
+                    ttps.forEach(tacticData => {
+                        const tactic = {
+                            id: tacticData.id || 'tactic-' + Math.random().toString(36).substr(2, 9),
+                            name: tacticData.name || '未知战术',
+                            description: tacticData.description || '',
+                            event_ids: Array.isArray(tacticData.event_ids) ? tacticData.event_ids : (typeof tacticData.event_ids === 'string' ? [tacticData.event_ids] : []),
+                            techniques: []
+                        };
+                        
+                        // 处理技术
+                        const techniques = tacticData.techniques || [];
+                        techniques.forEach(techData => {
+                            const technique = {
+                                id: techData.tech_id || techData.id || 'tech-' + Math.random().toString(36).substr(2, 9),
+                                name: techData.tech_name || techData.name || '未知技术',
+                                description: techData.description || '',
+                                procedures: []
+                            };
+                            
+                            // 处理程序
+                            const procedures = techData.procedures || [];
+                            procedures.forEach(procName => {
+                                if (typeof procName === 'string') {
+                                    const procedure = {
+                                        id: 'proc-' + Math.random().toString(36).substr(2, 9),
+                                        name: procName,
+                                        description: '',
+                                        evidence: ttp.event_count || Math.floor(Math.random() * 3) + 1
+                                    };
+                                    technique.procedures.push(procedure);
+                                }
+                            });
+                            
+                            tactic.techniques.push(technique);
+                        });
+                        
+                        tacticTree.push(tactic);
+                    });
+                    
+                    return tacticTree;
+                },
+
+                // 检查战术是否被当前TTP包含（用于高亮显示）
+                isTacticIncluded(ttp, tacticName) {
+                    if (!ttp || !tacticName) return false;
+                    const tacticTree = this.getTacticTree(ttp);
+                    const tacticNameLower = tacticName.toLowerCase();
+                    return tacticTree.some(tactic => {
+                        // 支持精确匹配和模糊包含匹配（不区分大小写，将连字符替换为空格）
+                        const tacticNameCurrentLower = tactic.name.toLowerCase().replace(/-/g, ' ');
+                        if (tacticNameCurrentLower === tacticNameLower) return true;
+                        if (tacticNameCurrentLower.includes(tacticNameLower)) return true;
+                        if (tacticNameLower.includes(tacticNameCurrentLower)) return true;
+                        return false;
+                    });
+                },
+
+                // 获取特定战术下的所有技术列表
+                getTechniquesForTactic(ttp, tacticName) {
+                    if (!ttp || !tacticName) return [];
+                    const tacticTree = this.getTacticTree(ttp);
+                    const tacticNameLower = tacticName.toLowerCase();
+                    const found = tacticTree.find(tactic => {
+                        const tacticNameCurrentLower = tactic.name.toLowerCase().replace(/-/g, ' ');
+                        if (tacticNameCurrentLower === tacticNameLower) return true;
+                        if (tacticNameCurrentLower.includes(tacticNameLower)) return true;
+                        if (tacticNameLower.includes(tacticNameCurrentLower)) return true;
+                        return false;
+                    });
+                    return found ? found.techniques : [];
+                },
+
+                // 检查战术是否有第二个技术（用于判断是否显示第三行）
+                hasSecondTechnique(ttp) {
+                    if (!ttp) return false;
+                    const tacticTree = this.getTacticTree(ttp);
+                    // 如果任何一个战术有两个或更多技术，则返回true
+                    return tacticTree.some(tactic => tactic.techniques && tactic.techniques.length >= 2);
+                },
+
+                // 预定义的战术顺序（常量）
+                tacticOrder: [
+                    'Reconnaissance',
+                    'Resource Development',
+                    'Initial Access',
+                    'Execution',
+                    'Persistence',
+                    'Privilege Escalation',
+                    'Defense Evasion',
+                    'Credential Access',
+                    'Discovery',
+                    'Lateral Movement',
+                    'Collection',
+                    'Command and Control',
+                    'Exfiltration',
+                    'Impact'
+                ],
+
+                // 获取战术在14列中的列索引（0-13）
+                getTacticColumnIndex(tacticName) {
+                    if (!tacticName) return 0;
+                    // 使用预定义的常量数组，避免重复创建
+                    const tacticNameLower = tacticName.toLowerCase();
+                    const index = this.tacticOrder.findIndex(t => {
+                        // 由于tacticOrder是常量，可以预先缓存小写版本，但这里转换量小，实时转换足够
+                        const tLower = t.toLowerCase();
+                        return tLower === tacticNameLower || 
+                               tLower.includes(tacticNameLower) || 
+                               tacticNameLower.includes(tLower);
+                    });
+                    return index >= 0 ? index : 0;
+                },
+
+                handleUrlParams() {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const type = urlParams.get('type');
+                    const id = urlParams.get('id');
+                    
+                    if (type && id) {
+                        console.log('URL参数检测:', { type, id });
+                        
+                        // 检查TTP是否存在
+                        let ttpExists = false;
+                        if (type === 'short') {
+                            ttpExists = this.shortTTPs.some(ttp => ttp.id === id || ttp.id === 'sttp_' + id);
+                        } else {
+                            ttpExists = this.longTTPs.some(ttp => ttp.id === id);
+                        }
+                        
+                        const performNavigation = () => {
+                            // 切换到对应的TTP类型
+                            this.searchType = type;
+
+                            // 立即展开目标TTP
+                            this.expandedTTPs.add(`${type}_${id}`);
+
+                            // 等待DOM更新后滚动到目标位置
+                            const waitForElement = () => {
+                                // 确保当前显示的是正确的标签页
+                                const currentTab = document.querySelector(`[x-show="searchType === '${type}'"]`) ||
+                                                 document.querySelector(`[x-show*="searchType === '${type}'"]`);
+
+                                if (!currentTab || currentTab.style.display === 'none') {
+                                    setTimeout(waitForElement, 200);
+                                    return false;
+                                }
+                                
+                                // 主查找方案：通过TTP ID查找
+                                let targetElement = null;
+                                
+                                // 方案1：查找包含TTP ID的容器
+                                const containers = currentTab.querySelectorAll('.border.border-gray-200.rounded-lg.p-4');
+                                for (let container of containers) {
+                                    // 查找短TTP ID
+                                    const shortTTPMatch = container.textContent.match(/TTP ID:\s*([A-Z0-9-]+)/i);
+                                    if (shortTTPMatch && shortTTPMatch[1] === id) {
+                                        targetElement = container;
+                                        break;
+                                    }
+                                    
+                                    // 查找长TTP ID
+                                    const longTTPMatch = container.textContent.match(/ID:\s*([A-Z0-9-]+)/i);
+                                    if (longTTPMatch && longTTPMatch[1] === id) {
+                                        targetElement = container;
+                                        break;
+                                    }
+                                }
+                                
+                                // 方案2：查找包含TTP ID的code元素
+                                if (!targetElement) {
+                                    const codeElements = currentTab.querySelectorAll('code');
+                                    for (let codeEl of codeElements) {
+                                        const codeText = codeEl.textContent.trim();
+                                        if (codeText === id) {
+                                            targetElement = codeEl.closest('.border.border-gray-200.rounded-lg.p-4') || codeEl;
+                                            break;
+                                        }
+                                    }
+                                }
+                                
+                                // 方案3：查找[x-data]属性中包含ID的元素
+                                if (!targetElement) {
+                                    targetElement = currentTab.querySelector(`[x-data*="${id}"]`) ||
+                                                   currentTab.querySelector(`[x-data*="sttp_${id}"]`);
+                                }
+                                
+                                // 方案4：查找文本内容完全匹配的元素
+                                if (!targetElement) {
+                                    const allElements = currentTab.querySelectorAll('*');
+                                    for (let el of allElements) {
+                                        if (el.textContent && el.textContent.trim() === id) {
+                                            targetElement = el;
+                                            break;
+                                        }
+                                    }
+                                }
+                                
+                                if (!targetElement) {
+                                    if (window.navigationRetryCount < 10) {
+                                        window.navigationRetryCount = (window.navigationRetryCount || 0) + 1;
+                                        setTimeout(waitForElement, 200);
+                                        return false;
+                                    }
+                                    return false;
+                                }
+                                
+                                // 获取目标容器
+                                const container = targetElement.closest('.border.border-gray-200.rounded-lg.p-4') ||
+                                                targetElement.closest('[x-data*="ttp"]') ||
+                                                targetElement.closest('.border') ||
+                                                targetElement.parentElement;
+                                
+                                if (container) {
+                                    // 计算滚动位置
+                                    const offsetTop = container.offsetTop;
+                                    const containerHeight = container.offsetHeight;
+                                    const viewportHeight = window.innerHeight;
+                                    const scrollTop = offsetTop - (viewportHeight / 2) + (containerHeight / 2);
+
+                                    window.scrollTo({
+                                        top: Math.max(0, scrollTop),
+                                        behavior: 'smooth'
+                                    });
+
+                                    // 高亮显示
+                                    container.style.border = '2px solid #3b82f6';
+                                    container.style.backgroundColor = '#f0f9ff';
+                                    container.style.boxShadow = '0 0 20px rgba(59, 130, 246, 0.3)';
+
+                                    setTimeout(() => {
+                                        container.style.border = '';
+                                        container.style.backgroundColor = '';
+                                        container.style.boxShadow = '';
+                                    }, 5000);
+
+                                    return true;
+                                } else {
+                                    if (window.navigationRetryCount < 10) {
+                                        window.navigationRetryCount = (window.navigationRetryCount || 0) + 1;
+                                        setTimeout(waitForElement, 200);
+                                        return false;
+                                    }
+                                    return false;
+                                }
+                            };
+                            
+                            // 如果数据还未加载，等待数据加载
+                            if ((type === 'short' && this.shortTTPs.length === 0) ||
+                                (type === 'long' && this.longTTPs.length === 0)) {
+                                const checkData = setInterval(() => {
+                                    if ((type === 'short' && this.shortTTPs.length > 0) ||
+                                        (type === 'long' && this.longTTPs.length > 0)) {
+                                        clearInterval(checkData);
+                                        performNavigation();
+                                    }
+                                }, 100);
+                                setTimeout(() => {
+                                    clearInterval(checkData);
+                                    performNavigation();
+                                }, 5000); // 最多等待5秒
+                            } else {
+                                performNavigation();
+                            }
+                        };
+                        
+                        // 开始导航，给DOM更新一些时间，确保只执行一次
+                        if (!window.navigationExecuted) {
+                            window.navigationExecuted = true;
+                            window.navigationRetryCount = 0; // 重置重试计数器
+                            setTimeout(performNavigation, 1000);
+                        }
+                    }
+                },
+
+                // 获取告警类型显示名称
+                getAlertTypeName(alertType) {
+                    const typeMap = {
+                        'suricata_alert': '网络告警',
+                        'suricata_raw': '网络行为异常',
+                        'openrasp_alert': '应用告警',
+                        'openrasp_raw': '应用行为异常',
+                        'falco_alert': '主机告警',
+                        'falco_raw': '主机行为异常'
+                    };
+                    return typeMap[alertType] || alertType;
+                },
+                
+                // 获取告警类型样式（直接用十六进制，不依赖Tailwind颜色类，确保显示）
+                getAlertTypeClass(alertType) {
+                    const styleMap = {
+                        'suricata_alert': {backgroundColor: '#e0e7ff', color: '#3730a3'},
+                        'suricata_raw': {backgroundColor: '#eef2ff', color: '#4f46e5'},
+                        'openrasp_alert': {backgroundColor: '#f3e8ff', color: '#6b21a8'},
+                        'openrasp_raw': {backgroundColor: '#faf5ff', color: '#7c3aed'},
+                        'falco_alert': {backgroundColor: '#f5f5dc', color: '#92400e'},
+                        'falco_raw': {backgroundColor: '#f8f8e8', color: '#b45309'}
+                    };
+                    return styleMap[alertType] || {backgroundColor: '#f3f4f6', color: '#374151'};
+                },
+                
+                // 获取所有唯一的告警类型（只根据前10个事件）
+                getUniqueAlertTypes(ttp) {
+                    const alertTypes = new Set();
+                    const tacticTree = this.getTacticTree(ttp);
+                    
+                    // 收集所有事件ID
+                    const allEventIds = [];
+                    for (const tactic of tacticTree) {
+                        if (tactic.event_ids && tactic.event_ids.length > 0) {
+                            allEventIds.push(...tactic.event_ids);
+                        }
+                    }
+                    
+                    // 只取前10个事件
+                    const limitedEventIds = allEventIds.slice(0, 10);
+                    
+                    // 遍历前10个事件提取告警类型
+                    for (const eventId of limitedEventIds) {
+                        // 如果已经加载了事件类型，添加到集合
+                        if (this.eventTypeCache[eventId]) {
+                            alertTypes.add(this.eventTypeCache[eventId]);
+                        } else {
+                            // 预加载事件类型
+                            this.loadEventType(eventId);
+                        }
+                    }
+                    
+                    return Array.from(alertTypes);
+                },
+                
+                // 获取TTP的最高严重程度
+                getSeverityLevel(ttp) {
+                    const tacticTree = this.getTacticTree(ttp);
+                    // 将连字符替换为空格，确保与标准战术名称匹配
+                    const tacticNames = tacticTree.map(t => t.name.toLowerCase().replace(/-/g, ' '));
+                    
+                    // 从高到低检查：严重 > 高危 > 中危 > 低危
+                    const severe = ['exfiltration', 'impact'];
+                    if (severe.some(s => tacticNames.some(name => name.includes(s)))) {
+                        return '严重';
+                    }
+                    
+                    const high = ['credential access', 'discovery', 'lateral movement', 'collection', 'command and control'];
+                    if (high.some(h => tacticNames.some(name => name.includes(h)))) {
+                        return '高危';
+                    }
+                    
+                    const medium = ['execution', 'persistence', 'privilege escalation', 'defense evasion'];
+                    if (medium.some(m => tacticNames.some(name => name.includes(m)))) {
+                        return '中危';
+                    }
+                    
+                    const low = ['reconnaissance', 'resource development', 'initial access'];
+                    if (low.some(l => tacticNames.some(name => name.includes(l)))) {
+                        return '低危';
+                    }
+                    
+                    return null;
+                },
+                
+                // 获取严重程度内联样式
+                getSeverityStyle(severity) {
+                    const styleMap = {
+                        '严重': {
+                            backgroundColor: '#fca5a5',
+                            color: '#7f1d1d',
+                            borderColor: '#ef4444'
+                        },
+                        '高危': {
+                            backgroundColor: '#fdba74',
+                            color: '#9a3412',
+                            borderColor: '#f97316'
+                        },
+                        '中危': {
+                            backgroundColor: '#fde68a',
+                            color: '#78350f',
+                            borderColor: '#f59e0b'
+                        },
+                        '低危': {
+                            backgroundColor: '#93c5fd',
+                            color: '#1e3a8a',
+                            borderColor: '#3b82f6'
+                        }
+                    };
+                    return styleMap[severity] || {
+                        backgroundColor: '#d1d5db',
+                        color: '#1f2937',
+                        borderColor: '#6b7280'
+                    };
+                },
+
+                connectWebSocket() {
+                    // 如果已有WebSocket连接，先关闭它以避免重复连接
+                    if (this.ws) {
+                        this.ws.close();
+                        this.ws = null;
+                    }
+
+                    this.ws = new WebSocket(`ws://${window.location.host}/ws`);
+
+                    this.ws.onopen = () => {
+                        this.connected = true;
+                        // 连接建立后发送当前的筛选参数
+                        this.ws.send(JSON.stringify({
+                            type: 'set_filter',
+                            hours: this.hours,
+                            customHours: this.customHours,
+                            customUnit: this.customUnit
+                        }));
+                    };
+                    
+                    this.ws.onmessage = (event) => {
+                        const data = JSON.parse(event.data);
+                        if (data.type === 'stats_update') {
+                            // 接受WebSocket的统计更新，保持数据同步
+                            this.stats = data.data;
+                        }
+                    };
+
+                    this.ws.onclose = () => {
+                        this.connected = false;
+                        // 确保连接完全关闭后再重连
+                        setTimeout(() => {
+                            if (!this.ws || this.ws.readyState === WebSocket.CLOSED) {
+                                this.connectWebSocket();
+                            }
+                        }, 3000);
+                    };
+                    
+                    this.ws.onerror = (error) => {
+                        this.connected = false;
+                        console.error('WebSocket错误:', error);
+                    };
+                }
+            };
+        }
+    </script>
+</body>
+</html>

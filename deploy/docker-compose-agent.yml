@@ -1,0 +1,272 @@
+version: '3.8'
+
+networks:
+  kafka-net:
+  rasp-net:
+  security-net:
+
+services:
+  # =========================
+  # Kafka 9092内部端口
+  # =========================
+  kafka:
+    image: essaigroup/deepxdr-kafka:v0.3.0
+    container_name: kafka
+    security_opt:
+      - seccomp:unconfined
+      - apparmor:unconfined
+    ports:
+      - "29092:29092"
+    networks:
+      - kafka-net
+    environment:
+      KAFKA_ENABLE_KRAFT: "yes"
+      KAFKA_CFG_PROCESS_ROLES: broker,controller
+      KAFKA_CFG_NODE_ID: 1
+      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:29092
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://<agent-ip>:29092
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CFG_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CFG_SASL_ENABLED_MECHANISMS: PLAIN
+      KAFKA_CFG_SASL_MECHANISM_INTER_BROKER_PROTOCOL: PLAIN
+      KAFKA_CLIENT_USERS: pmlqiangwang20251520
+      KAFKA_CLIENT_PASSWORDS: PMLabs3edc2025
+      ALLOW_PLAINTEXT_LISTENER: "yes"
+      KAFKA_CFG_LOG_DIRS: /bitnami/kafka/data
+      KAFKA_CREATE_TOPICS: "agent:5:1:compact"
+    volumes:
+      - kafka-data:/bitnami/kafka
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/bitnami/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list > /dev/null && echo 'ok' || exit 1"]
+      interval: 5s
+      timeout: 4s
+      retries: 30
+    restart: unless-stopped
+
+  # =========================
+  # rasp MongoDB 27017内部端口
+  # =========================
+  rasp-mongodb:
+    image: mongo:4.4
+    container_name: rasp-mongodb
+    networks:
+      - rasp-net
+    restart: unless-stopped
+
+  # =========================
+  # rasp Elasticsearch 9200内部端口
+  # =========================
+  rasp-elasticsearch:
+    image: elasticsearch:6.8.23
+    container_name: es
+    ports:
+      - "9201:9200"
+    networks:
+      - rasp-net
+    environment:
+      - discovery.type=single-node
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 30          # 最多 150 s
+    restart: unless-stopped
+
+  # rasp-cloud的配置方法参考third_party/openrasp/README.md
+  rasp-cloud:
+    image: essaigroup/deepxdr-rasp-cloud:v0.3.0-alpha
+    container_name: rasp-cloud
+    dns_search: .
+    dns: 127.0.0.11
+    networks:
+      - rasp-net
+      - kafka-net
+    ports:
+      - "8086:8086"
+    depends_on: 
+      rasp-mongodb:
+        condition: service_started
+      rasp-elasticsearch:
+        condition: service_healthy 
+    #注意关闭宿主机selinux
+    volumes:
+      - ../third_party/openrasp/rasp-cloud-docker/conf/app.conf:/app/conf/app.conf
+    restart: unless-stopped
+
+  # =========================
+  # Postgres  5432内部端口
+  # =========================
+  postgres:
+    image: postgres:15-alpine
+    container_name: security-postgres
+    ports:
+      - "5432:5432"
+    networks:
+      - security-net
+    environment:
+      POSTGRES_DB: security_db
+      POSTGRES_USER: security_user
+      POSTGRES_PASSWORD: security_pass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  # =========================
+  # Redis 6379内部端口
+  # =========================
+  redis:
+    image: redis:7-alpine
+    container_name: security-redis
+    networks:
+      - security-net
+      - kafka-net
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+  security-analysis:
+    image: essaigroup/deepxdr-analysis:v0.3.0-alpha
+    container_name: security-analysis
+    networks:
+      - security-net
+      - kafka-net
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_started
+      redis:
+        condition: service_started
+      kafka:
+        condition: service_healthy
+      baseline-adjudication:
+        condition: service_started
+    environment:
+      DATABASE_URL: postgresql+asyncpg://security_user:security_pass@postgres:5432/security_db
+      REDIS_URL: redis://redis:6379/0
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_TOPIC: agent
+      KAFKA_GROUP_ID: security-analysis-group
+      LOG_LEVEL: DEBUG
+      API_PORT: 8000
+      
+      ELASTICSEARCH_HOST: <app-host-ip>
+      ELASTICSEARCH_PORT: 9201
+
+      ELASTICSEARCH_MCP_URL: http://<app-host-ip>:8000/mcp
+      FILESYSTEM_MCP_URL: ws://<app-host-ip>:8001/message
+      GREP_MCP_URL: ws://<app-host-ip>:8003/message
+      
+      OPENAI_API_KEY: <your-llm-api-key>
+      OPENAI_BASE_URL: <your-llm-api-base-url> 
+      # [Required] Short TTP威胁分析及Long TTP主循环所使用的模型    
+      OPENAI_MODEL: <your-llm-model-name> 
+      # [Required] Long TTP深度研究阶段使用的模型，建议使用较强模型
+      RESEARCH_MODEL: <your-llm-model-name> 
+      # [Required] 长上下文压缩/截断阶段使用的模型，建议选择成本较低且上下文能力稳定的模型
+      COMPRESSION_MODEL: <your-llm-model-name> 
+      # [Required] 摘要生成阶段使用的模型
+      SUMMARIZATION_MODEL: <your-llm-model-name>
+      # [Required] 最终报告生成阶段使用的模型，建议选择输出质量更高的模型
+      FINAL_REPORT_MODEL: <your-llm-model-name> 
+      # [Required] MITRE RAG 节点中的 LLM 判定模型。
+      MITRE_RAG_LLM_MODEL: <your-llm-model-name> 
+      # 默认开启即可
+      USE_MITRE_INVESTIGATION_SUBGRAPH: true
+      # [Required] 人机反馈等待秒数,超时将跳过本轮人工参与继续威胁分析
+      HUMAN_FEEDBACK_TIMEOUT_SECONDS: 1800
+      # 人机交互的最高次数
+      MAX_HUMAN_FEEDBACK_ROUNDS: 4
+      # Deep researcher 最大调研迭代次数；增大后会增加模型调用成本和耗时
+      MAX_RESEARCHER_ITERATIONS: 3
+      # 单轮 ReAct 调研允许的最大工具调用次数
+      MAX_REACT_TOOL_CALLS: 9
+      # [Optional]用于langsmith调试
+      LANGSMITH_API_KEY: <your-langsmith-api-key>
+      LANGSMITH_PROJECT: <your-langsmith-api-key>
+      LANGSMITH_TRACING: <true or false>
+      # 默认值
+      LONG_TTP_TRIGGER_SUPPRESSION_SECONDS: 5
+      # [Required] 文件系统 MCP 允许访问的根目录,与app侧的<your-app-workspace>一致,如/src/dotcms。
+      MCP_FILESYSTEM_ALLOWED_ROOT: <your-app-workspace>
+      # [Required] Web UI 调用后端 API 时会使用该值。生产环境请使用随机长字符串，不要使用示例值。
+      BACKEND_API_KEY: <your-random-token>
+
+      # [Required]DashScope embedding 的 OpenAI-compatible 接口地址，用于 MITRE RAG 向量化召回。
+      DASHSCOPE_EMBEDDING_BASE_URL: <your-embedding-base-url>
+      # [Required]DashScope embedding 模型名，需要和账号可用模型保持一致。
+      DASHSCOPE_EMBEDDING_MODEL: <your-embedding-model-name>
+      # [Required]DashScope rerank 接口地址，用于对 embedding 召回候选进行重排。
+      DASHSCOPE_RERANK_BASE_URL: <your-rerank-base-url>
+      # [Required]DashScope rerank 模型名，需要确认账号和地域支持该模型。
+      DASHSCOPE_RERANK_MODEL: <your-rerank-model-name>
+      # [Required]DashScope API Key 用于 MITRE RAG 的 embedding/rerank 路径
+      DASHSCOPE_API_KEY: ${your-embedding-rerank-key}
+      # [Optional]实验性功能，需配合部署ACL MCP
+      MCP_SERVER_URL: <your-acl-mcp-url>
+      # 默认值
+      GET_API_KEYS_FROM_CONFIG: false
+    restart: unless-stopped
+
+  baseline-adjudication:
+    image: essaigroup/deepxdr-baseline:v0.3.0-alpha
+    container_name: baseline-adjudication
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_SOURCE_TOPIC: events
+      KAFKA_AGENT_TOPIC: agent
+      KAFKA_CONSUMER_GROUP_ID: anomaly-detector-group
+      KAFKA_SECURITY_PROTOCOL: PLAINTEXT
+      KAFKA_SASL_MECHANISM: PLAIN
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_DB: 1
+      BASELINE_DURATION: 7200
+      BASELINE_FILE_PATH: baseline.json
+      DEBUG: True
+      REDIS_VALUE_TYPE: key_fields
+      CONTINUOUS_BASELINE_ENABLED: false
+      BASELINE_SAVE_INTERVAL: 180
+      ENABLE_FILEPATH_NUM_FUZZY_MATCH: false
+      ENABLE_THREAD_NAME_FUZZY_MATCH: true
+      FALCO_SKIP_FILE_TYPES: .tmp,.tmp.jpg,.dat,.so,.log,.log.gz
+    #[Optional]支持挂载已知基线模型，如未提供，则将收集BASELINE_DURATION秒内所有事件构建新的基线模型
+    #volumes:
+    #  - ./resources/baseline-adjudication/baseline202511031700.json:/app/baseline.json
+    networks:
+      - kafka-net
+    depends_on:
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  web-ui:
+    image: essaigroup/deepxdr-web-ui:v0.3.0-alpha
+    container_name: web-ui
+    environment:
+      API_BASE_URL: http://security-analysis:8000
+    dns_search: .
+    dns: 127.0.0.11
+    networks:
+      - security-net
+    ports:
+      - "30003:30003"
+    depends_on:
+      - security-analysis
+    restart: unless-stopped
+
+
+volumes:
+  kafka-data:
+  es-data:
+  postgres_data:
+  redis_data:
+
