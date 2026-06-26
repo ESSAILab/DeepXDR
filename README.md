@@ -16,13 +16,13 @@ DeepXDR 是一个面向实时安全运营的智能威胁分析与调查系统。
 
 DeepXDR 将待守护应用、遥测源、数据裁决、AI 分析和可视化交互拆分为不同职责边界：待守护应用是被观测对象，遥测源负责产生安全数据，后续链路负责筛选、分析与呈现结果。
 
-| 对象 / 阶段 | 目录 | 说明 |
+| 对象 / 阶段 | 说明 | 对应目录 |
 | --- | --- | --- |
-| 应用 | 用户应用 / 示例应用位于 `third_party/dotcms/` | 被 DeepXDR 守护和观测的业务系统。应用本身不承担威胁分析职责，但可以集成 OpenRASP/RASP 等遥测源，并按部署要求共享必要工作空间给 MCP Server。 |
-| 遥测源 | `third_party/falco/`、`third_party/openrasp/`、`third_party/suricata/` | 负责从主机、应用和网络侧产生安全告警与行为事件，并将数据交给数据汇聚与基线裁决链路。 |
-| 数据汇聚与基线裁决 | `baseline_adjudication/` | 接收 Falco、OpenRASP/RASP、Suricata 等遥测源产生的安全数据。明确告警会直接进入后续分析流程；原始行为数据会先用于构建正常行为基线，未命中基线的异常行为也会进入后续分析流程。 |
-| AI 威胁分析与调查 | `ai_agent/` | 对已经过筛选和裁决的高价值安全事件进行聚合分析，生成 Short TTP，并按需触发 Long TTP / 高级持续性威胁调查。 |
-| 可视化与交互 | `web_ui/` | 面向分析师展示 TTP、调查结果和反馈入口 |
+| 应用  | 被 DeepXDR 守护和观测的业务系统。应用本身不承担威胁分析职责，但可以集成 OpenRASP/RASP 等遥测源，并按部署要求共享必要工作空间给 MCP Server。| `third_party/dotcms/` |
+| 遥测源 | 负责从主机、应用和网络侧产生安全告警与行为事件，并将数据交给数据汇聚与基线裁决链路。| `third_party/falco/`</br>`third_party/openrasp/`</br>`third_party/suricata/` |
+| 数据汇聚与基线裁决</br> | 接收 Falco、OpenRASP/RASP、Suricata 等遥测源产生的安全数据。明确告警会直接进入后续分析流程；原始行为数据会先用于构建正常行为基线，未命中基线的异常行为也会进入后续分析流程。| `baseline_adjudication/`  |
+| AI 威胁分析与调查</br> | 对已经过筛选和裁决的高价值安全事件进行聚合分析，生成 Short TTP，并按需触发 Long TTP / 高级持续性威胁调查。| `ai_agent/`  |
+| 可视化与交互 | 面向分析师展示 TTP、调查结果和反馈入口 | `web_ui/` |
 
 
 ## 核心能力
@@ -53,7 +53,7 @@ DeepXDR 将待守护应用、遥测源、数据裁决、AI 分析和可视化交
 
 ```mermaid
 flowchart LR
-    Sensors["Falco / OpenRASP / Suricata"] --> SourceTopic["Kafka topic: event"]
+    Sensors["Falco / OpenRASP / Suricata"] --> SourceTopic["Kafka topic: events"]
     SourceTopic --> Baseline["baseline_adjudication"]
     Baseline --> Redis["Redis behavior baseline"]
     Baseline --> BaselineFile["baseline.json"]
@@ -81,8 +81,8 @@ flowchart LR
 ```
 
 数据处理流程：
-1. 遥测数据进入 Kafka `event`。
-2. `baseline_adjudication` 消费 `event`。
+1. 遥测数据进入 Kafka `events`。
+2. `baseline_adjudication` 消费 `events`。
 3. 确切告警直接推送到 Kafka `agent`。
 4. 原始行为事件在基线阶段用于构建 Redis 行为基线。
 5. 检测阶段中，未命中基线的原始行为事件被判定为异常并推送到 `agent`。

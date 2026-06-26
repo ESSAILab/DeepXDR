@@ -52,7 +52,7 @@ Data outside the types listed above does not currently enter the AI Agent analys
 
 ```mermaid
 flowchart LR
-    Sensors["Falco / OpenRASP / Suricata"] --> SourceTopic["Kafka topic: event"]
+    Sensors["Falco / OpenRASP / Suricata"] --> SourceTopic["Kafka topic: events"]
     SourceTopic --> Baseline["baseline_adjudication"]
     Baseline --> Redis["Redis behavior baseline"]
     Baseline --> BaselineFile["baseline.json"]
@@ -80,8 +80,8 @@ flowchart LR
 ```
 
 Data processing flow:
-1. Telemetry data enters Kafka `event`.
-2. `baseline_adjudication` consumes `event`.
+1. Telemetry data enters Kafka `events`.
+2. `baseline_adjudication` consumes `events`.
 3. Confirmed alerts are pushed directly to Kafka `agent`.
 4. Raw behavior events are used to build Redis behavior baselines during the baseline phase.
 5. During the detection phase, raw behavior events that do not match the baseline are identified as anomalies and pushed to `agent`.
