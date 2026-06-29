@@ -42,10 +42,11 @@ DeepXDR 将待守护应用、遥测源、数据裁决、AI 分析和可视化交
 当前版本仅支持以下输入类型：
 
 | 遥测源 | 采集事件类型 | 
-| --- | --- | --- |
+| --- | --- |
 | Falco | 原生Falco告警（falco_alert类型）；</br>定制化修改Falco，支持全量open_write和execve事件收集（falco_raw类型）。</br>falco_raw类型事件用于构建行为基线 | 
 | OpenRASP | 原生OpenRASP告警（openrasp_alert）；</br> 定制化修改OpenRASP，支持全量open_write和execve事件收集（fopenrasp_raw类型、openrasp_raw_sq）。</br>falco_raw类型事件用于构建行为基线|
 | Suricata | 原生Sruicata告警（suricata_alert类型），不参与基线裁决。 | `suricata_alert` |
+
 
 非上述类型的数据当前不会进入 AI Agent 分析链路。后续计划扩展更多主机、网络、应用、云审计和 AI 智能体遥测源。
 
@@ -126,7 +127,7 @@ Suricata参考：[点击查看README](third_party/suricata/README.md)
 
 ### 3. 安装MCP Server
 
-以dotcms为例，该应用工作空间为/src/dotcms,为保证AI威胁分析智能体查看、检索该工作空间的文件内容，需将该工作空间通过共享卷的方式与filesystem-mcp-server服务、grep-mcp-server服务共享。配置方法见第4节。
+以dotcms为例，该应用工作空间为/src/dotcms，为保证AI威胁分析智能体查看、检索该工作空间的文件内容，需将该工作空间通过共享卷的方式与filesystem-mcp-server服务、grep-mcp-server服务共享。配置方法见第4节。
 
 ### 4. 安装app侧组件
 

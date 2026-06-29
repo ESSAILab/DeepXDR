@@ -108,7 +108,11 @@ async def health_check():
     )
 
 
-@router.get("/stats", response_model=StatsResponse)
+@router.get(
+    "/stats",
+    response_model=StatsResponse,
+    dependencies=[Depends(require_api_key)],
+)
 async def get_stats():
     """获取系统统计信息"""
     try:
@@ -129,7 +133,11 @@ async def get_stats():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/short-ttp", response_model=PaginatedResponse)
+@router.get(
+    "/short-ttp",
+    response_model=PaginatedResponse,
+    dependencies=[Depends(require_api_key)],
+)
 async def get_short_ttps(
     hours: int = Query(default=24, ge=1, le=168, description="查询时间范围（小时）"),
     min_confidence: float = Query(default=0.5, ge=0.0, le=1.0),
@@ -159,7 +167,11 @@ async def get_short_ttps(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/short-ttp/{ttp_id}", response_model=TTPDetailResponse)
+@router.get(
+    "/short-ttp/{ttp_id}",
+    response_model=TTPDetailResponse,
+    dependencies=[Depends(require_api_key)],
+)
 async def get_short_ttp_detail(ttp_id: str):
     """获取短期TTP详情"""
     try:
@@ -231,7 +243,11 @@ async def get_long_ttps(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/top-risk", response_model=LongTTPListResponse)
+@router.get(
+    "/top-risk",
+    response_model=LongTTPListResponse,
+    dependencies=[Depends(require_api_key)],
+)
 async def get_top_risk_ttps(
     limit: int = Query(default=10, ge=1, le=100),
     hours: int = Query(default=24, ge=1, le=168)
@@ -687,7 +703,11 @@ async def submit_feedback(session_id: str, request: SubmitFeedbackRequest):
         raise HTTPException(status_code=500, detail=f"提交失败: {str(e)}")
 
 
-@router.get("/queue-stats", response_model=Dict)
+@router.get(
+    "/queue-stats",
+    response_model=Dict,
+    dependencies=[Depends(require_api_key)],
+)
 async def get_queue_stats():
     """获取处理队列统计信息"""
     try:
@@ -698,7 +718,11 @@ async def get_queue_stats():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/events/{event_id}", response_model=TTPDetailResponse)
+@router.get(
+    "/events/{event_id}",
+    response_model=TTPDetailResponse,
+    dependencies=[Depends(require_api_key)],
+)
 async def get_event_detail(event_id: str):
     """获取事件详情"""
     try:
@@ -715,7 +739,10 @@ async def get_event_detail(event_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/events")
+@router.get(
+    "/events",
+    dependencies=[Depends(require_api_key)],
+)
 async def get_events(
     event_ids: str = Query(None, description="逗号分隔的事件ID列表"),
     page: int = Query(default=1, ge=1, description="页码"),
@@ -751,7 +778,10 @@ async def get_events(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/dashboard")
+@router.get(
+    "/dashboard",
+    dependencies=[Depends(require_api_key)],
+)
 async def get_dashboard_data():
     """获取仪表板数据"""
     try:
