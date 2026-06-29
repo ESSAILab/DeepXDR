@@ -132,9 +132,9 @@ services:
       - redis_data:/data
     restart: unless-stopped
 
-  security-analysis:
+  ai-agent:
     image: essaigroup/deepxdr-analysis:v0.3.0-alpha
-    container_name: security-analysis
+    container_name: ai-agent
     networks:
       - security-net
       - kafka-net
@@ -252,7 +252,7 @@ services:
     image: essaigroup/deepxdr-web-ui:v0.3.0-alpha
     container_name: web-ui
     environment:
-      API_BASE_URL: http://security-analysis:8000
+      API_BASE_URL: http://ai-agent:8000
     dns_search: .
     dns: 127.0.0.11
     networks:
@@ -260,7 +260,7 @@ services:
     ports:
       - "30003:30003"
     depends_on:
-      - security-analysis
+      - ai-agent
     restart: unless-stopped
 
 

@@ -286,9 +286,9 @@ services:
     volumes:
       - ../third_party/openrasp/rasp-cloud-docker/conf/app.conf:/app/conf/app.conf
     ...
-  security-analysis:
+  ai-agent:
     image: essaigroup/deepxdr-analysis:v0.3.0-alpha
-    container_name: security-analysis
+    container_name: ai-agent
     networks:
       - security-net
       - kafka-net
@@ -416,13 +416,13 @@ The dashboard is deployed on the agent side. The docker compose YAML configurati
     image: essaigroup/deepxdr-web-ui:v0.3.0-alpha
     container_name: web-ui
     environment:
-      API_BASE_URL: http://security-analysis:8000
+      API_BASE_URL: http://ai-agent:8000
     networks:
       - security-net
     ports:
       - "30003:30003"
     depends_on:
-      - security-analysis
+      - ai-agent
     ...
 ```
 

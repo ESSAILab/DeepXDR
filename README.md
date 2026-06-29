@@ -41,11 +41,11 @@ DeepXDR 将待守护应用、遥测源、数据裁决、AI 分析和可视化交
 
 当前版本仅支持以下输入类型：
 
-| 遥测源 | `baseline_adjudication` 处理方式 | `ai_agent` 事件类型 |
+| 遥测源 | 采集事件类型 | 
 | --- | --- | --- |
-| Falco | 原生告警直接推送到 `agent`；带 `behavior-collection` tag 的原始行为参与基线，比对未命中时推送到 `agent`。 | `falco_alert`, `falco_raw` |
-| OpenRASP | `event_type=attack` 的告警直接推送到 `agent`；`event_type=record_log` 的原始行为参与基线，比对未命中时推送到 `agent`；SQL 原始事件单独建模。 | `openrasp_alert`, `openrasp_raw`, `openrasp_raw_sql` |
-| Suricata | 当前直接透传到 `agent`，不参与基线哈希比对。 | `suricata_alert` |
+| Falco | 原生Falco告警（falco_alert类型）；</br>定制化修改Falco，支持全量open_write和execve事件收集（falco_raw类型）。</br>falco_raw类型事件用于构建行为基线 | 
+| OpenRASP | 原生OpenRASP告警（openrasp_alert）；</br> 定制化修改OpenRASP，支持全量open_write和execve事件收集（fopenrasp_raw类型、openrasp_raw_sq）。</br>falco_raw类型事件用于构建行为基线|
+| Suricata | 原生Sruicata告警（suricata_alert类型），不参与基线裁决。 | `suricata_alert` |
 
 非上述类型的数据当前不会进入 AI Agent 分析链路。后续计划扩展更多主机、网络、应用、云审计和 AI 智能体遥测源。
 
@@ -85,14 +85,14 @@ flowchart LR
 2. `baseline_adjudication` 消费 `events`。
 3. 确切告警直接推送到 Kafka `agent`。
 4. 原始行为事件在基线阶段用于构建 Redis 行为基线。
-5. 检测阶段中，未命中基线的原始行为事件被判定为异常并推送到 `agent`。
-6. `ai_agent` 从 `agent` 消费高价值安全事件。
+5. 检测阶段中，未命中基线的原始行为事件被判定为异常并推送到 `Kafka agent`。
+6. `ai_agent` 从 `Kafka agent` 消费高价值安全事件。
 7. `DynamicEventWindowManager` 将时间上接近的事件聚合为动态窗口。
 8. `ShortTTPGenerator` 对关闭窗口并发分析，生成 Short TTP。
 9. Short TTP 写入 ElasticSearch。
 10. 用户可基于 Short TTP 触发 Long TTP 调查，必要时通过人机反馈补充调查方向。
 
-## Quickstart
+## 快速开始
 
 DeepXDR 按部署位置划分为 app 侧和 agent 侧，两侧可以部署在同一网络下的不同主机上。
 
@@ -113,7 +113,9 @@ docker compose 中各组件的关系如下：
 ### 1. 按需启动遥测源
 
 Falco参考：[点击查看README](third_party/falco/README.md)
+
 OpenRASP参考：[点击查看README](third_party/openrasp/README.md)
+
 Suricata参考：[点击查看README](third_party/suricata/README.md)
 
 注意：为支持基线构建、异常裁决功能，我们对Falco配置文件、OpenRASP源码做了定制化修改。
@@ -253,14 +255,9 @@ services:
     ...
 ```
 
-
-
-**agent侧安装部署：**
-
-agent侧配置说明:
-[docker-compose-agent.yml](deploy/docker-compose-agent.yml)
-
 ### 5. 安装agent侧组件
+
+[docker-compose-agent.yml](deploy/docker-compose-agent.yml)
 
 启动方法：
 
@@ -287,9 +284,9 @@ services:
     volumes:
       - ../third_party/openrasp/rasp-cloud-docker/conf/app.conf:/app/conf/app.conf
     ...
-  security-analysis:
+  ai-agent:
     image: essaigroup/deepxdr-analysis:v0.3.0-alpha
-    container_name: security-analysis
+    container_name: ai-agent
     networks:
       - security-net
       - kafka-net
@@ -418,13 +415,13 @@ services:
     image: essaigroup/deepxdr-web-ui:v0.3.0-alpha
     container_name: web-ui
     environment:
-      API_BASE_URL: http://security-analysis:8000
+      API_BASE_URL: http://ai-agent:8000
     networks:
       - security-net
     ports:
       - "30003:30003"
     depends_on:
-      - security-analysis
+      - ai-agent
     ...
 ```
 

@@ -13,10 +13,15 @@
 ## 原始项目文档
 
 **原始参考项目地址**：https://github.com/baidu/openrasp.git  
-**原始项目英文文档**：[README_origin.md](README_origin.md)  
-**原始项目中文文档**：[README_CN_origin.md](README_CN_origin.md)  
 
 ---
+
+## 二次开发源码获取
+本服务二次开发的源码采用在openrasp开源源码基础上打patch的方式获取，命令如下：  
+```bash
+git clone https://github.com/baidu/openrasp.git .
+git apply --exclude=README.md --exclude=README_CN.md --exclude=plugins/official/plugin.js openrasp.patch
+```
 
 ## OpenRASP Cloud 管理后台
 
@@ -101,6 +106,17 @@ volumes:
 #### 插件启用
 
 管理后台安装完成后，需要在管理后台客户端页面上传上述的plugin-v3.js插件，登录云控后台 `插件管理-选择插件-提交` 执行上传操作，上传完成后，选择操作栏的推送操作。
+
+#### OpenRASP 原始事件支持类型
+
+本服务对openrasp原始事件采集进行了定制化修改增强，具体支持的原始事件如下：  
+
+| 事件名称 | 说明 |
+|---------|------|
+| `sql` | 数据库操作 |
+| `readfile` | 文件读取 |
+| `fileUpload` | 文件上传 |
+| `command` | 命令行操作 |
 
 
 ### OpenRASP Cloud镜像构建
