@@ -2,7 +2,7 @@
 # 构建阶段：安装编译依赖和 Python 包
 # ========================================
 # 注意：本 Dockerfile 需在 ai_agent/ 目录下构建，构建命令：
-#   cd ai_agent && docker build -t security-analysis .
+#   cd ai_agent && docker build -t analysis .
 # ========================================
 FROM python:3.11-alpine AS builder
 

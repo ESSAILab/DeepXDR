@@ -16,13 +16,13 @@ DeepXDR 是一个面向实时安全运营的智能威胁分析与调查系统。
 
 DeepXDR 将待守护应用、遥测源、数据裁决、AI 分析和可视化交互拆分为不同职责边界：待守护应用是被观测对象，遥测源负责产生安全数据，后续链路负责筛选、分析与呈现结果。
 
-| 对象 / 阶段 | 目录 | 说明 |
+| 对象 / 阶段 | 说明 | 对应目录 |
 | --- | --- | --- |
-| 应用 | 用户应用 / 示例应用位于 `third_party/dotcms/` | 被 DeepXDR 守护和观测的业务系统。应用本身不承担威胁分析职责，但可以集成 OpenRASP/RASP 等遥测源，并按部署要求共享必要工作空间给 MCP Server。 |
-| 遥测源 | `third_party/falco/`、`third_party/openrasp/`、`third_party/suricata/` | 负责从主机、应用和网络侧产生安全告警与行为事件，并将数据交给数据汇聚与基线裁决链路。 |
-| 数据汇聚与基线裁决 | `baseline_adjudication/` | 接收 Falco、OpenRASP/RASP、Suricata 等遥测源产生的安全数据。明确告警会直接进入后续分析流程；原始行为数据会先用于构建正常行为基线，未命中基线的异常行为也会进入后续分析流程。 |
-| AI 威胁分析与调查 | `ai_agent/` | 对已经过筛选和裁决的高价值安全事件进行聚合分析，生成 Short TTP，并按需触发 Long TTP / 高级持续性威胁调查。 |
-| 可视化与交互 | `web_ui/` | 面向分析师展示 TTP、调查结果和反馈入口 |
+| 应用  | 被 DeepXDR 守护和观测的业务系统。应用本身不承担威胁分析职责，但可以集成 OpenRASP/RASP 等遥测源，并按部署要求共享必要工作空间给 MCP Server。| `third_party/dotcms/` |
+| 遥测源 | 负责从主机、应用和网络侧产生安全告警与行为事件，并将数据交给数据汇聚与基线裁决链路。| `third_party/falco/`</br>`third_party/openrasp/`</br>`third_party/suricata/` |
+| 数据汇聚与基线裁决</br> | 接收 Falco、OpenRASP/RASP、Suricata 等遥测源产生的安全数据。明确告警会直接进入后续分析流程；原始行为数据会先用于构建正常行为基线，未命中基线的异常行为也会进入后续分析流程。| `baseline_adjudication/`  |
+| AI 威胁分析与调查</br> | 对已经过筛选和裁决的高价值安全事件进行聚合分析，生成 Short TTP，并按需触发 Long TTP / 高级持续性威胁调查。| `ai_agent/`  |
+| 可视化与交互 | 面向分析师展示 TTP、调查结果和反馈入口 | `web_ui/` |
 
 
 ## 核心能力
@@ -41,11 +41,12 @@ DeepXDR 将待守护应用、遥测源、数据裁决、AI 分析和可视化交
 
 当前版本仅支持以下输入类型：
 
-| 遥测源 | `baseline_adjudication` 处理方式 | `ai_agent` 事件类型 |
-| --- | --- | --- |
-| Falco | 原生告警直接推送到 `agent`；带 `behavior-collection` tag 的原始行为参与基线，比对未命中时推送到 `agent`。 | `falco_alert`, `falco_raw` |
-| OpenRASP | `event_type=attack` 的告警直接推送到 `agent`；`event_type=record_log` 的原始行为参与基线，比对未命中时推送到 `agent`；SQL 原始事件单独建模。 | `openrasp_alert`, `openrasp_raw`, `openrasp_raw_sql` |
-| Suricata | 当前直接透传到 `agent`，不参与基线哈希比对。 | `suricata_alert` |
+| 遥测源 | 采集事件类型 | 
+| --- | --- |
+| Falco | 原生Falco告警（falco_alert类型）；</br>定制化修改Falco，支持全量open_write和execve事件收集（falco_raw类型）。</br>falco_raw类型事件用于构建行为基线 | 
+| OpenRASP | 原生OpenRASP告警（openrasp_alert）；</br> 定制化修改OpenRASP，支持全量open_write和execve事件收集（fopenrasp_raw类型、openrasp_raw_sq）。</br>falco_raw类型事件用于构建行为基线|
+| Suricata | 原生Sruicata告警（suricata_alert类型），不参与基线裁决。 | `suricata_alert` |
+
 
 非上述类型的数据当前不会进入 AI Agent 分析链路。后续计划扩展更多主机、网络、应用、云审计和 AI 智能体遥测源。
 
@@ -53,7 +54,7 @@ DeepXDR 将待守护应用、遥测源、数据裁决、AI 分析和可视化交
 
 ```mermaid
 flowchart LR
-    Sensors["Falco / OpenRASP / Suricata"] --> SourceTopic["Kafka topic: event"]
+    Sensors["Falco / OpenRASP / Suricata"] --> SourceTopic["Kafka topic: events"]
     SourceTopic --> Baseline["baseline_adjudication"]
     Baseline --> Redis["Redis behavior baseline"]
     Baseline --> BaselineFile["baseline.json"]
@@ -81,18 +82,18 @@ flowchart LR
 ```
 
 数据处理流程：
-1. 遥测数据进入 Kafka `event`。
-2. `baseline_adjudication` 消费 `event`。
+1. 遥测数据进入 Kafka `events`。
+2. `baseline_adjudication` 消费 `events`。
 3. 确切告警直接推送到 Kafka `agent`。
 4. 原始行为事件在基线阶段用于构建 Redis 行为基线。
-5. 检测阶段中，未命中基线的原始行为事件被判定为异常并推送到 `agent`。
-6. `ai_agent` 从 `agent` 消费高价值安全事件。
+5. 检测阶段中，未命中基线的原始行为事件被判定为异常并推送到 `Kafka agent`。
+6. `ai_agent` 从 `Kafka agent` 消费高价值安全事件。
 7. `DynamicEventWindowManager` 将时间上接近的事件聚合为动态窗口。
 8. `ShortTTPGenerator` 对关闭窗口并发分析，生成 Short TTP。
 9. Short TTP 写入 ElasticSearch。
 10. 用户可基于 Short TTP 触发 Long TTP 调查，必要时通过人机反馈补充调查方向。
 
-## Quickstart
+## 快速开始
 
 DeepXDR 按部署位置划分为 app 侧和 agent 侧，两侧可以部署在同一网络下的不同主机上。
 
@@ -113,31 +114,33 @@ docker compose 中各组件的关系如下：
 ### 1. 按需启动遥测源
 
 Falco参考：[点击查看README](third_party/falco/README.md)
+
 OpenRASP参考：[点击查看README](third_party/openrasp/README.md)
+
 Suricata参考：[点击查看README](third_party/suricata/README.md)
 
 注意：为支持基线构建、异常裁决功能，我们对Falco配置文件、OpenRASP源码做了定制化修改。
 
 ### 2. 安装应用
 
-以dotcms为例，启动方式参考：[点击查看README](third_party\dotcms\README.md)
+以dotcms为例，启动方式参考：[点击查看README](third_party/dotcms/README.md)
 
 ### 3. 安装MCP Server
 
-以dotcms为例，该应用工作空间为/src/dotcms,为保证AI威胁分析智能体查看、检索该工作空间的文件内容，需将该工作空间通过共享卷的方式与filesystem-mcp-server服务、grep-mcp-server服务共享。配置方法见第4节。
+以dotcms为例，该应用工作空间为/src/dotcms，为保证AI威胁分析智能体查看、检索该工作空间的文件内容，需将该工作空间通过共享卷的方式与filesystem-mcp-server服务、grep-mcp-server服务共享。配置方法见第4节。
 
 ### 4. 安装app侧组件
 
-[docker-compose-app.yaml](deploy/docker-compose-app.yaml)
+[docker-compose-app.yml](deploy/docker-compose-app.yml)
 
 启动方法：
 
 ```
 cd deploy
-docker-compose -f docker-compose-app.yaml up -d
+docker-compose -f docker-compose-app.yml up -d
 ```
 
-docker-compose-app.yaml配置说明：
+docker-compose-app.yml配置说明：
 [Required]为必须配置项，[Optional]为可选配置项，未做标记的保持默认值即可。
 注意：以下为关键配置片段，不是完整 compose 文件，完整配置以deploy目录为准。
 
@@ -253,23 +256,18 @@ services:
     ...
 ```
 
-
-
-**agent侧安装部署：**
-
-agent侧配置说明:
-[docker-compose-agent.yaml](deploy/docker-compose-agent.yaml)
-
 ### 5. 安装agent侧组件
+
+[docker-compose-agent.yml](deploy/docker-compose-agent.yml)
 
 启动方法：
 
 ```
 cd deploy
-docker-compose -f docker-compose-agent.yaml up -d
+docker-compose -f docker-compose-agent.yml up -d
 ```
 
-docker-compose-agent.yaml配置说明：
+docker-compose-agent.yml配置说明：
 
 ```yaml
 services:
@@ -287,9 +285,9 @@ services:
     volumes:
       - ../third_party/openrasp/rasp-cloud-docker/conf/app.conf:/app/conf/app.conf
     ...
-  security-analysis:
+  ai-agent:
     image: essaigroup/deepxdr-analysis:v0.3.0-alpha
-    container_name: security-analysis
+    container_name: ai-agent
     networks:
       - security-net
       - kafka-net
@@ -418,13 +416,13 @@ services:
     image: essaigroup/deepxdr-web-ui:v0.3.0-alpha
     container_name: web-ui
     environment:
-      API_BASE_URL: http://security-analysis:8000
+      API_BASE_URL: http://ai-agent:8000
     networks:
       - security-net
     ports:
       - "30003:30003"
     depends_on:
-      - security-analysis
+      - ai-agent
     ...
 ```
 

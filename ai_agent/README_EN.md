@@ -71,7 +71,7 @@ Build from the `ai_agent` directory:
 
 ```bash
 cd ai_agent
-docker build -t security-analysis:latest .
+docker build -t analysis:latest .
 ```
 
 To use a China-accessible PyPI mirror:
@@ -80,7 +80,7 @@ To use a China-accessible PyPI mirror:
 cd ai_agent
 docker build \
   --build-arg PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple \
-  -t security-analysis:latest .
+  -t analysis:latest .
 ```
 
 ## Start The Container
@@ -89,17 +89,17 @@ Start with an environment file:
 
 ```bash
 docker run -d \
-  --name security-analysis \
+  --name analysis \
   --env-file ../.env \
   -p 8000:8000 \
-  security-analysis:latest
+  analysis:latest
 ```
 
 You can also pass key variables directly:
 
 ```bash
 docker run -d \
-  --name security-analysis \
+  --name analysis \
   -e DATABASE_URL=postgresql+asyncpg://user:password@postgres:5432/security_analysis \
   -e REDIS_URL=redis://redis:6379/0 \
   -e KAFKA_BOOTSTRAP_SERVERS=kafka:9092 \
@@ -110,7 +110,7 @@ docker run -d \
   -e OPENAI_BASE_URL=replace-with-your-openai-compatible-base-url \
   -e OPENAI_MODEL=replace-with-your-model-name \
   -p 8000:8000 \
-  security-analysis:latest
+  analysis:latest
 ```
 
 The service listens on container port `8000` by default.
@@ -128,11 +128,3 @@ curl -H "X-API-Key: $BACKEND_API_KEY" \
   http://localhost:8000/longttp
 ```
 
-## Push The Image
-
-Example for pushing to the official Docker Hub registry:
-
-```bash
-docker tag security-analysis:latest docker.io/<your-dockerhub-namespace>/security-analysis:v0917
-docker push docker.io/<your-dockerhub-namespace>/security-analysis:v0917
-```
