@@ -417,6 +417,8 @@ services:
     container_name: web-ui
     environment:
       API_BASE_URL: http://ai-agent:8000
+      # [Required] 与上文的ai-agent配置相同，Web UI 调用后端 API 时会使用该值。
+      BACKEND_API_KEY: <your-random-token>
     networks:
       - security-net
     ports:
