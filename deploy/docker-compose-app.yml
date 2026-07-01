@@ -192,7 +192,7 @@ services:
       # [Required]挂载 Logstash 的管道配置文件 `logstash.conf` 和主配置文件 `logstash.yml`。
       # [Required]logstash.conf文件需替换`<agent-ip>`为agent侧kafka服务对应的实际ip地址，例如：172.19.9.192
       - ../third_party/logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
-      - ../third_party/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
+      - ../third_party/logstash/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
     networks:
       - logging_net
     depends_on:

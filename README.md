@@ -44,7 +44,7 @@ DeepXDR 将待守护应用、遥测源、数据裁决、AI 分析和可视化交
 | 遥测源 | 采集事件类型 | 
 | --- | --- |
 | Falco | 原生Falco告警（falco_alert类型）；</br>定制化修改Falco，支持全量open_write和execve事件收集（falco_raw类型）。</br>falco_raw类型事件用于构建行为基线 | 
-| OpenRASP | 原生OpenRASP告警（openrasp_alert）；</br> 定制化修改OpenRASP，支持全量open_write和execve事件收集（fopenrasp_raw类型、openrasp_raw_sq）。</br>falco_raw类型事件用于构建行为基线|
+| OpenRASP | 原生OpenRASP告警（openrasp_alert）；</br> 定制化修改OpenRASP，除原生OpenRASP告警外，还会采集sql，readfile，fileUpload，command事件。 </br> 除原生OpenRASP告警以外的事件用于构建行为基线|
 | Suricata | 原生Sruicata告警（suricata_alert类型），不参与基线裁决。 | `suricata_alert` |
 
 
@@ -240,7 +240,7 @@ services:
       # [Required]挂载 Logstash 的管道配置文件 `logstash.conf` 和主配置文件 `logstash.yml`。
       # [Required]logstash.conf文件需替换`<agent-ip>`为agent侧kafka服务对应的实际ip地址，例如：172.19.9.192
       - ../third_party/logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
-      - ../third_party/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
+      - ../third_party/logstash/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
     ...
 
   filebeat:
