@@ -1,15 +1,15 @@
-English | [中文](README_CN.md)
+# Redis 部署文档
 
-# Redis Deployment Guide
+[English](README_EN.md) | 中文
 
-Redis is an in-memory database service used for data caching and temporary storage in this system, primarily providing support for the Long-Term Threat Analysis (LTTP) function in the AI-Agent module. It is used for storing intermediate calculation results, session states, and other temporary data.
+Redis 是本系统中用于数据缓存和临时存储的内存数据库服务，主要为 AI-Agent 模块中的长期威胁分析（LTTP）功能提供支持。用于存储中间计算结果、会话状态等临时数据。
 
 
-## Image Startup
+## 镜像启动
 
-This service is deployed as a Docker container on the agent-side server. Official native Docker image: `redis:7-alpine`
+本服务以docker形式安装在agent侧服务器上。  原生官方 Docker 镜像: `redis:7-alpine`
 
-The docker-compose configuration example for this image is shown below:
+docker-compose中该镜像配置示例展示如下 ：
 
 ```yaml
 redis:
@@ -24,8 +24,9 @@ redis:
 ```
 
 
-Startup command:
+镜像启动方式：
 
 ```bash
 docker-compose -f docker-compose-defense.yml up -d redis
 ```
+
