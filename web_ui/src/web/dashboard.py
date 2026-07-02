@@ -247,6 +247,68 @@ async def get_long_ttp_list(q: str = None, page: int = 1, size: int = 10, hours:
         print(f"Traceback: {traceback.format_exc()}")
         return []
 
+
+@app.get("/api/agent-sessions")
+async def get_agent_session_list(page: int = 1, size: int = 20):
+    """代理获取智能体会话审计列表"""
+    try:
+        response = requests.get(
+            f"{API_BASE_URL}/agent-sessions?page={page}&size={size}",
+            headers=get_backend_headers(),
+            timeout=10,
+        )
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch agent sessions: {str(e)}")
+
+
+@app.get("/api/agent-sessions/{run_id}")
+async def get_agent_session_detail(run_id: str):
+    """代理获取智能体会话审计详情"""
+    try:
+        response = requests.get(
+            f"{API_BASE_URL}/agent-sessions/{run_id}",
+            headers=get_backend_headers(),
+            timeout=10,
+        )
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch agent session: {str(e)}")
+
+
+@app.post("/api/agent-sessions/{run_id}/accept")
+async def accept_agent_session(run_id: str):
+    """代理接受智能体会话变更"""
+    try:
+        response = requests.post(
+            f"{API_BASE_URL}/agent-sessions/{run_id}/accept",
+            headers=get_backend_headers(),
+            timeout=10,
+        )
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to accept agent session: {str(e)}")
+
+
+@app.post("/api/agent-sessions/{run_id}/rollback")
+async def rollback_agent_session(run_id: str, request: Request):
+    """代理请求智能体会话韧性恢复"""
+    try:
+        body = await request.json()
+        response = requests.post(
+            f"{API_BASE_URL}/agent-sessions/{run_id}/rollback",
+            json=body,
+            headers=get_backend_headers(),
+            timeout=10,
+        )
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to request rollback: {str(e)}")
+
 @app.get("/api/proxy/events/{event_id}")
 async def proxy_event_detail(event_id: str):
     """代理访问事件详情API"""

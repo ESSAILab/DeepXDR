@@ -35,7 +35,7 @@ services:
       KAFKA_CLIENT_PASSWORDS: PMLabs3edc2025
       ALLOW_PLAINTEXT_LISTENER: "yes"
       KAFKA_CFG_LOG_DIRS: /bitnami/kafka/data
-      KAFKA_CREATE_TOPICS: "agent:5:1:compact"
+      KAFKA_CREATE_TOPICS: "agent:5:1,events:5:1,agent.session.finished:5:1,agent.rollback.requested:3:1,agent.rollback.completed:3:1,agent.session.dlq:3:1"
     volumes:
       - kafka-data:/bitnami/kafka
     healthcheck:
@@ -223,6 +223,7 @@ services:
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       KAFKA_SOURCE_TOPIC: events
       KAFKA_AGENT_TOPIC: agent
+      KAFKA_AGENT_SESSION_TOPIC: agent.session.finished
       KAFKA_CONSUMER_GROUP_ID: anomaly-detector-group
       KAFKA_SECURITY_PROTOCOL: PLAINTEXT
       KAFKA_SASL_MECHANISM: PLAIN

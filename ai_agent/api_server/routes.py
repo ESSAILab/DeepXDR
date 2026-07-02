@@ -11,12 +11,19 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from sqlalchemy.exc import SQLAlchemyError
 
 from shared.utils.timezone import ChinaTime
-from shared.models.ttp import ShortTTP
-import ttp_generator.dx_analyzer_api as dx_analyzer_api
-from ttp_generator.human_feedback_session import (
-    session_manager,
-    FeedbackStatus,
-)
+
+try:
+    from shared.models.ttp import ShortTTP
+    import ttp_generator.dx_analyzer_api as dx_analyzer_api
+    from ttp_generator.human_feedback_session import (
+        session_manager,
+        FeedbackStatus,
+    )
+except ModuleNotFoundError:
+    ShortTTP = None
+    dx_analyzer_api = None
+    session_manager = None
+    FeedbackStatus = None
 
 from api_server.schemas import (
     HealthResponse,
@@ -48,6 +55,8 @@ router = APIRouter()
 # 全局组件引用（在main.py中设置）
 window_manager = None
 short_ttp_generator = None
+agent_session_repository = None
+agent_rollback_publisher = None
 
 
 BACKEND_API_KEY_ENV = "BACKEND_API_KEY"
@@ -74,6 +83,13 @@ def set_components(wm, stg):
     short_ttp_generator = stg
 
 
+def set_agent_guard_components(repository, rollback_publisher):
+    """设置智能体会话审计组件引用"""
+    global agent_session_repository, agent_rollback_publisher
+    agent_session_repository = repository
+    agent_rollback_publisher = rollback_publisher
+
+
 def calculate_pagination(total: int, page: int, size: int) -> Dict:
     """计算分页信息"""
     pages = (total + size - 1) // size
@@ -92,6 +108,18 @@ def calculate_pagination(total: int, page: int, size: int) -> Dict:
 def _long_ttp_store_unavailable(message: str) -> HTTPException:
     logger.exception(message)
     return HTTPException(status_code=503, detail="Long TTP 存储服务不可用")
+
+
+def _require_agent_guard_repository():
+    if agent_session_repository is None:
+        raise HTTPException(status_code=503, detail="Agent session repository unavailable")
+    return agent_session_repository
+
+
+def _require_agent_rollback_publisher():
+    if agent_rollback_publisher is None:
+        raise HTTPException(status_code=503, detail="Agent rollback publisher unavailable")
+    return agent_rollback_publisher
 
 
 @router.get("/health", response_model=HealthResponse)
@@ -131,6 +159,70 @@ async def get_stats():
     except Exception as e:
         logger.error(f"获取统计信息失败: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get(
+    "/agent-sessions",
+    dependencies=[Depends(require_api_key)],
+)
+async def list_agent_sessions(page: int = Query(default=1, ge=1), size: int = Query(default=20, ge=1, le=100)):
+    """分页获取智能体会话审计记录"""
+    repo = _require_agent_guard_repository()
+    return await repo.list_sessions(page=page, size=size)
+
+
+@router.get(
+    "/agent-sessions/{run_id}",
+    dependencies=[Depends(require_api_key)],
+)
+async def get_agent_session(run_id: str):
+    """获取智能体会话审计详情"""
+    repo = _require_agent_guard_repository()
+    session = await repo.get_session(run_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail="Agent session not found")
+    return session
+
+
+@router.post(
+    "/agent-sessions/{run_id}/accept",
+    dependencies=[Depends(require_api_key)],
+)
+async def accept_agent_session(run_id: str):
+    """接受智能体会话变更"""
+    repo = _require_agent_guard_repository()
+    session = await repo.update_session(run_id, {"decision": "accepted", "rollback_status": "not_requested"})
+    if session is None:
+        raise HTTPException(status_code=404, detail="Agent session not found")
+    return {"status": "accepted", "run_id": run_id}
+
+
+@router.post(
+    "/agent-sessions/{run_id}/rollback",
+    dependencies=[Depends(require_api_key)],
+)
+async def request_agent_session_rollback(run_id: str, request: Dict):
+    """请求对智能体会话执行韧性恢复"""
+    from agent_guard.rollback import build_rollback_requested_event
+
+    repo = _require_agent_guard_repository()
+    publisher = _require_agent_rollback_publisher()
+    session = await repo.get_session(run_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail="Agent session not found")
+    nono_session_id = session.get("nono", {}).get("session_id") or session.get("nono_session_id")
+    if not nono_session_id:
+        raise HTTPException(status_code=409, detail="nono session id missing")
+
+    event = build_rollback_requested_event(
+        run_id=run_id,
+        nono_session_id=nono_session_id,
+        requested_by=str(request.get("requested_by", "web_ui")),
+        approved=True,
+    )
+    await publisher.publish(event)
+    await repo.update_session(run_id, {"decision": "rollback_requested", "rollback_status": "requested"})
+    return {"status": "rollback_requested", "run_id": run_id}
 
 
 @router.get(
