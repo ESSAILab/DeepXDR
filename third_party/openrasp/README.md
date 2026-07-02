@@ -1,5 +1,7 @@
 # OpenRASP 二次开发说明
 
+[English](README_EN.md) | 中文
+
 本仓库基于 [Baidu OpenRASP](https://github.com/baidu/openrasp.git) 开源项目进行二次开发，在保留原有核心功能的基础上，针对实际应用场景进行了检测能力增强、云控后端扩展及部署方式优化。
 
 本项目包含两个核心组件，分别承担不同的职责：

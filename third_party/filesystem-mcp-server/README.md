@@ -1,22 +1,22 @@
-# Filesystem MCP Server — Secondary Development
+# Filesystem MCP 二次开发说明
 
-[简体中文](README_CN.md)
+[English](README_EN.md) | 中文
 
-## Project Description
+## 项目说明
 
-This project is a secondary development based on the `src/filesystem` module from the open-source repository [modelcontextprotocol/servers](https://github.com/modelcontextprotocol/servers).
+本项目基于 [modelcontextprotocol/servers](https://github.com/modelcontextprotocol/servers) 开源仓库中的 `src/filesystem` 模块进行二次开发。
 
-**Original Reference Project**: https://github.com/modelcontextprotocol/servers/tree/main/src/filesystem  
-**Original Project Documentation**: [README_origin.md](README_origin.md)
+**原始参考项目地址**：https://github.com/modelcontextprotocol/servers/tree/main/src/filesystem  
+**原始项目文档**：[README_origin.md](README_origin.md)
 
 
-## Image Deployment
 
-This service is deployed on the application-side server to provide file operation tools for the AI-agent threat analysis intelligence.
 
-### 1. Docker Compose Configuration Example
+## 镜像启动
+该服务部署在app侧所在服务器上，为ai-agent威胁分析智能体提供文件操作工具。
 
-The following example demonstrates the image configuration in docker-compose:
+### 1. Docker Compose 配置示例
+docker-compose中该镜像配置示例展示如下 ：
 
 ```yaml
   supergateway-filesystem:
@@ -39,59 +39,56 @@ The following example demonstrates the image configuration in docker-compose:
           memory: 256M
 ```
 
-### 2. Configuration Parameters
+### 2.配置参数说明
 
-| Parameter | Description |
-|-----------|-------------|
-| `volumes` | Mounts the shared storage volume to the application workspace inside the container, serving as the target working directory accessible by the filesystem tool. Users must configure this to the corresponding application working directory based on actual business scenarios. |
+| 参数 | 说明 |
+|------|------|
+| `volumes` | 将共享存储卷挂载至容器内的应用工作空间，作为 filesystem 工具可访问的目标工作目录。用户须根据实际业务场景配置为对应的应用工作目录。 |
 
-### 3. Supported Tools
-
-This MCP server provides the following tools:
-
-- `read_text_file`
-- `read_media_file`
-- `read_multiple_files`
-- `list_directory`
-- `directory_tree`
-- `search_files`
-- `get_file_info`
-- `list_allowed_directories`
+## 3.工具支持
+该mcp服务支持以下工具：  
+read_text_file  
+read_media_file  
+read_multiple_files  
+list_directory  
+directory_tree  
+search_files  
+get_file_info  
+list_allowed_directories  
 
 
-## Image Build
+## 镜像构建
 
-Execute the following command in the project root directory:
+在项目根目录执行以下命令：
 
 ```bash
 docker build -f src/filesystem/Dockerfile.supergateway -t essaigroup/deepxdr-filesystem-mcp-server:v0.3.0-alpha .
 ```
+若docker-hub中已有该镜像，则可跳过此步骤。
 
-If the image already exists in the Docker registry, this step may be skipped.
 
+## 二次开发功能说明
 
-## Secondary Development Features
+### 1. 文件读取安全限制
 
-### 1. File Reading Safety Limits
+针对大文件及超长行场景，对 `read_text_file` 工具进行了安全性增强：
 
-Security enhancements have been applied to the `read_text_file` tool for large files and excessively long lines:
+- **行数限制**：默认最多返回 2000 行，可通过 `limit` 参数动态调整，防止因读取超大文件导致内存溢出或响应超时。
+- **单行截断**：单行内容超过 2000 字符时自动截断，并追加 ` ... [truncated]` 标记，确保输出可控。
+- **全路径覆盖**：`head`、`tail` 及普通读取模式均统一应用单行截断策略。
 
-- **Line Limit**: Returns a maximum of 2000 lines by default, adjustable via the `limit` parameter, preventing memory overflow or response timeouts when reading oversized files.
-- **Single-Line Truncation**: Automatically truncates lines exceeding 2000 characters and appends ` ... [truncated]`, ensuring controllable output.
-- **Full-Path Coverage**: The single-line truncation policy is uniformly applied to `head`, `tail`, and standard read modes.
+### 2. Docker 部署支持
 
-### 2. Docker Deployment Support
+新增基于 SuperGateway 的容器化部署方案，将 stdio 模式的 MCP 服务器暴露为 WebSocket 服务，便于在分布式环境中集成：
 
-A containerized deployment solution based on SuperGateway has been added, exposing the stdio-mode MCP server as a WebSocket service for easier integration in distributed environments:
+- 新增 `Dockerfile.supergateway`，构建包含 SuperGateway 的复合镜像。
+- 新增 `.dockerignore` 文件，优化镜像构建上下文。
+- 在镜像内预装 `supergateway`，通过 WebSocket 协议对外提供 MCP 服务，默认暴露 8001 端口。
 
-- Added `Dockerfile.supergateway` for building a composite image containing SuperGateway.
-- Added `.dockerignore` to optimize the image build context.
-- Pre-installed `supergateway` within the image to provide MCP services externally via the WebSocket protocol, exposing port 8001 by default.
+### 3. 项目结构精简
 
-### 3. Project Structure Simplification
+移除原始仓库中与本项目无关的其他 MCP 服务器模块（`everything`、`fetch`、`git`、`memory`、`sequentialthinking`、`time` 等）及相关 CI/CD 工作流、发布脚本，仅保留 `filesystem` 核心模块，降低维护成本与构建复杂度。
 
-Unrelated MCP server modules from the original repository (`everything`, `fetch`, `git`, `memory`, `sequentialthinking`, `time`, etc.) and associated CI/CD workflows and release scripts have been removed. Only the core `filesystem` module is retained, reducing maintenance costs and build complexity.
-
-## License
+## 许可证
 
 MIT

@@ -111,15 +111,15 @@ Note: Suricata is deployed outside containers and is not shown in docker compose
   
 ### 1. Start telemetry sources as needed
 
-Falco reference: [README](third_party/falco/README.md)
-OpenRASP reference: [README](third_party/openrasp/README.md)
-Suricata reference: [README](third_party/suricata/README.md)
+Falco reference: [README](third_party/falco/README_EN.md)
+OpenRASP reference: [README](third_party/openrasp/README_EN.md)
+Suricata reference: [README](third_party/suricata/README_EN.md)
 
 Note: To support baseline construction and anomaly adjudication, the Falco configuration files and OpenRASP source code have been customized.
 
 ### 2. Install the application
 
-Using dotCMS as an example, see the startup instructions here: [README](third_party/dotcms/README.md)
+Using dotCMS as an example, see the startup instructions here: [README](third_party/dotcms/README_EN.md)
 
 ### 3. Install MCP Server
 
