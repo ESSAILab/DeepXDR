@@ -194,7 +194,7 @@ services:
       - -c
       - |
         # [Required] Run RASP installation. If users build their own RASP package, replace this package when building the application image.
-        cd /tmp/rasp-2025-08-05 && java -jar RaspInstall.jar -heartbeat 90 -appid <your-rasp-cloud-appid> -appsecret <your-rasp-cloud-appsecret> -backendurl http://<agent-ip>:8086/ -install /srv/dotserver/tomcat-9.0.41
+        cd /tmp/rasp-2025-08-05 && java -jar RaspInstall.jar -heartbeat 90 -appid <your-rasp-cloud-appid> -appsecret <your-rasp-cloud-appsecret> -backendurl http://<agent-host-ip>:8086/ -install /srv/dotserver/tomcat-9.0.41
         cd /tmp && rm -rf rasp-2025-08-05 && rm -rf rasp-java.tar.gz
         exec /srv/entrypoint.sh
     volumes:
@@ -234,7 +234,7 @@ services:
       - "5044:5044"
     volumes:
       # [Required] Mount the Logstash pipeline configuration file `logstash.conf` and main configuration file `logstash.yml`.
-      # [Required] In logstash.conf, replace `<agent-ip>` with the actual IP address of the Kafka service on the agent side, for example: 172.19.9.192.
+      # [Required] In logstash.conf, replace `<agent-host-ip>` with the actual IP address of the Kafka service on the agent side, for example: 172.19.9.192.
       - ../third_party/logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
       - ../third_party/logstash/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
     ...
@@ -425,7 +425,7 @@ The dashboard is deployed on the agent side. The docker compose YAML configurati
 Default access URL:
 
 ```text
-http://<your-agent-host-ip>:30003
+http://<agent-host-ip>:30003
 ```
 
 ## FAST API Overview

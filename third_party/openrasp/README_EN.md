@@ -108,7 +108,7 @@ volumes:
 
 #### Plugin Enablement
 
-After the management backend installation is complete, you need to upload the above plugin-v3.js plugin on the management backend client page. Log in to the cloud control backend and go to `Plugin Management -> Select Plugin -> Submit` to perform the upload operation. After the upload is complete, select the push operation in the action column.
+After the management backend installation is complete, you need to upload the above openrasp/plugins/official/plugin-v3.js plugin on the management backend client page. Log in to the cloud control backend and go to `Plugin Management -> Select Plugin -> Submit` to perform the upload operation. After the upload is complete, select the push operation in the action column.
 
 #### OpenRASP Raw Event Support Types
 
