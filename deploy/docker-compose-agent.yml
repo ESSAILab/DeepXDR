@@ -52,7 +52,9 @@ services:
     image: mongo:4.4
     container_name: rasp-mongodb
     networks:
-      - rasp-net
+      rasp-net:
+        aliases:
+          - mongodb
     restart: unless-stopped
 
   # =========================
@@ -64,7 +66,9 @@ services:
     ports:
       - "9201:9200"
     networks:
-      - rasp-net
+      rasp-net:
+        aliases:
+          - elasticsearch
     environment:
       - discovery.type=single-node
     ulimits:
@@ -105,7 +109,7 @@ services:
   # Postgres  5432内部端口
   # =========================
   postgres:
-    image: postgres:15-alpine
+    image: essaigroup/deepxdr-postgres:v0.3.0
     container_name: security-postgres
     ports:
       - "5432:5432"
@@ -252,6 +256,8 @@ services:
     image: essaigroup/deepxdr-web-ui:v0.3.0-alpha
     container_name: web-ui
     environment:
+      # [Required] Web UI 调用后端 API 时会使用该值。生产环境请使用随机长字符串，不要使用示例值。
+      BACKEND_API_KEY: <your-random-token>
       API_BASE_URL: http://ai-agent:8000
     dns_search: .
     dns: 127.0.0.11
