@@ -33,7 +33,7 @@ kafka:
     KAFKA_CFG_NODE_ID: 1
     KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
     KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:29092
-    KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://<agent-ip>:29092
+    KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://<agent-host-ip>:29092
     KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
     KAFKA_CFG_INTER_BROKER_LISTENER_NAME: PLAINTEXT
     KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
@@ -57,7 +57,7 @@ kafka:
 Listener Address Explanations:
 
 - **PLAINTEXT://kafka:9092**: Container internal communication address, other services (e.g., Falco, baseline adjudication) connect to Kafka via this address
-- **EXTERNAL://agent-ip:29092**: External exposed address, used by host or other servers to connect to Kafka
+- **EXTERNAL://agent-host-ip:29092**: External exposed address, used by host or other servers to connect to Kafka
 
 Startup command:
 ```bash
@@ -66,7 +66,7 @@ docker-compose -f docker-compose-defense.yaml up -d kafka
 
 Notes:
 1. **Topic Creation**: The `agent` Topic is used for transmitting security event data processed by baseline adjudication, consumed by the AI-Agent module.
-2. **Port Mapping**: Host port 29092 is mapped to container port 29092, external services connect to Kafka via agent-ip:29092.
+2. **Port Mapping**: Host port 29092 is mapped to container port 29092, external services connect to Kafka via agent-host-ip:29092.
 
 ## Data Flow
 

@@ -24,7 +24,7 @@ A sample Docker Compose configuration for this image is shown below:
       - -c
       - |
         # [Required] Execute RASP installation. If you build your own RASP package, replace this package when building the application image.
-        cd /tmp/rasp-2025-08-05 && java -jar RaspInstall.jar -heartbeat 90 -appid <your-rasp-cloud-appid> -appsecret <your-rasp-cloud-appsecret> -backendurl http://<agent-ip>:8086/ -install /srv/dotserver/tomcat-9.0.41
+        cd /tmp/rasp-2025-08-05 && java -jar RaspInstall.jar -heartbeat 90 -appid <your-rasp-cloud-appid> -appsecret <your-rasp-cloud-appsecret> -backendurl http://<agent-host-ip>:8086/ -install /srv/dotserver/tomcat-9.0.41
         cd /tmp && rm -rf rasp-2025-08-05 && rm -rf rasp-java.tar.gz
         exec /srv/entrypoint.sh
     environment:
@@ -52,7 +52,7 @@ Modify the configuration in the `dotcms` service section:
 ```yaml
 -appid <your-rasp-cloud-appid>
 -appsecret <your-rasp-cloud-appsecret>
--backendurl http://<your-agent-host-ip>:8086/
+-backendurl http://<agent-host-ip>:8086/
 ```
 
 You need to update the values of the three fields above: `app_id`, `app_secret`, and `backend_url`.
@@ -60,7 +60,7 @@ These three field values are obtained from the cloud control management backend 
 
 **Example of the original configuration:**
 ```bash
-java -jar RaspInstall.jar -heartbeat 90 -appid <your-rasp-cloud-appid> -appsecret <your-rasp-cloud-appsecret> -backendurl http://<your-agent-host-ip>:8086/ -install /path/to/tomcat
+java -jar RaspInstall.jar -heartbeat 90 -appid <your-rasp-cloud-appid> -appsecret <your-rasp-cloud-appsecret> -backendurl http://<agent-host-ip>:8086/ -install /path/to/tomcat
 ```
 
 Start the image:
@@ -78,4 +78,4 @@ If this image is already provided, skip this step.
 
 ## Notes
 
-The placeholder `<agent-ip>` above must be replaced with the actual IP address of the agent-side server.
+The placeholder `<agent-host-ip>` above must be replaced with the actual IP address of the agent-side server.

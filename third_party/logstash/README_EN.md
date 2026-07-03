@@ -46,7 +46,7 @@ Modify the logstash.conf configuration file. You need to configure the Kafka add
 vi logstash.conf
 ```
 
-Modify the `<agent-ip>` content in the kafka section on line 98, replacing this IP with the actual IP address of the agent-side server where the kafka service is deployed, for example: 172.19.9.192
+Modify the `<agent-host-ip>` content in the kafka section on line 98, replacing this IP with the actual IP address of the agent-side server where the kafka service is deployed, for example: 172.19.9.192
 
 ## Data Flow
 

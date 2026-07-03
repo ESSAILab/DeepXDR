@@ -46,7 +46,7 @@ docker-compose -f docker-compose-app.yml up -d logstash
 vi logstash.conf
 ```
 
-修改第98行kafka里面的`<agent-ip>`内容，该ip替换为部署了kafka服务的agent侧服务器对应的实际ip地址，例如：172.19.9.192
+修改第98行kafka里面的`<agent-host-ip>`内容，该ip替换为部署了kafka服务的agent侧服务器对应的实际ip地址，例如：172.19.9.192
 
 ## 数据流转流程
 

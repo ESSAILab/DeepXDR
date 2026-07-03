@@ -24,7 +24,7 @@ docker-compose中该镜像配置示例展示如下 ：
       - -c
       - |
         # [Required]执行 RASP 安装，如用户自行编译rasp安装包，则需在构建应用镜像时替换该包
-        cd /tmp/rasp-2025-08-05 && java -jar RaspInstall.jar -heartbeat 90 -appid <your-rasp-cloud-appid> -appsecret <your-rasp-cloud-appsecret> -backendurl http://<agent-ip>:8086/ -install /srv/dotserver/tomcat-9.0.41
+        cd /tmp/rasp-2025-08-05 && java -jar RaspInstall.jar -heartbeat 90 -appid <your-rasp-cloud-appid> -appsecret <your-rasp-cloud-appsecret> -backendurl http://<agent-host-ip>:8086/ -install /srv/dotserver/tomcat-9.0.41
         cd /tmp && rm -rf rasp-2025-08-05 && rm -rf rasp-java.tar.gz
         exec /srv/entrypoint.sh
     environment:
@@ -52,7 +52,7 @@ docker-compose中该镜像配置示例展示如下 ：
 ```yaml
 -appid <your-rasp-cloud-appid>
 -appsecret <your-rasp-cloud-appsecret>
--backendurl http://<your-agent-host-ip>:8086/
+-backendurl http://<agent-host-ip>:8086/
 ```
 
 需要修改如上3个字段`app_id`/`app_secret`/`backend_url`的值，
@@ -60,7 +60,7 @@ docker-compose中该镜像配置示例展示如下 ：
 
 **展示的原始配置信息举例如下：**
 ```bash
-java -jar RaspInstall.jar -heartbeat 90 -appid <your-rasp-cloud-appid> -appsecret <your-rasp-cloud-appsecret> -backendurl http://<your-agent-host-ip>:8086/ -install /path/to/tomcat
+java -jar RaspInstall.jar -heartbeat 90 -appid <your-rasp-cloud-appid> -appsecret <your-rasp-cloud-appsecret> -backendurl http://<agent-host-ip>:8086/ -install /path/to/tomcat
 ```
 
 启动镜像：
@@ -78,4 +78,4 @@ docker build -t essaigroup/deepxdr-dotcms:v0.3.0 .
 
 ## 注意事项
 
-上面出现的占位符 `<agent-ip>`需要替换成实际agent侧服务器的ip地址。
+上面出现的占位符 `<agent-host-ip>`需要替换成实际agent侧服务器的ip地址。

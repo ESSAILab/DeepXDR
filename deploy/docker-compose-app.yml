@@ -108,7 +108,7 @@ services:
       - -c
       - |
         # 1. 执行 RASP 安装，如用户自行编译rasp安装包，则需在构建应用镜像时替换该包
-        cd /tmp/rasp-2025-08-05 && java -jar RaspInstall.jar -heartbeat 90 -appid a9a6bd08918c1c89ceb3ffaa73e32754dca718f4 -appsecret Jwltg_0Rb6ppBe-_6dvtdVjW74aO7H9N8-na4GWgSv0 -backendurl http://<agent-ip>:8086/ -install /srv/dotserver/tomcat-9.0.41
+        cd /tmp/rasp-2025-08-05 && java -jar RaspInstall.jar -heartbeat 90 -appid a9a6bd08918c1c89ceb3ffaa73e32754dca718f4 -appsecret Jwltg_0Rb6ppBe-_6dvtdVjW74aO7H9N8-na4GWgSv0 -backendurl http://<agent-host-ip>:8086/ -install /srv/dotserver/tomcat-9.0.41
         
         # 2. 在 command 中直接修复权限，将 rasp 目录交给 dotcms 用户 (65001)
         #chown -R 65001:65001 /srv/dotserver/tomcat-9.0.41/rasp
@@ -190,7 +190,7 @@ services:
       - "5044:5044"
     volumes:
       # [Required]挂载 Logstash 的管道配置文件 `logstash.conf` 和主配置文件 `logstash.yml`。
-      # [Required]logstash.conf文件需替换`<agent-ip>`为agent侧kafka服务对应的实际ip地址，例如：172.19.9.192
+      # [Required]logstash.conf文件需替换`<agent-host-ip>`为agent侧kafka服务对应的实际ip地址，例如：172.19.9.192
       - ../third_party/logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
       - ../third_party/logstash/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
     networks:

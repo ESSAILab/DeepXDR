@@ -33,7 +33,7 @@ kafka:
     KAFKA_CFG_NODE_ID: 1
     KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
     KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:29092
-    KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://<agent-ip>:29092
+    KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://<agent-host-ip>:29092
     KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
     KAFKA_CFG_INTER_BROKER_LISTENER_NAME: PLAINTEXT
     KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
@@ -57,7 +57,7 @@ kafka:
 监听地址说明:
 
 - **PLAINTEXT://kafka:9092**：容器内部通信地址，其他服务（如 Falco、基线裁决）通过此地址连接 Kafka
-- **EXTERNAL://agent-ip:29092**：外部暴露地址，用于宿主机或其他服务器连接 Kafka
+- **EXTERNAL://agent-host-ip:29092**：外部暴露地址，用于宿主机或其他服务器连接 Kafka
 
 启动方式如下：
 ```bash
@@ -66,7 +66,7 @@ docker-compose -f docker-compose-defense.yaml up -d kafka
 
 注意：
 1. **Topic 创建**：`agent` Topic 用于传输经基线裁决处理后的安全事件数据，由 AI-Agent 模块消费。
-2. **端口映射**：宿主机 29092 端口映射到容器 29092，外部服务通过 agent-ip:29092 连接 Kafka。
+2. **端口映射**：宿主机 29092 端口映射到容器 29092，外部服务通过 agent-host-ip:29092 连接 Kafka。
 
 ## 数据流转流程
 
