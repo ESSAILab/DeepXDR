@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TTP分析仪表盘</title>
+    <title>DeepXDR 安全运营平台</title>
     <link rel="stylesheet" href="/static/css/full-tailwind.css">
     <script src="/static/js/alpine.min.js" defer></script>
     <script src="/static/js/chart.umd.js"></script>
@@ -127,6 +127,64 @@
             margin-top: 0.5rem;
             border: 1px solid #e5e7eb;
         }
+        .mode-switch {
+            position: relative;
+        }
+        .mode-switch-trigger {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.375rem;
+            border: 1px solid #e5e7eb;
+            background: #ffffff;
+            cursor: default;
+            transition: all 0.2s;
+        }
+        .mode-switch:hover .mode-switch-trigger,
+        .mode-switch:focus-within .mode-switch-trigger {
+            background: #f9fafb;
+            border-color: #d1d5db;
+        }
+        .mode-switch-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            width: 240px;
+            margin-top: 0.5rem;
+            padding: 0.5rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            background: #ffffff;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            z-index: 1000;
+            display: none;
+        }
+        .mode-switch:hover .mode-switch-menu,
+        .mode-switch:focus-within .mode-switch-menu {
+            display: block;
+        }
+        .mode-switch-option {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            padding: 0.625rem 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #374151;
+            transition: all 0.2s;
+        }
+        .mode-switch-option:hover {
+            background: #f3f4f6;
+            color: #111827;
+        }
+        .agent-tab-active {
+            background: linear-gradient(135deg, #14b8a6 0%, #0ea5e9 100%);
+            color: #ffffff;
+        }
         .compact-input {
             height: 32px;
             font-size: 0.875rem;
@@ -215,11 +273,9 @@
         <header class="bg-white border-b border-gray-200 relative">
             <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between items-center py-2">
-                    <div class="flex items-end">
+                    <div class="flex items-center">
                         <img src="/static/images/logo.jpg" alt="Logo" class="h-8 w-auto mr-2">
                         <h1 class="text-2xl font-bold text-gray-900">DeepXDR</h1>
-                        <span class="text-gray-300 mx-2">|</span>
-                        <span class="text-base text-gray-500">TTP分析</span>
                     </div>
                     <div class="flex items-center space-x-4">
                         <!-- 紧凑搜索区域 -->
@@ -291,6 +347,32 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- 全局模式切换 -->
+                        <div class="mode-switch">
+                            <button type="button" class="mode-switch-trigger" aria-haspopup="true">
+                                <i class="fas fa-layer-group text-gray-600"></i>
+                                <span class="text-sm font-medium text-gray-700">模式切换</span>
+                                <span class="text-xs text-gray-500" x-text="getAnalysisModeLabel()"></span>
+                                <i class="fas fa-chevron-down text-xs text-gray-400"></i>
+                            </button>
+                            <div class="mode-switch-menu" role="menu">
+                                <button type="button" @click="switchToNetworkMode()" class="mode-switch-option" role="menuitem">
+                                    <span class="flex items-center">
+                                        <i class="fas fa-shield-alt text-blue-500 mr-2"></i>
+                                        网络安全分析
+                                    </span>
+                                    <i x-show="analysisMode === 'network'" class="fas fa-check text-gray-900"></i>
+                                </button>
+                                <button type="button" @click="switchToAgentMode()" class="mode-switch-option" role="menuitem">
+                                    <span class="flex items-center">
+                                        <i class="fas fa-robot text-red-500 mr-2"></i>
+                                        智能体安全分析
+                                    </span>
+                                    <i x-show="analysisMode === 'agent'" class="fas fa-check text-gray-900"></i>
+                                </button>
+                            </div>
+                        </div>
                         
                         <!-- 状态指示器 -->
                         <div class="flex items-center space-x-2">
@@ -307,8 +389,8 @@
 
         <!-- Main Content -->
         <main class="max-w-full mx-auto px-3 sm:px-6 lg:px-8 py-3" style="min-width: 1000px;">
-            <!-- Stats Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-5 mb-3">
+            <!-- Network Security Stats Cards -->
+            <div x-show="analysisMode === 'network'" class="grid grid-cols-1 md:grid-cols-4 gap-5 mb-3">
                 <div class="bg-white rounded-xl shadow-lg px-5 py-3">
                     <div class="flex items-center justify-between">
                         <div>
@@ -358,34 +440,77 @@
                 </div>
             </div>
 
-            <!-- Tab Navigation -->
+            <!-- Agent Security Stats Cards -->
+            <div x-show="analysisMode === 'agent'" class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-3">
+                <div class="bg-white rounded-xl shadow-lg px-5 py-3">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-500">待人工处理</h3>
+                            <p class="text-3xl font-bold text-red-600 mt-1" x-text="getAgentActionableCount()"></p>
+                        </div>
+                        <div class="p-2.5 bg-red-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-user-check text-red-600 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-lg px-5 py-3">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-500">已完成回退</h3>
+                            <p class="text-3xl font-bold text-green-700 mt-1" x-text="getAgentCompletedCount()"></p>
+                        </div>
+                        <div class="p-2.5 bg-green-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-undo text-green-700 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-lg px-5 py-3">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-500">总告警数</h3>
+                            <p class="text-3xl font-bold text-gray-900 mt-1" x-text="agentSessionPagination.total || 0"></p>
+                        </div>
+                        <div class="p-2.5 bg-gray-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-list-check text-gray-700 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mode-specific Tab Navigation -->
             <div class="bg-white rounded-xl shadow-lg p-1.5 mb-3">
-                <nav class="flex space-x-1.5">
-                    <button @click="switchToShortTTPs()"
-                            :class="searchType === 'short' ? 'bg-blue-500 text-white shadow-md' : 'text-gray-600 hover:bg-gray-100'"
-                            class="flex-1 py-2 px-3 rounded-lg font-medium text-sm transition-all duration-200 flex items-center justify-center">
-                        <i class="fas fa-bolt mr-2"></i>
-                        实时告警
-                        <span class="ml-2 bg-white bg-opacity-20 text-white text-xs font-bold px-2 py-0.5 rounded-full"
-                              x-text="stats.short_ttp_count || 0"></span>
-                    </button>
-                    <button @click="switchToLongTTPs()"
-                            :class="searchType === 'long' ? 'bg-green-500 text-white shadow-md' : 'text-gray-600 hover:bg-gray-100'"
-                            class="flex-1 py-2 px-3 rounded-lg font-medium text-sm transition-all duration-200 flex items-center justify-center">
-                        <i class="fas fa-shield-alt mr-2"></i>
-                        高级持续性威胁
-                        <span class="ml-2 bg-white bg-opacity-20 text-white text-xs font-bold px-2 py-0.5 rounded-full"
-                              x-text="stats.long_ttp_count || 0"></span>
-                    </button>
-                    <button @click="switchToAgentSessions()"
-                            :class="searchType === 'agent' ? 'bg-red-500 text-white shadow-md' : 'text-gray-600 hover:bg-gray-100'"
-                            class="flex-1 py-2 px-3 rounded-lg font-medium text-sm transition-all duration-200 flex items-center justify-center">
-                        <i class="fas fa-robot mr-2"></i>
-                        智能体告警
-                        <span class="ml-2 bg-white bg-opacity-20 text-white text-xs font-bold px-2 py-0.5 rounded-full"
-                              x-text="agentSessionPagination.total || 0"></span>
-                    </button>
-                </nav>
+                <div>
+                    <nav x-show="analysisMode === 'network'" class="flex space-x-1.5">
+                        <button @click="switchToShortTTPs()"
+                                :class="searchType === 'short' ? 'bg-blue-500 text-white shadow-md' : 'text-gray-600 hover:bg-gray-100'"
+                                class="flex-1 py-2 px-3 rounded-lg font-medium text-sm transition-all duration-200 flex items-center justify-center">
+                            <i class="fas fa-bolt mr-2"></i>
+                            实时告警
+                            <span class="ml-2 bg-white bg-opacity-20 text-white text-xs font-bold px-2 py-0.5 rounded-full"
+                                  x-text="stats.short_ttp_count || 0"></span>
+                        </button>
+                        <button @click="switchToLongTTPs()"
+                                :class="searchType === 'long' ? 'bg-green-500 text-white shadow-md' : 'text-gray-600 hover:bg-gray-100'"
+                                class="flex-1 py-2 px-3 rounded-lg font-medium text-sm transition-all duration-200 flex items-center justify-center">
+                            <i class="fas fa-shield-alt mr-2"></i>
+                            高级持续性威胁
+                            <span class="ml-2 bg-white bg-opacity-20 text-white text-xs font-bold px-2 py-0.5 rounded-full"
+                                  x-text="stats.long_ttp_count || 0"></span>
+                        </button>
+                    </nav>
+                    <div x-show="analysisMode === 'agent'" class="flex">
+                        <button @click="switchToAgentSessions()"
+                                :class="searchType === 'agent' ? 'agent-tab-active shadow-md' : 'text-gray-600 hover:bg-gray-100'"
+                                class="w-full py-2 px-3 rounded-lg font-medium text-sm transition-all duration-200 flex items-center justify-center">
+                            <i class="fas fa-robot mr-2"></i>
+                            智能体告警
+                            <span class="ml-2 bg-white bg-opacity-20 text-white text-xs font-bold px-2 py-0.5 rounded-full"
+                                  x-text="agentSessionPagination.total || 0"></span>
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <!-- 已移除：搜索控件已移至头部区域 -->
@@ -1012,32 +1137,8 @@
                     </div>
 
                     <!-- Agent Guard Sessions -->
-                    <div x-show="searchType === 'agent'" class="space-y-4">
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                            <div class="border border-gray-200 rounded-lg px-4 py-3 bg-white">
-                                <div class="text-xs text-gray-500">待人工处理</div>
-                                <div class="mt-1 flex items-baseline justify-between">
-                                    <span class="text-2xl font-semibold text-gray-900" x-text="getAgentActionableCount()"></span>
-                                    <span class="text-xs text-gray-500">可接受或回退</span>
-                                </div>
-                            </div>
-                            <div class="border border-gray-200 rounded-lg px-4 py-3 bg-white">
-                                <div class="text-xs text-gray-500">已完成回退</div>
-                                <div class="mt-1 flex items-baseline justify-between">
-                                    <span class="text-2xl font-semibold text-green-700" x-text="getAgentCompletedCount()"></span>
-                                    <span class="text-xs text-gray-500">nono restore 完成</span>
-                                </div>
-                            </div>
-                            <div class="border border-gray-200 rounded-lg px-4 py-3 bg-white">
-                                <div class="text-xs text-gray-500">当前页总数</div>
-                                <div class="mt-1 flex items-baseline justify-between">
-                                    <span class="text-2xl font-semibold text-gray-900" x-text="agentSessions.length"></span>
-                                    <span class="text-xs text-gray-500" x-text="`${agentSessionPagination.total || 0} total`"></span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 pb-3 border-b border-gray-100">
+                    <div x-show="searchType === 'agent'" class="space-y-2">
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 pb-2 border-b border-gray-100">
                             <div>
                                 <div class="text-sm font-medium text-gray-900">人工确认队列</div>
                                 <div class="text-xs text-gray-500 mt-0.5">仅点击“执行回退”后才会发布回退请求；接受变更会记录人工放行决策。</div>
@@ -1052,27 +1153,22 @@
 
                         <template x-for="session in agentSessions" :key="session.run_id">
                             <div class="border border-gray-200 rounded-lg bg-white hover:border-gray-300 transition-colors">
-                                <div class="grid grid-cols-1 xl:grid-cols-[1fr_260px] gap-4 p-4 cursor-pointer" @click="toggleTTPDetails(session.run_id, 'agent')">
+                                <div class="grid grid-cols-1 xl:grid-cols-[1fr_150px] gap-3 px-3 py-2.5 cursor-pointer" @click="toggleTTPDetails(session.run_id, 'agent')">
                                     <div class="min-w-0">
-                                        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2">
-                                            <div class="min-w-0">
-                                                <div class="flex flex-wrap items-center gap-2">
-                                                    <span class="font-mono text-sm text-gray-900 break-all" x-text="session.run_id"></span>
-                                                    <span class="px-2 py-0.5 rounded-full text-xs font-medium"
-                                                          :class="getAgentSessionStatusClass(session.status)"
-                                                          x-text="getAgentSessionStatusLabel(session.status)"></span>
-                                                    <span class="px-2 py-0.5 rounded-full text-xs font-medium"
-                                                          :class="getAgentRollbackStatusClass(session.rollback_status)"
-                                                          x-text="getAgentRollbackStatusLabel(session.rollback_status)"></span>
-                                                    <span class="px-2 py-0.5 rounded-full text-xs font-medium"
-                                                          :class="getAgentRiskClass(getAgentAdjudication(session).risk_level)"
-                                                          x-text="getAgentRiskLabel(getAgentAdjudication(session).risk_level)"></span>
-                                                </div>
-                                                <div class="mt-2 text-sm text-gray-700 line-clamp-2" x-text="getAgentAdjudication(session).summary || session.original_request || '暂无裁决摘要'"></div>
+                                        <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-1.5">
+                                            <div class="min-w-0 flex flex-wrap items-center gap-2">
+                                                <span class="font-mono text-sm text-gray-900 break-all" x-text="session.run_id"></span>
+                                                <span class="px-2 py-0.5 rounded-full text-xs font-medium"
+                                                      :class="getAgentRiskClass(getAgentAdjudication(session).risk_level)"
+                                                      x-text="getAgentRiskLabel(getAgentAdjudication(session).risk_level)"></span>
+                                                <span class="px-2 py-0.5 rounded-full text-xs font-medium"
+                                                      :class="getAgentDispositionStatus(session).className"
+                                                      x-text="getAgentDispositionStatus(session).label"></span>
                                             </div>
                                             <div class="text-xs text-gray-500 shrink-0" x-text="formatDate(session.updated_at || session.created_at)"></div>
                                         </div>
-                                        <div class="mt-3 grid grid-cols-1 md:grid-cols-3 gap-2 text-xs text-gray-500">
+                                        <div class="mt-1 text-sm text-gray-700 truncate" x-text="getAgentAdjudication(session).summary || session.original_request || '暂无裁决摘要'"></div>
+                                        <div class="mt-1.5 grid grid-cols-1 md:grid-cols-3 gap-1.5 text-xs text-gray-500">
                                             <div class="min-w-0 flex items-center">
                                                 <i class="fas fa-folder-open mr-1.5 text-gray-400"></i>
                                                 <span class="truncate" x-text="session.workspace || '-'"></span>
@@ -1087,22 +1183,14 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="flex xl:flex-col items-stretch xl:items-end gap-2" @click.stop>
-                                        <template x-if="!canActOnAgentSession(session)">
-                                            <div x-show="!canActOnAgentSession(session)"
-                                                 class="w-full xl:w-40 px-3 py-2 text-sm rounded border text-center"
-                                                 :class="getAgentSessionTerminalStatus(session).className">
-                                                <i :class="getAgentSessionTerminalStatus(session).icon" class="mr-1"></i>
-                                                <span x-text="getAgentSessionTerminalStatus(session).label"></span>
-                                            </div>
-                                        </template>
-                                        <div x-show="canActOnAgentSession(session)" class="flex xl:flex-col items-stretch xl:items-end gap-2 w-full xl:w-auto">
+                                    <div class="flex items-center justify-end gap-1.5" @click.stop>
+                                        <div x-show="canActOnAgentSession(session)" class="flex xl:flex-row items-center justify-end gap-1.5 w-full xl:w-auto">
                                         <button type="button"
                                                 onclick="return window.handleAgentSessionAction(event, this)"
                                                 :data-agent-run-id="session.run_id"
                                                 data-agent-action="accept"
                                                 :aria-disabled="!canActOnAgentSession(session) || agentSessionActionInFlight[session.run_id]"
-                                                class="w-full xl:w-40 px-3 py-1.5 text-sm bg-green-100 text-green-700 rounded hover:bg-green-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                                                class="px-2.5 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap">
                                             <i class="fas fa-check mr-1"></i><span x-text="agentSessionActionInFlight[session.run_id] ? '处理中...' : '接受变更'"></span>
                                         </button>
                                         <button type="button"
@@ -1110,11 +1198,11 @@
                                                 :data-agent-run-id="session.run_id"
                                                 data-agent-action="rollback"
                                                 :aria-disabled="!canActOnAgentSession(session) || agentSessionActionInFlight[session.run_id]"
-                                                class="w-full xl:w-40 px-3 py-1.5 text-sm bg-red-500 text-white rounded hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed">
+                                                class="px-2.5 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap">
                                             <i class="fas fa-undo mr-1"></i><span x-text="agentSessionActionInFlight[session.run_id] ? '回退请求中...' : '执行回退'"></span>
                                         </button>
                                         </div>
-                                        <i class="hidden xl:block fas transition-transform text-gray-400 mt-1"
+                                        <i class="hidden xl:block fas transition-transform text-gray-400"
                                            :class="isExpanded(session.run_id, 'agent') ? 'fa-chevron-up rotate-180' : 'fa-chevron-down'"></i>
                                     </div>
                                 </div>
@@ -1562,6 +1650,7 @@
             return {
                 connected: false,
                 stats: {short_ttp_count: 0, long_ttp_count: 0, total_events_processed: 0, windows_yielded: 0},
+                analysisMode: 'network',
                 searchType: 'short',
                 shortTTPs: [],
                 longTTPs: [],
@@ -1621,9 +1710,19 @@
 
                 init() {
                     const urlParams = new URLSearchParams(window.location.search);
-                    if (urlParams.get('type') === 'agent') {
+                    const type = urlParams.get('type');
+                    const id = urlParams.get('id');
+                    const initialMode = this.getInitialAnalysisMode(type);
+
+                    if (initialMode === 'agent') {
+                        this.analysisMode = 'agent';
                         this.searchType = 'agent';
-                        this.handleUrlParams();
+                        this.agentSessionPagination.page = 1;
+                        if (type === 'agent' && id) {
+                            this.handleUrlParams();
+                        } else {
+                            this.loadAgentSessions().then(() => this.startAgentSessionPolling());
+                        }
                     } else {
                         this.loadData();
                         this.connectWebSocket();
@@ -1654,6 +1753,24 @@
                             this.agentSessionTimer = null;
                         }
                     });
+                },
+
+                getInitialAnalysisMode(type) {
+                    if (type === 'agent') return 'agent';
+                    if (type === 'short' || type === 'long') return 'network';
+                    try {
+                        return window.localStorage.getItem('deepxdr.analysisMode') === 'agent' ? 'agent' : 'network';
+                    } catch (error) {
+                        return 'network';
+                    }
+                },
+
+                persistAnalysisMode(mode) {
+                    try {
+                        window.localStorage.setItem('deepxdr.analysisMode', mode);
+                    } catch (error) {
+                        console.debug('无法持久化分析模式:', error);
+                    }
                 },
 
                 resetAllExpansions() {
@@ -2056,6 +2173,8 @@
                 // 切换到实时告警标签页
                 async switchToShortTTPs() {
                     // 重置短告警分页状态
+                    this.analysisMode = 'network';
+                    this.persistAnalysisMode('network');
                     this.sttpPagination.currentPage = 1;
                     this.searchType = 'short';
                     await this.loadShortTTPs();
@@ -2067,6 +2186,8 @@
                 // 切换到高级持续性威胁标签页
                 async switchToLongTTPs() {
                     // 重置长威胁分页状态
+                    this.analysisMode = 'network';
+                    this.persistAnalysisMode('network');
                     this.lttpPagination.currentPage = 1;
                     this.searchType = 'long';
                     await this.loadLongTTPs();
@@ -2076,11 +2197,29 @@
                 },
 
                 async switchToAgentSessions() {
+                    this.analysisMode = 'agent';
+                    this.persistAnalysisMode('agent');
                     this.agentSessionPagination.page = 1;
                     this.searchType = 'agent';
                     await this.loadAgentSessions();
                     this.stopLongTTPPolling();
                     this.startAgentSessionPolling();
+                },
+
+                async switchToNetworkMode() {
+                    if (this.searchType === 'long') {
+                        await this.switchToLongTTPs();
+                    } else {
+                        await this.switchToShortTTPs();
+                    }
+                },
+
+                async switchToAgentMode() {
+                    await this.switchToAgentSessions();
+                },
+
+                getAnalysisModeLabel() {
+                    return this.analysisMode === 'agent' ? '智能体安全分析' : '网络安全分析';
                 },
 
                 // 启动 Long TTP 轮询
@@ -2203,10 +2342,14 @@
                                     if (ttpData.type === 'short') {
                                         this.shortTTPs = [this.processTTPData(ttpData, 'short')];
                                         this.longTTPs = [];
+                                        this.analysisMode = 'network';
+                                        this.persistAnalysisMode('network');
                                         this.searchType = 'short';
                                     } else if (ttpData.type === 'long') {
                                         this.longTTPs = [this.processTTPData(ttpData, 'long')];
                                         this.shortTTPs = [];
+                                        this.analysisMode = 'network';
+                                        this.persistAnalysisMode('network');
                                         this.searchType = 'long';
                                     }
                                     
@@ -2608,7 +2751,7 @@
                     const labels = {
                         not_requested: '未回退',
                         requested: '回退请求中',
-                        completed: '回退完成',
+                        completed: '已回退',
                         failed: '回退失败'
                     };
                     return labels[status] || status || '未回退';
@@ -2623,24 +2766,31 @@
 
                 getAgentSessionTerminalStatus(session) {
                     if (session?.rollback_status === 'completed') {
-                        return {label: '回退完成', className: 'border-green-200 bg-green-50 text-green-700', icon: 'fas fa-check-circle'};
+                        return {label: '已回退', className: 'bg-green-100 text-green-800', icon: 'fas fa-check-circle'};
                     }
                     if (session?.rollback_status === 'requested') {
-                        return {label: '回退执行中', className: 'border-yellow-200 bg-yellow-50 text-yellow-700', icon: 'fas fa-spinner fa-spin'};
+                        return {label: '回退执行中', className: 'bg-yellow-100 text-yellow-800', icon: 'fas fa-spinner fa-spin'};
                     }
                     if (session?.rollback_status === 'failed') {
-                        return {label: '回退失败', className: 'border-red-200 bg-red-50 text-red-700', icon: 'fas fa-exclamation-circle'};
+                        return {label: '回退失败', className: 'bg-red-100 text-red-800', icon: 'fas fa-exclamation-circle'};
                     }
                     if (session?.decision === 'accepted') {
-                        return {label: '已接受变更', className: 'border-green-200 bg-green-50 text-green-700', icon: 'fas fa-check'};
+                        return {label: '已接受变更', className: 'bg-green-100 text-green-800', icon: 'fas fa-check'};
                     }
                     if (session?.decision === 'rollback_requested') {
-                        return {label: '回退执行中', className: 'border-yellow-200 bg-yellow-50 text-yellow-700', icon: 'fas fa-spinner fa-spin'};
+                        return {label: '回退执行中', className: 'bg-yellow-100 text-yellow-800', icon: 'fas fa-spinner fa-spin'};
                     }
                     if (session?.status === 'evidence_invalid') {
-                        return {label: '证据无效', className: 'border-red-200 bg-red-50 text-red-700', icon: 'fas fa-ban'};
+                        return {label: '证据无效', className: 'bg-red-100 text-red-800', icon: 'fas fa-ban'};
                     }
-                    return {label: '不可操作', className: 'border-gray-200 bg-gray-50 text-gray-600', icon: 'fas fa-lock'};
+                    return {label: '不可操作', className: 'bg-gray-100 text-gray-700', icon: 'fas fa-lock'};
+                },
+
+                getAgentDispositionStatus(session) {
+                    if (this.canActOnAgentSession(session)) {
+                        return {label: '待人工确认', className: 'bg-blue-100 text-blue-800', icon: 'fas fa-user-clock'};
+                    }
+                    return this.getAgentSessionTerminalStatus(session);
                 },
 
                 getAgentRiskLabel(riskLevel) {
@@ -3297,6 +3447,8 @@
                     
                     if (type && id) {
                         if (type === 'agent') {
+                            this.analysisMode = 'agent';
+                            this.persistAnalysisMode('agent');
                             this.searchType = 'agent';
                             this.agentSessionPagination.page = 1;
                             this.loadAgentSessions().then(() => {
@@ -3333,6 +3485,8 @@
                         
                         const performNavigation = () => {
                             // 切换到对应的TTP类型
+                            this.analysisMode = 'network';
+                            this.persistAnalysisMode('network');
                             this.searchType = type;
 
                             // 立即展开目标TTP
