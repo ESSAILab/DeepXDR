@@ -1,0 +1,107 @@
+from __future__ import annotations
+
+import hashlib
+
+from ai_agent.agent_guard.config import AgentGuardConfig
+from ai_agent.agent_guard.service import process_finished_session_event
+
+
+class QueueLLM:
+    def __init__(self, responses: list[str]):
+        self.responses = list(responses)
+        self.prompts: list[str] = []
+
+    def complete(self, prompt: str) -> str:
+        self.prompts.append(prompt)
+        if not self.responses:
+            raise AssertionError("LLM called more times than expected")
+        return self.responses.pop(0)
+
+
+def _event_for_diff(tmp_path, diff_text: str):
+    path = tmp_path / "run.diff"
+    path.write_text(diff_text, encoding="utf-8")
+    return {
+        "type": "agent_session",
+        "event_type": "finished",
+        "run_id": "run-1",
+        "original_request": "modify files",
+        "workspace": "/repo/app",
+        "diff_ref": {
+            "storage": "local",
+            "uri": str(path),
+            "sha256": hashlib.sha256(diff_text.encode("utf-8")).hexdigest(),
+            "size_bytes": len(diff_text.encode("utf-8")),
+        },
+        "nono": {"session_id": "nono-1"},
+    }
+
+
+def test_small_diff_uses_one_session_level_langgraph_adjudication_with_full_diff(tmp_path):
+    diff_text = "diff --git a/README.md b/README.md\n+++ b/README.md\n@@\n-old\n+new\n"
+    llm = QueueLLM([
+        '{"verdict":"allow","risk_level":"low","out_of_intent":false,"summary":"readme","findings":[],"recommended_action":"accept","rollback_recommended":false}'
+    ])
+
+    result = process_finished_session_event(
+        _event_for_diff(tmp_path, diff_text),
+        config=AgentGuardConfig(small_diff_token_limit=1000, medium_diff_token_limit=2000),
+        llm=llm,
+    )
+
+    assert result.context_plan.strategy == "file_level"
+    assert result.adjudication.verdict == "allow"
+    assert len(llm.prompts) == 1
+    assert "+new" in llm.prompts[0]
+
+
+def test_medium_diff_summarizes_each_file_then_adjudicates_merged_summaries(tmp_path):
+    diff_text = (
+        "diff --git a/a.py b/a.py\n+++ b/a.py\n@@\n+print('a')\n"
+        "diff --git a/b.py b/b.py\n+++ b/b.py\n@@\n+print('b')\n"
+    )
+    llm = QueueLLM([
+        '{"path":"a.py","summary":"a changed","risk_level":"low","findings":[]}',
+        '{"path":"b.py","summary":"b changed","risk_level":"low","findings":[]}',
+        '{"verdict":"allow","risk_level":"low","out_of_intent":false,"summary":"two safe files","findings":[],"recommended_action":"accept","rollback_recommended":false}',
+    ])
+
+    result = process_finished_session_event(
+        _event_for_diff(tmp_path, diff_text),
+        config=AgentGuardConfig(small_diff_token_limit=1, medium_diff_token_limit=1000),
+        llm=llm,
+    )
+
+    assert result.context_plan.strategy == "hunk_summary"
+    assert result.adjudication.summary == "two safe files"
+    assert len(llm.prompts) == 3
+    assert "单文件变更摘要" in llm.prompts[0]
+    assert "单文件变更摘要" in llm.prompts[1]
+    assert "文件变更摘要列表" in llm.prompts[2]
+
+
+def test_huge_diff_clips_file_diff_and_still_uses_llm_adjudication(tmp_path):
+    long_payload = "A" * 5000
+    diff_text = f"diff --git a/big.py b/big.py\n+++ b/big.py\n@@\n+{long_payload}\n"
+    llm = QueueLLM([
+        '{"path":"big.py","summary":"big file clipped","risk_level":"medium","findings":[]}',
+        '{"verdict":"warn","risk_level":"medium","out_of_intent":false,"summary":"review big file","findings":[],"recommended_action":"ask_user","rollback_recommended":false}',
+    ])
+
+    result = process_finished_session_event(
+        _event_for_diff(tmp_path, diff_text),
+        config=AgentGuardConfig(
+            small_diff_token_limit=1,
+            medium_diff_token_limit=2,
+            hunk_token_limit=20,
+            force_review_on_huge_diff=False,
+        ),
+        llm=llm,
+    )
+
+    assert result.context_plan.strategy == "risk_only"
+    assert result.context_plan.force_human_review is False
+    assert result.adjudication.verdict == "warn"
+    assert len(llm.prompts) == 2
+    assert "[diff clipped]" in llm.prompts[0]
+    assert long_payload not in llm.prompts[0]

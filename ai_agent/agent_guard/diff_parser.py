@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 
 
@@ -16,6 +17,7 @@ def parse_unified_diff(diff_text: str) -> list[ChangedFile]:
     files: list[ChangedFile] = []
     current_path: str | None = None
     current_lines: list[str] = []
+    pending_old_path: str | None = None
 
     def flush_current() -> None:
         nonlocal current_path, current_lines
@@ -36,7 +38,18 @@ def parse_unified_diff(diff_text: str) -> list[ChangedFile]:
         current_path = None
         current_lines = []
 
-    for line in diff_text.splitlines():
+    def normalize_path(raw: str) -> str:
+        path = raw.strip()
+        if "\t" in path:
+            path = path.split("\t", 1)[0]
+        if path.startswith("a/") or path.startswith("b/"):
+            return path[2:]
+        return path
+
+    ansi_re = re.compile(r"\x1b\[[0-9;]*m")
+
+    for raw_line in diff_text.splitlines():
+        line = ansi_re.sub("", raw_line)
         if line.startswith("diff --git "):
             flush_current()
             parts = line.split()
@@ -46,6 +59,21 @@ def parse_unified_diff(diff_text: str) -> list[ChangedFile]:
             else:
                 current_path = "unknown"
             current_lines = [line]
+        elif line.startswith("--- "):
+            if current_path is not None:
+                current_lines.append(line)
+            pending_old_path = normalize_path(line[4:])
+        elif line.startswith("+++ "):
+            if current_path is not None:
+                current_lines.append(line)
+                continue
+            current_path = normalize_path(line[4:])
+            if current_path == "/dev/null" and pending_old_path:
+                current_path = pending_old_path
+            current_lines = []
+            if pending_old_path:
+                current_lines.append(f"--- {pending_old_path}")
+            current_lines.append(line)
         elif current_path is not None:
             current_lines.append(line)
 

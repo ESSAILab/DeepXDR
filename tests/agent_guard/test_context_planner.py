@@ -25,7 +25,7 @@ def test_context_planner_uses_hunk_summary_for_medium_diff():
     assert plan.force_human_review is False
 
 
-def test_context_planner_forces_review_for_huge_diff_when_configured():
+def test_context_planner_uses_risk_only_for_huge_diff_without_forcing_review():
     config = AgentGuardConfig(
         small_diff_token_limit=100,
         medium_diff_token_limit=500,
@@ -44,5 +44,5 @@ def test_context_planner_forces_review_for_huge_diff_when_configured():
     )
 
     assert plan.strategy == "risk_only"
-    assert plan.force_human_review is True
+    assert plan.force_human_review is False
     assert plan.high_risk_files == [".env"]

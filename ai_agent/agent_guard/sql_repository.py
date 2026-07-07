@@ -7,6 +7,7 @@ from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from shared.database.models import AgentAdjudication, AgentRollback, AgentSession
+from shared.database.connection import get_db
 
 
 class SqlAlchemyAgentSessionRepository:
@@ -29,6 +30,7 @@ class SqlAlchemyAgentSessionRepository:
             "diff_ref": session.get("diff_ref") or {},
             "conversation": session.get("conversation"),
             "status": session.get("status", "received"),
+            "decision": session.get("decision"),
             "rollback_status": session.get("rollback_status", "not_requested"),
             "raw_event": session,
             "updated_at": now,
@@ -92,8 +94,9 @@ class SqlAlchemyAgentSessionRepository:
             status=rollback["status"],
             command_results=rollback.get("command_results"),
             error_message=rollback.get("error"),
+            completed_at=_parse_datetime(rollback.get("completed_at")),
         )
-        self.db.add(row)
+        await self.db.merge(row)
         await self.db.commit()
 
     async def _store_adjudication(self, run_id: str, adjudication: dict[str, Any]) -> None:
@@ -114,17 +117,59 @@ class SqlAlchemyAgentSessionRepository:
 
     @staticmethod
     def _session_to_dict(row: AgentSession) -> dict[str, Any]:
+        raw_event = row.raw_event if isinstance(row.raw_event, dict) else {}
+        raw_nono = raw_event.get("nono") if isinstance(raw_event.get("nono"), dict) else {}
+        nono = {"session_id": row.nono_session_id}
+        for key in ("state_home", "rollback_root"):
+            if raw_nono.get(key):
+                nono[key] = raw_nono[key]
         return {
             "run_id": row.run_id,
-            "nono": {"session_id": row.nono_session_id},
+            "nono": nono,
             "original_request": row.original_request,
             "agent_command": row.agent_command,
             "workspace": row.workspace,
             "diff_ref": row.diff_ref,
             "conversation": row.conversation,
             "status": row.status,
+            "decision": row.decision,
             "rollback_status": row.rollback_status,
             "raw_event": row.raw_event,
             "created_at": row.created_at.isoformat() if row.created_at else None,
             "updated_at": row.updated_at.isoformat() if row.updated_at else None,
         }
+
+
+class SqlAlchemyAgentSessionRepositoryProvider:
+    """Request-scoped repository facade for FastAPI route globals."""
+
+    async def upsert_session(self, session: dict[str, Any]) -> dict[str, Any]:
+        async with get_db() as db:
+            return await SqlAlchemyAgentSessionRepository(db).upsert_session(session)
+
+    async def list_sessions(self, *, page: int = 1, size: int = 20) -> dict[str, Any]:
+        async with get_db() as db:
+            return await SqlAlchemyAgentSessionRepository(db).list_sessions(page=page, size=size)
+
+    async def get_session(self, run_id: str) -> dict[str, Any] | None:
+        async with get_db() as db:
+            return await SqlAlchemyAgentSessionRepository(db).get_session(run_id)
+
+    async def update_session(self, run_id: str, updates: dict[str, Any]) -> dict[str, Any] | None:
+        async with get_db() as db:
+            return await SqlAlchemyAgentSessionRepository(db).update_session(run_id, updates)
+
+    async def store_rollback(self, rollback: dict[str, Any]) -> None:
+        async with get_db() as db:
+            await SqlAlchemyAgentSessionRepository(db).store_rollback(rollback)
+
+
+def _parse_datetime(value: Any) -> datetime | None:
+    if not value:
+        return None
+    if isinstance(value, datetime):
+        return value.replace(tzinfo=None)
+    try:
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00")).replace(tzinfo=None)
+    except ValueError:
+        return None

@@ -76,7 +76,7 @@ def test_process_finished_session_event_marks_invalid_evidence_on_sha256_mismatc
     assert result.adjudication is None
 
 
-def test_process_finished_session_event_forces_review_for_huge_diff(tmp_path):
+def test_process_finished_session_event_uses_risk_only_llm_path_for_huge_diff(tmp_path):
     diff_ref = _write_diff(
         tmp_path,
         "diff --git a/.env b/.env\n+++ b/.env\n@@\n+TOKEN=x\n",
@@ -86,5 +86,5 @@ def test_process_finished_session_event_forces_review_for_huge_diff(tmp_path):
     result = process_finished_session_event(_event(diff_ref), config=config, llm=FakeLLM("{}"))
 
     assert result.context_plan.strategy == "risk_only"
-    assert result.context_plan.force_human_review is True
+    assert result.context_plan.force_human_review is False
     assert result.adjudication.verdict == "needs_human_review"

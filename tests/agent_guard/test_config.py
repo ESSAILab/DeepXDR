@@ -15,6 +15,14 @@ def test_config_uses_safe_defaults_when_env_is_empty(monkeypatch):
         "AGENT_GUARD_MAX_FILE_SUMMARIES",
         "AGENT_GUARD_MAX_HIGH_RISK_SNIPPETS",
         "AGENT_GUARD_FORCE_REVIEW_ON_HUGE_DIFF",
+        "AGENT_GUARD_DIFF_STORAGE",
+        "AGENT_GUARD_DIFF_BUCKET",
+        "AGENT_GUARD_DIFF_PREFIX",
+        "AGENT_GUARD_DIFF_ENDPOINT_URL",
+        "AGENT_GUARD_DIFF_ACCESS_KEY_ID",
+        "AGENT_GUARD_DIFF_SECRET_ACCESS_KEY",
+        "AGENT_GUARD_DIFF_REGION",
+        "AGENT_GUARD_MAX_DIFF_READ_BYTES",
     ):
         monkeypatch.delenv(name, raising=False)
 
@@ -27,7 +35,11 @@ def test_config_uses_safe_defaults_when_env_is_empty(monkeypatch):
     assert config.hunk_token_limit == 6_000
     assert config.max_file_summaries == 80
     assert config.max_high_risk_snippets == 20
-    assert config.force_review_on_huge_diff is True
+    assert config.force_review_on_huge_diff is False
+    assert config.diff_storage == "local"
+    assert config.diff_bucket == ""
+    assert config.diff_prefix == "agent-diff-evidence"
+    assert config.max_diff_read_bytes == 8 * 1024 * 1024
 
 
 def test_config_reads_thresholds_from_env(monkeypatch):
@@ -39,6 +51,14 @@ def test_config_reads_thresholds_from_env(monkeypatch):
     monkeypatch.setenv("AGENT_GUARD_MAX_FILE_SUMMARIES", "7")
     monkeypatch.setenv("AGENT_GUARD_MAX_HIGH_RISK_SNIPPETS", "3")
     monkeypatch.setenv("AGENT_GUARD_FORCE_REVIEW_ON_HUGE_DIFF", "0")
+    monkeypatch.setenv("AGENT_GUARD_DIFF_STORAGE", "minio")
+    monkeypatch.setenv("AGENT_GUARD_DIFF_BUCKET", "agent-diffs")
+    monkeypatch.setenv("AGENT_GUARD_DIFF_PREFIX", "prod")
+    monkeypatch.setenv("AGENT_GUARD_DIFF_ENDPOINT_URL", "http://minio:9000")
+    monkeypatch.setenv("AGENT_GUARD_DIFF_ACCESS_KEY_ID", "minio")
+    monkeypatch.setenv("AGENT_GUARD_DIFF_SECRET_ACCESS_KEY", "secret")
+    monkeypatch.setenv("AGENT_GUARD_DIFF_REGION", "us-east-1")
+    monkeypatch.setenv("AGENT_GUARD_MAX_DIFF_READ_BYTES", "4096")
 
     config = AgentGuardConfig.from_env()
 
@@ -50,6 +70,14 @@ def test_config_reads_thresholds_from_env(monkeypatch):
     assert config.max_file_summaries == 7
     assert config.max_high_risk_snippets == 3
     assert config.force_review_on_huge_diff is False
+    assert config.diff_storage == "minio"
+    assert config.diff_bucket == "agent-diffs"
+    assert config.diff_prefix == "prod"
+    assert config.diff_endpoint_url == "http://minio:9000"
+    assert config.diff_access_key_id == "minio"
+    assert config.diff_secret_access_key == "secret"
+    assert config.diff_region == "us-east-1"
+    assert config.max_diff_read_bytes == 4096
 
 
 def test_config_rejects_invalid_numeric_env(monkeypatch):

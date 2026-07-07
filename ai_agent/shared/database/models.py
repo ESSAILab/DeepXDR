@@ -233,6 +233,7 @@ class AgentSession(Base):
     diff_ref = Column(JSON, nullable=False, comment="diff对象存储引用")
     conversation = Column(JSON, comment="智能体对话信息")
     status = Column(String(50), nullable=False, default="received", comment="处理状态")
+    decision = Column(String(50), nullable=True, comment="用户决策")
     rollback_status = Column(String(50), nullable=False, default="not_requested", comment="韧性恢复状态")
     raw_event = Column(JSON, nullable=False, comment="原始会话事件")
     created_at = Column(DateTime, default=func.now(), comment="创建时间")

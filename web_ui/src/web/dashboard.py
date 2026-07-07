@@ -79,6 +79,16 @@ def get_backend_headers() -> dict:
         headers["X-API-Key"] = api_key
     return headers
 
+
+def request_backend(method: str, url: str, **kwargs):
+    """Call the configured backend without inheriting shell proxy settings."""
+    session = requests.Session()
+    session.trust_env = False
+    try:
+        return session.request(method, url, **kwargs)
+    finally:
+        session.close()
+
 # WebSocket connection manager
 class ConnectionManager:
     def __init__(self):
@@ -128,7 +138,10 @@ async def get_dashboard():
         template_path = os.path.join(os.path.dirname(__file__), "templates", "dashboard.html")
         with open(template_path, "r", encoding="utf-8") as f:
             html_content = f.read()
-        return HTMLResponse(content=html_content.replace("API_BASE_URL_PLACEHOLDER", API_BASE_URL))
+        return HTMLResponse(
+            content=html_content.replace("API_BASE_URL_PLACEHOLDER", API_BASE_URL),
+            headers={"Cache-Control": "no-store, max-age=0"},
+        )
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail="Dashboard template not found")
 
@@ -252,7 +265,8 @@ async def get_long_ttp_list(q: str = None, page: int = 1, size: int = 10, hours:
 async def get_agent_session_list(page: int = 1, size: int = 20):
     """代理获取智能体会话审计列表"""
     try:
-        response = requests.get(
+        response = request_backend(
+            "GET",
             f"{API_BASE_URL}/agent-sessions?page={page}&size={size}",
             headers=get_backend_headers(),
             timeout=10,
@@ -267,7 +281,8 @@ async def get_agent_session_list(page: int = 1, size: int = 20):
 async def get_agent_session_detail(run_id: str):
     """代理获取智能体会话审计详情"""
     try:
-        response = requests.get(
+        response = request_backend(
+            "GET",
             f"{API_BASE_URL}/agent-sessions/{run_id}",
             headers=get_backend_headers(),
             timeout=10,
@@ -282,7 +297,8 @@ async def get_agent_session_detail(run_id: str):
 async def accept_agent_session(run_id: str):
     """代理接受智能体会话变更"""
     try:
-        response = requests.post(
+        response = request_backend(
+            "POST",
             f"{API_BASE_URL}/agent-sessions/{run_id}/accept",
             headers=get_backend_headers(),
             timeout=10,
@@ -298,7 +314,8 @@ async def rollback_agent_session(run_id: str, request: Request):
     """代理请求智能体会话韧性恢复"""
     try:
         body = await request.json()
-        response = requests.post(
+        response = request_backend(
+            "POST",
             f"{API_BASE_URL}/agent-sessions/{run_id}/rollback",
             json=body,
             headers=get_backend_headers(),

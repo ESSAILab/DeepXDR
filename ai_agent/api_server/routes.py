@@ -213,13 +213,17 @@ async def request_agent_session_rollback(run_id: str, request: Dict):
     nono_session_id = session.get("nono", {}).get("session_id") or session.get("nono_session_id")
     if not nono_session_id:
         raise HTTPException(status_code=409, detail="nono session id missing")
+    nono_state_home = session.get("nono", {}).get("state_home")
 
     event = build_rollback_requested_event(
         run_id=run_id,
         nono_session_id=nono_session_id,
         requested_by=str(request.get("requested_by", "web_ui")),
         approved=True,
+        nono_state_home=nono_state_home,
     )
+    if hasattr(repo, "store_rollback"):
+        await repo.store_rollback({**event, "status": "requested"})
     await publisher.publish(event)
     await repo.update_session(run_id, {"decision": "rollback_requested", "rollback_status": "requested"})
     return {"status": "rollback_requested", "run_id": run_id}

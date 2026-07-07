@@ -1,0 +1,190 @@
+version: "3.8"
+
+networks:
+  agentguard-smoke:
+
+volumes:
+  agentguard-postgres:
+  agentguard-redis:
+  agentguard-kafka:
+  agentguard-minio:
+
+services:
+  kafka:
+    image: apache/kafka:3.7.0
+    container_name: agentguard-smoke-kafka
+    networks:
+      - agentguard-smoke
+    ports:
+      - "29092:29092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_LISTENERS: PLAINTEXT://:9092,EXTERNAL://:29092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    volumes:
+      - agentguard-kafka:/bitnami/kafka
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list >/dev/null"]
+      interval: 5s
+      timeout: 4s
+      retries: 30
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: agentguard-smoke-postgres
+    networks:
+      - agentguard-smoke
+    ports:
+      - "15432:5432"
+    environment:
+      POSTGRES_DB: security_db
+      POSTGRES_USER: security_user
+      POSTGRES_PASSWORD: security_pass
+    volumes:
+      - agentguard-postgres:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: agentguard-smoke-redis
+    networks:
+      - agentguard-smoke
+    volumes:
+      - agentguard-redis:/data
+
+  minio:
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+    container_name: agentguard-smoke-minio
+    networks:
+      - agentguard-smoke
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    volumes:
+      - agentguard-minio:/data
+
+  minio-init:
+    image: minio/mc:RELEASE.2025-04-16T18-13-26Z
+    container_name: agentguard-smoke-minio-init
+    networks:
+      - agentguard-smoke
+    depends_on:
+      minio:
+        condition: service_started
+    entrypoint: ["/bin/sh", "-c"]
+    command: >
+      "until mc alias set local http://minio:9000 minioadmin minioadmin; do sleep 2; done &&
+       mc mb --ignore-existing local/agent-diffs"
+
+  baseline-adjudication:
+    build:
+      context: ../baseline_adjudication
+    container_name: agentguard-smoke-baseline
+    networks:
+      - agentguard-smoke
+    depends_on:
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_SOURCE_TOPIC: events
+      KAFKA_AGENT_TOPIC: agent
+      KAFKA_AGENT_SESSION_TOPIC: agent.session.finished
+      KAFKA_CONSUMER_GROUP_ID: agentguard-smoke-baseline
+      KAFKA_SECURITY_PROTOCOL: PLAINTEXT
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_DB: 1
+      BASELINE_DURATION: 1
+      BASELINE_FILE_PATH: baseline.json
+      DEBUG: "true"
+      REDIS_VALUE_TYPE: key_fields
+      CONTINUOUS_BASELINE_ENABLED: "false"
+
+  ai-agent:
+    image: essaigroup/deepxdr-analysis:v0.3.0-alpha
+    container_name: agentguard-smoke-ai-agent
+    user: root
+    networks:
+      - agentguard-smoke
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../ai_agent:/app/ai_agent
+      - ..:/home/shalei/DeepXDR
+      - /root/.local/bin/nono:/usr/local/bin/nono:ro
+      - /lib64:/lib64:ro
+      - /lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:ro
+    command: >
+      sh -c "python -m pip install -i https://pypi.tuna.tsinghua.edu.cn/simple 'boto3>=1.35.0,<2.0.0' &&
+             python main.py"
+    depends_on:
+      kafka:
+        condition: service_healthy
+      postgres:
+        condition: service_started
+      redis:
+        condition: service_started
+      minio-init:
+        condition: service_completed_successfully
+      baseline-adjudication:
+        condition: service_started
+    environment:
+      DATABASE_URL: postgresql+asyncpg://security_user:security_pass@postgres:5432/security_db
+      REDIS_URL: redis://redis:6379/0
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_TOPIC: agent
+      KAFKA_GROUP_ID: agentguard-smoke-main
+      KAFKA_AGENT_SESSION_TOPIC: agent.session.finished
+      KAFKA_AGENT_ROLLBACK_REQUESTED_TOPIC: agent.rollback.requested
+      KAFKA_AGENT_ROLLBACK_COMPLETED_TOPIC: agent.rollback.completed
+      AGENT_GUARD_ENABLED: "true"
+      AGENT_GUARD_DIFF_STORAGE: minio
+      AGENT_GUARD_DIFF_BUCKET: agent-diffs
+      AGENT_GUARD_DIFF_PREFIX: smoke
+      AGENT_GUARD_DIFF_ENDPOINT_URL: http://minio:9000
+      AGENT_GUARD_DIFF_ACCESS_KEY_ID: minioadmin
+      AGENT_GUARD_DIFF_SECRET_ACCESS_KEY: minioadmin
+      AGENT_GUARD_MAX_DIFF_READ_BYTES: 8388608
+      AGENT_GUARD_SMALL_DIFF_TOKEN_LIMIT: 200
+      AGENT_GUARD_MEDIUM_DIFF_TOKEN_LIMIT: 800
+      AGENT_GUARD_FILE_TOKEN_LIMIT: 300
+      AGENT_GUARD_HUNK_TOKEN_LIMIT: 80
+      API_PORT: 8000
+      BACKEND_API_KEY: agentguard-smoke-secret
+      LOG_LEVEL: INFO
+      ELASTICSEARCH_HOST: localhost
+      ELASTICSEARCH_PORT: 9200
+      OPENAI_MODEL: deepseek-v3-2-251201
+      OPENAI_API_KEY: bbdef7a9-6efd-4767-9e42-434a6deacebe
+      OPENAI_BASE_URL: https://ark.cn-beijing.volces.com/api/v3
+
+  web-ui:
+    build:
+      context: ../web_ui
+    container_name: agentguard-smoke-web-ui
+    networks:
+      - agentguard-smoke
+    ports:
+      - "30003:30003"
+    depends_on:
+      ai-agent:
+        condition: service_started
+    environment:
+      API_BASE_URL: http://ai-agent:8000
+      BACKEND_API_KEY: agentguard-smoke-secret

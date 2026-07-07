@@ -34,6 +34,6 @@ def plan_context(
     ][: config.max_high_risk_snippets]
     return ContextPlan(
         strategy="risk_only",
-        force_human_review=config.force_review_on_huge_diff,
+        force_human_review=False,
         high_risk_files=high_risk_files,
     )

@@ -10,8 +10,9 @@ class FakeRunner:
         self.commands = []
         self.fail_on = fail_on
 
-    async def run(self, command):
+    async def run(self, command, *, env=None, cwd=None):
         self.commands.append(command)
+        self.env = env
         if self.fail_on and self.fail_on in command:
             return {"exit_code": 1, "stdout": "", "stderr": "failed"}
         return {"exit_code": 0, "stdout": "ok", "stderr": ""}
@@ -36,6 +37,7 @@ def test_worker_verifies_dry_runs_restores_and_publishes_completed():
                 "nono_session_id": "nono-1",
                 "snapshot": 0,
                 "requested_by": "user-1",
+                "nono_state_home": "/tmp/nono-state",
             },
             runner=runner,
             publisher=publisher,
@@ -49,6 +51,7 @@ def test_worker_verifies_dry_runs_restores_and_publishes_completed():
         ]
         assert publisher.events[0][0] == "agent.rollback.completed"
         assert publisher.events[0][1]["status"] == "completed"
+        assert runner.env == {"XDG_STATE_HOME": "/tmp/nono-state"}
 
     anyio.run(run_test)
 

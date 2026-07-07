@@ -8,9 +8,11 @@ from ai_agent.agent_guard.nono_wrapper import LocalDiffEvidenceWriter, run_nono_
 class FakeRunner:
     def __init__(self):
         self.commands = []
+        self.calls = []
 
-    async def run(self, command):
+    async def run(self, command, *, env=None, cwd=None):
         self.commands.append(command)
+        self.calls.append((command, env, cwd))
         if command[:3] == ["nono", "rollback", "show"] and "--json" in command:
             return {"exit_code": 0, "stdout": '{"session_id":"nono-1"}', "stderr": ""}
         if command[:3] == ["nono", "rollback", "show"] and "--diff" in command:
@@ -48,8 +50,6 @@ def test_run_nono_guarded_session_builds_diff_ref_and_publishes_event(tmp_path):
             "run",
             "--rollback",
             "--no-rollback-prompt",
-            "--rollback-dest",
-            "/rollback/run-1",
             "--allow",
             "/repo/app",
             "--",
@@ -58,6 +58,9 @@ def test_run_nono_guarded_session_builds_diff_ref_and_publishes_event(tmp_path):
         ]
         assert event["type"] == "agent_session"
         assert event["event_type"] == "finished"
+        assert event["nono"]["state_home"] == "/rollback/run-1"
+        assert runner.calls[0][1] == {"XDG_STATE_HOME": "/rollback/run-1"}
+        assert runner.calls[0][2] == "/repo/app"
         assert event["diff_ref"]["storage"] == "local"
         assert event["diff_ref"]["sha256"]
         assert publisher.events[0][0] == "events"

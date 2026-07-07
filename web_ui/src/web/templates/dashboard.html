@@ -377,6 +377,14 @@
                         <span class="ml-2 bg-white bg-opacity-20 text-white text-xs font-bold px-2 py-0.5 rounded-full"
                               x-text="stats.long_ttp_count || 0"></span>
                     </button>
+                    <button @click="switchToAgentSessions()"
+                            :class="searchType === 'agent' ? 'bg-red-500 text-white shadow-md' : 'text-gray-600 hover:bg-gray-100'"
+                            class="flex-1 py-2 px-3 rounded-lg font-medium text-sm transition-all duration-200 flex items-center justify-center">
+                        <i class="fas fa-robot mr-2"></i>
+                        智能体告警
+                        <span class="ml-2 bg-white bg-opacity-20 text-white text-xs font-bold px-2 py-0.5 rounded-full"
+                              x-text="agentSessionPagination.total || 0"></span>
+                    </button>
                 </nav>
             </div>
 
@@ -387,7 +395,8 @@
                 <h2 class="text-lg font-semibold text-gray-900 mb-2">
                     <span x-show="searchType === 'short'" class="text-blue-600">实时告警</span>
                     <span x-show="searchType === 'long'" class="text-green-500">高级持续性威胁</span>
-                    <span class="text-sm font-normal text-gray-600 ml-2" x-text="`(${searchType === 'short' ? (stats.short_ttp_count || 0) : (stats.long_ttp_count || 0)} items)`"></span>
+                    <span x-show="searchType === 'agent'" class="text-red-500">智能体告警</span>
+                    <span class="text-sm font-normal text-gray-600 ml-2" x-text="`(${getCurrentListTotal()} items)`"></span>
                 </h2>
 
                 <div class="space-y-2">
@@ -1001,9 +1010,216 @@
                             </button>
                         </div>
                     </div>
+
+                    <!-- Agent Guard Sessions -->
+                    <div x-show="searchType === 'agent'" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <div class="border border-gray-200 rounded-lg px-4 py-3 bg-white">
+                                <div class="text-xs text-gray-500">待人工处理</div>
+                                <div class="mt-1 flex items-baseline justify-between">
+                                    <span class="text-2xl font-semibold text-gray-900" x-text="getAgentActionableCount()"></span>
+                                    <span class="text-xs text-gray-500">可接受或回退</span>
+                                </div>
+                            </div>
+                            <div class="border border-gray-200 rounded-lg px-4 py-3 bg-white">
+                                <div class="text-xs text-gray-500">已完成回退</div>
+                                <div class="mt-1 flex items-baseline justify-between">
+                                    <span class="text-2xl font-semibold text-green-700" x-text="getAgentCompletedCount()"></span>
+                                    <span class="text-xs text-gray-500">nono restore 完成</span>
+                                </div>
+                            </div>
+                            <div class="border border-gray-200 rounded-lg px-4 py-3 bg-white">
+                                <div class="text-xs text-gray-500">当前页总数</div>
+                                <div class="mt-1 flex items-baseline justify-between">
+                                    <span class="text-2xl font-semibold text-gray-900" x-text="agentSessions.length"></span>
+                                    <span class="text-xs text-gray-500" x-text="`${agentSessionPagination.total || 0} total`"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 pb-3 border-b border-gray-100">
+                            <div>
+                                <div class="text-sm font-medium text-gray-900">人工确认队列</div>
+                                <div class="text-xs text-gray-500 mt-0.5">仅点击“执行回退”后才会发布回退请求；接受变更会记录人工放行决策。</div>
+                            </div>
+                            <button @click="loadAgentSessions()"
+                                    :disabled="agentSessionsLoading"
+                                    class="self-start md:self-auto px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 disabled:opacity-50 flex items-center">
+                                <i class="fas fa-sync-alt mr-1.5" :class="agentSessionsLoading ? 'fa-spin' : ''"></i>
+                                刷新
+                            </button>
+                        </div>
+
+                        <template x-for="session in agentSessions" :key="session.run_id">
+                            <div class="border border-gray-200 rounded-lg bg-white hover:border-gray-300 transition-colors">
+                                <div class="grid grid-cols-1 xl:grid-cols-[1fr_260px] gap-4 p-4 cursor-pointer" @click="toggleTTPDetails(session.run_id, 'agent')">
+                                    <div class="min-w-0">
+                                        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2">
+                                            <div class="min-w-0">
+                                                <div class="flex flex-wrap items-center gap-2">
+                                                    <span class="font-mono text-sm text-gray-900 break-all" x-text="session.run_id"></span>
+                                                    <span class="px-2 py-0.5 rounded-full text-xs font-medium"
+                                                          :class="getAgentSessionStatusClass(session.status)"
+                                                          x-text="getAgentSessionStatusLabel(session.status)"></span>
+                                                    <span class="px-2 py-0.5 rounded-full text-xs font-medium"
+                                                          :class="getAgentRollbackStatusClass(session.rollback_status)"
+                                                          x-text="getAgentRollbackStatusLabel(session.rollback_status)"></span>
+                                                    <span class="px-2 py-0.5 rounded-full text-xs font-medium"
+                                                          :class="getAgentRiskClass(getAgentAdjudication(session).risk_level)"
+                                                          x-text="getAgentRiskLabel(getAgentAdjudication(session).risk_level)"></span>
+                                                </div>
+                                                <div class="mt-2 text-sm text-gray-700 line-clamp-2" x-text="getAgentAdjudication(session).summary || session.original_request || '暂无裁决摘要'"></div>
+                                            </div>
+                                            <div class="text-xs text-gray-500 shrink-0" x-text="formatDate(session.updated_at || session.created_at)"></div>
+                                        </div>
+                                        <div class="mt-3 grid grid-cols-1 md:grid-cols-3 gap-2 text-xs text-gray-500">
+                                            <div class="min-w-0 flex items-center">
+                                                <i class="fas fa-folder-open mr-1.5 text-gray-400"></i>
+                                                <span class="truncate" x-text="session.workspace || '-'"></span>
+                                            </div>
+                                            <div class="min-w-0 flex items-center">
+                                                <i class="fas fa-file-code mr-1.5 text-gray-400"></i>
+                                                <span x-text="`${getAgentChangedFiles(session).length} changed files`"></span>
+                                            </div>
+                                            <div class="min-w-0 flex items-center">
+                                                <i class="fas fa-undo mr-1.5 text-gray-400"></i>
+                                                <span class="truncate" x-text="session.nono?.session_id || '-'"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex xl:flex-col items-stretch xl:items-end gap-2" @click.stop>
+                                        <template x-if="!canActOnAgentSession(session)">
+                                            <div x-show="!canActOnAgentSession(session)"
+                                                 class="w-full xl:w-40 px-3 py-2 text-sm rounded border text-center"
+                                                 :class="getAgentSessionTerminalStatus(session).className">
+                                                <i :class="getAgentSessionTerminalStatus(session).icon" class="mr-1"></i>
+                                                <span x-text="getAgentSessionTerminalStatus(session).label"></span>
+                                            </div>
+                                        </template>
+                                        <div x-show="canActOnAgentSession(session)" class="flex xl:flex-col items-stretch xl:items-end gap-2 w-full xl:w-auto">
+                                        <button type="button"
+                                                onclick="return window.handleAgentSessionAction(event, this)"
+                                                :data-agent-run-id="session.run_id"
+                                                data-agent-action="accept"
+                                                :aria-disabled="!canActOnAgentSession(session) || agentSessionActionInFlight[session.run_id]"
+                                                class="w-full xl:w-40 px-3 py-1.5 text-sm bg-green-100 text-green-700 rounded hover:bg-green-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                                            <i class="fas fa-check mr-1"></i><span x-text="agentSessionActionInFlight[session.run_id] ? '处理中...' : '接受变更'"></span>
+                                        </button>
+                                        <button type="button"
+                                                onclick="return window.handleAgentSessionAction(event, this)"
+                                                :data-agent-run-id="session.run_id"
+                                                data-agent-action="rollback"
+                                                :aria-disabled="!canActOnAgentSession(session) || agentSessionActionInFlight[session.run_id]"
+                                                class="w-full xl:w-40 px-3 py-1.5 text-sm bg-red-500 text-white rounded hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed">
+                                            <i class="fas fa-undo mr-1"></i><span x-text="agentSessionActionInFlight[session.run_id] ? '回退请求中...' : '执行回退'"></span>
+                                        </button>
+                                        </div>
+                                        <i class="hidden xl:block fas transition-transform text-gray-400 mt-1"
+                                           :class="isExpanded(session.run_id, 'agent') ? 'fa-chevron-up rotate-180' : 'fa-chevron-down'"></i>
+                                    </div>
+                                </div>
+
+                                <div x-show="isExpanded(session.run_id, 'agent')" class="border-t border-gray-200 px-4 py-4">
+                                    <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_360px] gap-5 text-sm">
+                                        <div class="space-y-4 min-w-0">
+                                            <section>
+                                                <div class="flex items-center justify-between mb-2">
+                                                    <div class="font-semibold text-gray-900">LLM 裁决</div>
+                                                    <div class="flex flex-wrap gap-2">
+                                                        <span class="px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-700 border" x-text="getAgentAdjudication(session).verdict || 'unknown'"></span>
+                                                        <span class="px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-700 border" x-text="getAgentAdjudication(session).recommended_action || 'ask_user'"></span>
+                                                        <span class="px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-700 border" x-text="getAgentAdjudication(session).rollback_recommended ? '建议回退' : '无需自动回退'"></span>
+                                                    </div>
+                                                </div>
+                                                <div class="bg-gray-50 border border-gray-200 rounded p-3 text-gray-700 whitespace-pre-wrap" x-text="getAgentAdjudication(session).summary || '-'"></div>
+                                            </section>
+
+                                            <section>
+                                                <div class="font-semibold text-gray-900 mb-2">本次变更</div>
+                                                <template x-if="getAgentChangedFiles(session).length === 0">
+                                                    <div class="bg-gray-50 border border-gray-200 rounded p-3 text-gray-500">暂无变更文件记录</div>
+                                                </template>
+                                                <div class="space-y-2">
+                                                    <template x-for="file in getAgentChangedFiles(session)" :key="file.path">
+                                                        <div class="border border-gray-200 rounded p-3 bg-white">
+                                                            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-1">
+                                                                <span class="font-mono text-xs text-gray-800 break-all" x-text="file.path"></span>
+                                                                <span class="text-xs text-gray-500" x-text="`${file.change_type || 'changed'} · +${file.added_lines || 0} / -${file.deleted_lines || 0}`"></span>
+                                                            </div>
+                                                            <pre class="mt-2 bg-gray-900 text-gray-100 rounded p-3 text-xs overflow-x-auto max-h-56" x-text="file.diff || ''"></pre>
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </section>
+
+                                            <section>
+                                                <div class="font-semibold text-gray-900 mb-2">原始请求</div>
+                                                <div class="bg-gray-50 border border-gray-200 rounded p-3 text-gray-700 whitespace-pre-wrap" x-text="session.original_request || '-'"></div>
+                                            </section>
+                                        </div>
+
+                                        <div class="space-y-4 min-w-0">
+                                            <section>
+                                                <div class="font-semibold text-gray-900 mb-2">运行证据</div>
+                                                <dl class="grid grid-cols-1 gap-2 text-xs">
+                                                    <div class="flex justify-between gap-3 border-b border-gray-100 pb-2">
+                                                        <dt class="text-gray-500">workspace</dt>
+                                                        <dd class="font-mono text-gray-800 text-right break-all" x-text="session.workspace || '-'"></dd>
+                                                    </div>
+                                                    <div class="flex justify-between gap-3 border-b border-gray-100 pb-2">
+                                                        <dt class="text-gray-500">nono session</dt>
+                                                        <dd class="font-mono text-gray-800 text-right break-all" x-text="session.nono?.session_id || '-'"></dd>
+                                                    </div>
+                                                    <div class="flex justify-between gap-3 border-b border-gray-100 pb-2">
+                                                        <dt class="text-gray-500">state home</dt>
+                                                        <dd class="font-mono text-gray-800 text-right break-all" x-text="session.nono?.state_home || '-'"></dd>
+                                                    </div>
+                                                    <div class="flex justify-between gap-3">
+                                                        <dt class="text-gray-500">diff sha256</dt>
+                                                        <dd class="font-mono text-gray-800 text-right break-all" x-text="session.diff_ref?.sha256 || '-'"></dd>
+                                                    </div>
+                                                </dl>
+                                            </section>
+
+                                            <section>
+                                                <div class="font-semibold text-gray-900 mb-2">执行命令</div>
+                                                <pre class="bg-gray-50 border border-gray-200 rounded p-3 text-xs overflow-x-auto max-h-40" x-text="JSON.stringify(session.agent_command || [], null, 2)"></pre>
+                                            </section>
+
+                                            <section>
+                                                <div class="font-semibold text-gray-900 mb-2">nono 状态</div>
+                                                <pre class="bg-gray-50 border border-gray-200 rounded p-3 text-xs overflow-x-auto max-h-48" x-text="JSON.stringify(session.nono || {}, null, 2)"></pre>
+                                            </section>
+
+                                            <section>
+                                                <div class="font-semibold text-gray-900 mb-2">完整记录</div>
+                                                <pre class="bg-gray-50 border border-gray-200 rounded p-3 text-xs overflow-x-auto max-h-56" x-text="JSON.stringify(session, null, 2)"></pre>
+                                            </section>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+
+                        <div class="flex justify-center items-center space-x-2 mt-6" x-show="agentSessionPagination.pages > 1">
+                            <button @click="changeAgentSessionPage(agentSessionPagination.page - 1)"
+                                    :disabled="agentSessionPagination.page <= 1"
+                                    class="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                                上一页
+                            </button>
+                            <span class="text-sm text-gray-600">
+                                第 <span x-text="agentSessionPagination.page"></span> 页 / 共 <span x-text="agentSessionPagination.pages"></span> 页
+                            </span>
+                            <button @click="changeAgentSessionPage(agentSessionPagination.page + 1)"
+                                    :disabled="agentSessionPagination.page >= agentSessionPagination.pages"
+                                    class="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                                下一页
+                            </button>
+                        </div>
+                    </div>
                 </div>
                 
-                <div x-show="(searchType === 'short' && shortTTPs.length === 0) || (searchType === 'long' && longTTPs.length === 0)" 
+                <div x-show="(searchType === 'short' && shortTTPs.length === 0) || (searchType === 'long' && longTTPs.length === 0) || (searchType === 'agent' && agentSessions.length === 0)"
                      class="text-center py-12">
                     <i class="fas fa-inbox text-gray-400 text-4xl mb-4"></i>
                     <p class="text-gray-500 text-lg" x-text="loading ? '加载中...' : '暂无数据'"></p>
@@ -1381,6 +1597,16 @@
                 generationStatus: {},
                 generationTimers: {},
                 longTTPTimer: null,  // Long TTP 轮询定时器
+                agentSessions: [],
+                agentSessionsLoading: false,
+                agentSessionTimer: null,
+                agentSessionActionInFlight: {},
+                agentSessionPagination: {
+                    page: 1,
+                    size: 20,
+                    total: 0,
+                    pages: 1
+                },
                 manualFeedbackEnabled: false,  // 人工参与开关状态
                 // 人工参与面板相关状态
                 showFeedbackPanel: false,  // 是否显示右侧面板
@@ -1394,9 +1620,15 @@
                 cardFeedbackTimers: {},  // 卡片轮询定时器
 
                 init() {
-                    this.loadData();
-                    this.connectWebSocket();
-                    this.handleUrlParams();
+                    const urlParams = new URLSearchParams(window.location.search);
+                    if (urlParams.get('type') === 'agent') {
+                        this.searchType = 'agent';
+                        this.handleUrlParams();
+                    } else {
+                        this.loadData();
+                        this.connectWebSocket();
+                        this.handleUrlParams();
+                    }
                     // 确保所有战术和技术默认闭合
                     this.resetAllExpansions();
 
@@ -1416,6 +1648,10 @@
                         if (this.longTTPTimer) {
                             clearInterval(this.longTTPTimer);
                             this.longTTPTimer = null;
+                        }
+                        if (this.agentSessionTimer) {
+                            clearInterval(this.agentSessionTimer);
+                            this.agentSessionTimer = null;
                         }
                     });
                 },
@@ -1825,6 +2061,7 @@
                     await this.loadShortTTPs();
                     // 停止 Long TTP 轮询
                     this.stopLongTTPPolling();
+                    this.stopAgentSessionPolling();
                 },
 
                 // 切换到高级持续性威胁标签页
@@ -1835,6 +2072,15 @@
                     await this.loadLongTTPs();
                     // 启动 Long TTP 轮询
                     this.startLongTTPPolling();
+                    this.stopAgentSessionPolling();
+                },
+
+                async switchToAgentSessions() {
+                    this.agentSessionPagination.page = 1;
+                    this.searchType = 'agent';
+                    await this.loadAgentSessions();
+                    this.stopLongTTPPolling();
+                    this.startAgentSessionPolling();
                 },
 
                 // 启动 Long TTP 轮询
@@ -1855,6 +2101,22 @@
                     if (this.longTTPTimer) {
                         clearInterval(this.longTTPTimer);
                         this.longTTPTimer = null;
+                    }
+                },
+
+                startAgentSessionPolling() {
+                    this.stopAgentSessionPolling();
+                    this.agentSessionTimer = setInterval(() => {
+                        if (this.searchType === 'agent') {
+                            this.loadAgentSessions();
+                        }
+                    }, 5000);
+                },
+
+                stopAgentSessionPolling() {
+                    if (this.agentSessionTimer) {
+                        clearInterval(this.agentSessionTimer);
+                        this.agentSessionTimer = null;
                     }
                 },
 
@@ -1879,16 +2141,24 @@
                         // 使用分页参数加载数据
                         await Promise.all([
                             this.loadShortTTPs(),
-                            this.loadLongTTPs()
+                            this.loadLongTTPs(),
+                            this.loadAgentSessions()
                         ]);
                     } catch (error) {
                         console.error('Error loading data:', error);
                         this.shortTTPs = [];
                         this.longTTPs = [];
+                        this.agentSessions = [];
                         this.stats = {short_ttp_count: 0, long_ttp_count: 0, total_events_processed: 0, windows_yielded: 0};
                     } finally {
                         this.loading = false;
                     }
+                },
+
+                getCurrentListTotal() {
+                    if (this.searchType === 'short') return this.stats.short_ttp_count || 0;
+                    if (this.searchType === 'long') return this.stats.long_ttp_count || 0;
+                    return this.agentSessionPagination.total || 0;
                 },
 
                 isTacticExpanded(tacticId) {
@@ -2210,6 +2480,185 @@
                     } finally {
                         this.loading = false;
                     }
+                },
+
+                async loadAgentSessions() {
+                    try {
+                        this.agentSessionsLoading = true;
+                        const params = new URLSearchParams();
+                        params.append('page', this.agentSessionPagination.page);
+                        params.append('size', this.agentSessionPagination.size);
+                        const response = await fetch(`/api/agent-sessions?${params.toString()}`);
+                        if (!response.ok) {
+                            throw new Error('加载智能体告警失败');
+                        }
+                        const result = await response.json();
+                        this.agentSessions = result.items || [];
+                        this.agentSessionPagination = {
+                            page: result.page || this.agentSessionPagination.page,
+                            size: result.size || this.agentSessionPagination.size,
+                            total: result.total || 0,
+                            pages: result.pages || Math.max(1, Math.ceil((result.total || 0) / this.agentSessionPagination.size))
+                        };
+                    } catch (error) {
+                        console.error('加载智能体告警失败:', error);
+                        this.agentSessions = [];
+                        this.agentSessionPagination.total = 0;
+                        this.agentSessionPagination.pages = 1;
+                    } finally {
+                        this.agentSessionsLoading = false;
+                    }
+                },
+
+                async changeAgentSessionPage(page) {
+                    if (page < 1 || page > this.agentSessionPagination.pages) return;
+                    this.agentSessionPagination.page = page;
+                    await this.loadAgentSessions();
+                },
+
+                canActOnAgentSession(session) {
+                    return session && session.status === 'adjudicated' && ['not_requested', null, undefined].includes(session.rollback_status) && !session.decision;
+                },
+
+                updateAgentSessionLocal(runId, patch) {
+                    this.agentSessions = this.agentSessions.map(session => (
+                        session.run_id === runId ? Object.assign({}, session, patch) : session
+                    ));
+                },
+
+                async acceptAgentSession(session) {
+                    if (!session || !this.canActOnAgentSession(session)) return;
+                    this.agentSessionActionInFlight = Object.assign({}, this.agentSessionActionInFlight, {[session.run_id]: true});
+                    try {
+                        const response = await fetch(`/api/agent-sessions/${encodeURIComponent(session.run_id)}/accept`, {
+                            method: 'POST'
+                        });
+                        if (!response.ok) throw new Error('接受变更失败');
+                        this.updateAgentSessionLocal(session.run_id, {
+                            decision: 'accepted',
+                            rollback_status: 'not_requested'
+                        });
+                        await this.loadAgentSessions();
+                    } catch (error) {
+                        console.error('接受智能体变更失败:', error);
+                        alert('接受变更失败: ' + error.message);
+                    } finally {
+                        this.agentSessionActionInFlight = Object.assign({}, this.agentSessionActionInFlight, {[session.run_id]: false});
+                    }
+                },
+
+                async rollbackAgentSession(session) {
+                    if (!session || !this.canActOnAgentSession(session)) return;
+                    if (!confirm(`确认对 ${session.run_id} 执行回退？此操作会调用真实 nono rollback restore。`)) {
+                        return;
+                    }
+                    this.agentSessionActionInFlight = Object.assign({}, this.agentSessionActionInFlight, {[session.run_id]: true});
+                    try {
+                        const response = await fetch(`/api/agent-sessions/${encodeURIComponent(session.run_id)}/rollback`, {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({requested_by: 'web_ui'})
+                        });
+                        if (!response.ok) throw new Error('请求 nono 回退失败');
+                        this.updateAgentSessionLocal(session.run_id, {
+                            decision: 'rollback_requested',
+                            rollback_status: 'requested'
+                        });
+                        await this.loadAgentSessions();
+                    } catch (error) {
+                        console.error('请求智能体回退失败:', error);
+                        alert('执行回退失败: ' + error.message);
+                    } finally {
+                        this.agentSessionActionInFlight = Object.assign({}, this.agentSessionActionInFlight, {[session.run_id]: false});
+                    }
+                },
+
+                getAgentAdjudication(session) {
+                    return session?.raw_event?.adjudication || {};
+                },
+
+                getAgentChangedFiles(session) {
+                    return session?.raw_event?.changed_files || [];
+                },
+
+                getAgentActionableCount() {
+                    return this.agentSessions.filter(session => this.canActOnAgentSession(session)).length;
+                },
+
+                getAgentCompletedCount() {
+                    return this.agentSessions.filter(session => session.rollback_status === 'completed').length;
+                },
+
+                getAgentSessionStatusLabel(status) {
+                    const labels = {
+                        received: '已接收',
+                        adjudicated: '已裁决',
+                        evidence_invalid: '证据无效'
+                    };
+                    return labels[status] || status || '未知';
+                },
+
+                getAgentSessionStatusClass(status) {
+                    if (status === 'adjudicated') return 'bg-blue-100 text-blue-800';
+                    if (status === 'evidence_invalid') return 'bg-red-100 text-red-800';
+                    return 'bg-gray-100 text-gray-700';
+                },
+
+                getAgentRollbackStatusLabel(status) {
+                    const labels = {
+                        not_requested: '未回退',
+                        requested: '回退请求中',
+                        completed: '回退完成',
+                        failed: '回退失败'
+                    };
+                    return labels[status] || status || '未回退';
+                },
+
+                getAgentRollbackStatusClass(status) {
+                    if (status === 'completed') return 'bg-green-100 text-green-800';
+                    if (status === 'requested') return 'bg-yellow-100 text-yellow-800';
+                    if (status === 'failed') return 'bg-red-100 text-red-800';
+                    return 'bg-gray-100 text-gray-700';
+                },
+
+                getAgentSessionTerminalStatus(session) {
+                    if (session?.rollback_status === 'completed') {
+                        return {label: '回退完成', className: 'border-green-200 bg-green-50 text-green-700', icon: 'fas fa-check-circle'};
+                    }
+                    if (session?.rollback_status === 'requested') {
+                        return {label: '回退执行中', className: 'border-yellow-200 bg-yellow-50 text-yellow-700', icon: 'fas fa-spinner fa-spin'};
+                    }
+                    if (session?.rollback_status === 'failed') {
+                        return {label: '回退失败', className: 'border-red-200 bg-red-50 text-red-700', icon: 'fas fa-exclamation-circle'};
+                    }
+                    if (session?.decision === 'accepted') {
+                        return {label: '已接受变更', className: 'border-green-200 bg-green-50 text-green-700', icon: 'fas fa-check'};
+                    }
+                    if (session?.decision === 'rollback_requested') {
+                        return {label: '回退执行中', className: 'border-yellow-200 bg-yellow-50 text-yellow-700', icon: 'fas fa-spinner fa-spin'};
+                    }
+                    if (session?.status === 'evidence_invalid') {
+                        return {label: '证据无效', className: 'border-red-200 bg-red-50 text-red-700', icon: 'fas fa-ban'};
+                    }
+                    return {label: '不可操作', className: 'border-gray-200 bg-gray-50 text-gray-600', icon: 'fas fa-lock'};
+                },
+
+                getAgentRiskLabel(riskLevel) {
+                    const labels = {
+                        low: '低风险',
+                        medium: '中风险',
+                        high: '高风险',
+                        critical: '严重风险'
+                    };
+                    return labels[riskLevel] || '风险待定';
+                },
+
+                getAgentRiskClass(riskLevel) {
+                    if (riskLevel === 'critical') return 'bg-red-200 text-red-900';
+                    if (riskLevel === 'high') return 'bg-orange-100 text-orange-800';
+                    if (riskLevel === 'medium') return 'bg-yellow-100 text-yellow-800';
+                    if (riskLevel === 'low') return 'bg-green-100 text-green-800';
+                    return 'bg-gray-100 text-gray-700';
                 },
 
                 async changeShortTTPPage(page) {
@@ -2847,6 +3296,31 @@
                     const id = urlParams.get('id');
                     
                     if (type && id) {
+                        if (type === 'agent') {
+                            this.searchType = 'agent';
+                            this.agentSessionPagination.page = 1;
+                            this.loadAgentSessions().then(() => {
+                                this.expandedTTPs.add(`agent_${id}`);
+                                this.startAgentSessionPolling();
+                                setTimeout(() => {
+                                    const codeElements = document.querySelectorAll('code, span');
+                                    for (let el of codeElements) {
+                                        if (el.textContent && el.textContent.trim() === id) {
+                                            const container = el.closest('.border.border-gray-200.rounded-lg.p-4') || el.closest('.border') || el;
+                                            container.scrollIntoView({behavior: 'smooth', block: 'center'});
+                                            container.style.border = '2px solid #ef4444';
+                                            container.style.backgroundColor = '#fff7ed';
+                                            setTimeout(() => {
+                                                container.style.border = '';
+                                                container.style.backgroundColor = '';
+                                            }, 5000);
+                                            break;
+                                        }
+                                    }
+                                }, 500);
+                            });
+                            return;
+                        }
                         console.log('URL参数检测:', { type, id });
                         
                         // 检查TTP是否存在
@@ -3164,6 +3638,65 @@
                 }
             };
         }
+
+        window.handleAgentSessionAction = async function(event, button) {
+            const actionButton = button || event.target.closest('[data-agent-action][data-agent-run-id]');
+            if (!actionButton) return false;
+            if (actionButton.dataset.agentFallbackHandling === 'true') return false;
+
+            const action = actionButton.dataset.agentAction;
+            const runId = actionButton.dataset.agentRunId;
+            if (!runId || !['accept', 'rollback'].includes(action)) return;
+
+            const root = actionButton.closest('[x-data]');
+            const alpineComponent = root && window.Alpine ? window.Alpine.$data(root) : null;
+            const session = alpineComponent?.agentSessions?.find(item => item.run_id === runId);
+            if (session && typeof alpineComponent?.canActOnAgentSession === 'function' && !alpineComponent.canActOnAgentSession(session)) {
+                console.log('Agent session action ignored because session is not actionable', {runId, action, session});
+                return false;
+            }
+
+            if (action === 'rollback' && !confirm(`确认对 ${runId} 执行回退？此操作会调用真实 nono rollback restore。`)) {
+                return false;
+            }
+
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            actionButton.dataset.agentFallbackHandling = 'true';
+            const originalText = actionButton.innerText;
+            actionButton.innerText = action === 'rollback' ? '回退请求中...' : '处理中...';
+            console.log('Agent session action started', {runId, action});
+            try {
+                const response = await fetch(`/api/agent-sessions/${encodeURIComponent(runId)}/${action}`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: action === 'rollback' ? JSON.stringify({requested_by: 'web_ui'}) : undefined
+                });
+                const text = await response.text();
+                if (!response.ok) {
+                    throw new Error(text || `${response.status} ${response.statusText}`);
+                }
+                console.log('Agent session action completed', {runId, action, response: text});
+                if (alpineComponent?.loadAgentSessions) {
+                    await alpineComponent.loadAgentSessions();
+                } else {
+                    window.location.reload();
+                }
+            } catch (error) {
+                console.error('Agent session action failed', error);
+                alert(`${action === 'rollback' ? '执行回退' : '接受变更'}失败: ${error.message}`);
+                actionButton.innerText = originalText;
+            } finally {
+                delete actionButton.dataset.agentFallbackHandling;
+            }
+            return false;
+        };
+
+        document.addEventListener('click', async (event) => {
+            const button = event.target.closest('[data-agent-action][data-agent-run-id]');
+            if (!button) return;
+            await window.handleAgentSessionAction(event, button);
+        }, true);
     </script>
 </body>
 </html>

@@ -1,23 +1,12 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from collections.abc import Callable
 
-from .adjudicator import AdjudicationResult, LLMClient, adjudicate_session
+from .adjudication_graph import run_adjudication_graph
+from .adjudicator import LLMClient
 from .config import AgentGuardConfig
-from .context_planner import ContextPlan, plan_context
-from .diff_parser import ChangedFile, estimate_token_count, parse_unified_diff
-from .diff_store import DiffEvidenceError, DiffRef, load_diff_text
-from .rule_engine import RiskSignal, detect_risk_signals
-
-
-@dataclass(frozen=True)
-class AgentSessionProcessResult:
-    status: str
-    changed_files: list[ChangedFile] = field(default_factory=list)
-    risk_signals_by_file: dict[str, list[RiskSignal]] = field(default_factory=dict)
-    context_plan: ContextPlan | None = None
-    adjudication: AdjudicationResult | None = None
-    error: str | None = None
+from .diff_store import DiffEvidenceError, DiffRef, create_boto3_diff_store, load_diff_text
+from .service_types import AgentSessionProcessResult
 
 
 def process_finished_session_event(
@@ -25,6 +14,7 @@ def process_finished_session_event(
     *,
     config: AgentGuardConfig,
     llm: LLMClient,
+    diff_text_loader: Callable[[DiffRef], str] | None = None,
 ) -> AgentSessionProcessResult:
     try:
         raw_ref = event["diff_ref"]
@@ -33,43 +23,25 @@ def process_finished_session_event(
             uri=raw_ref["uri"],
             sha256=raw_ref["sha256"],
         )
-        diff_text = load_diff_text(diff_ref)
+        diff_text = diff_text_loader(diff_ref) if diff_text_loader else _load_diff_text(diff_ref, config)
     except (KeyError, DiffEvidenceError, OSError) as exc:
         return AgentSessionProcessResult(status="evidence_invalid", error=str(exc))
 
-    changed_files = parse_unified_diff(diff_text)
-    risk_signals_by_file = {
-        changed.path: detect_risk_signals(changed)
-        for changed in changed_files
-    }
-    context_plan = plan_context(
-        total_tokens=estimate_token_count(diff_text),
-        files=changed_files,
-        risk_signals_by_file=risk_signals_by_file,
-        config=config,
-    )
+    return run_adjudication_graph(event=event, diff_text=diff_text, config=config, llm=llm)
 
-    if context_plan.force_human_review:
-        adjudication = AdjudicationResult(
-            verdict="needs_human_review",
-            risk_level="medium",
-            out_of_intent=None,
-            summary="Diff exceeds configured threshold; human review is required.",
-            recommended_action="ask_user",
-        )
-    else:
-        adjudication = adjudicate_session(
-            original_request=event.get("original_request", ""),
-            changed_files=changed_files,
-            context_plan=context_plan,
-            risk_signals_by_file=risk_signals_by_file,
-            llm=llm,
-        )
 
-    return AgentSessionProcessResult(
-        status="adjudicated",
-        changed_files=changed_files,
-        risk_signals_by_file=risk_signals_by_file,
-        context_plan=context_plan,
-        adjudication=adjudication,
-    )
+def _load_diff_text(diff_ref: DiffRef, config: AgentGuardConfig) -> str:
+    if diff_ref.storage == "local":
+        return load_diff_text(diff_ref, max_bytes=config.max_diff_read_bytes)
+    if diff_ref.storage in {"s3", "minio"}:
+        store = create_boto3_diff_store(
+            bucket=config.diff_bucket,
+            prefix=config.diff_prefix,
+            endpoint_url=config.diff_endpoint_url or None,
+            access_key_id=config.diff_access_key_id or None,
+            secret_access_key=config.diff_secret_access_key or None,
+            region_name=config.diff_region or None,
+            storage=diff_ref.storage,
+        )
+        return store.read_text(diff_ref, max_bytes=config.max_diff_read_bytes)
+    return load_diff_text(diff_ref, max_bytes=config.max_diff_read_bytes)
