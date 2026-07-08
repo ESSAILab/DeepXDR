@@ -197,6 +197,19 @@ async def accept_agent_session(run_id: str):
     return {"status": "accepted", "run_id": run_id}
 
 
+@router.delete(
+    "/agent-sessions/{run_id}",
+    dependencies=[Depends(require_api_key)],
+)
+async def delete_agent_session(run_id: str):
+    """删除智能体会话审计记录及其关联裁决/回退记录"""
+    repo = _require_agent_guard_repository()
+    deleted = await repo.delete_session(run_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Agent session not found")
+    return {"status": "deleted", "run_id": run_id}
+
+
 @router.post(
     "/agent-sessions/{run_id}/rollback",
     dependencies=[Depends(require_api_key)],

@@ -60,6 +60,8 @@ def parse_unified_diff(diff_text: str) -> list[ChangedFile]:
                 current_path = "unknown"
             current_lines = [line]
         elif line.startswith("--- "):
+            if current_path is not None and current_lines and not current_lines[0].startswith("diff --git "):
+                flush_current()
             if current_path is not None:
                 current_lines.append(line)
             pending_old_path = normalize_path(line[4:])

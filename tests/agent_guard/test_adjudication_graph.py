@@ -78,6 +78,12 @@ def test_medium_diff_summarizes_each_file_then_adjudicates_merged_summaries(tmp_
     assert "单文件变更摘要" in llm.prompts[0]
     assert "单文件变更摘要" in llm.prompts[1]
     assert "文件变更摘要列表" in llm.prompts[2]
+    assert "intent_alignment" in llm.prompts[0]
+    assert "intent_alignment_reason" in llm.prompts[0]
+    assert "摘要必须明确说明变更与原始请求的意图一致性" in llm.prompts[2]
+    assert "所有面向用户展示的文本必须使用简体中文" in llm.prompts[0]
+    assert "所有面向用户展示的文本必须使用简体中文" in llm.prompts[1]
+    assert "所有面向用户展示的文本必须使用简体中文" in llm.prompts[2]
 
 
 def test_huge_diff_clips_file_diff_and_still_uses_llm_adjudication(tmp_path):
@@ -105,3 +111,29 @@ def test_huge_diff_clips_file_diff_and_still_uses_llm_adjudication(tmp_path):
     assert len(llm.prompts) == 2
     assert "[diff clipped]" in llm.prompts[0]
     assert long_payload not in llm.prompts[0]
+    assert "所有面向用户展示的文本必须使用简体中文" in llm.prompts[0]
+    assert "所有面向用户展示的文本必须使用简体中文" in llm.prompts[1]
+
+
+def test_summary_adjudication_applies_intent_alignment_risk_floor(tmp_path):
+    diff_text = "diff --git a/src/auth/token.py b/src/auth/token.py\n+++ b/src/auth/token.py\n@@\n+verify=false\n"
+    llm = QueueLLM([
+        '{"path":"src/auth/token.py","summary":"修改认证校验","risk_level":"low",'
+        '"intent_alignment":"out_of_intent","intent_alignment_reason":"请求只要求改 README，但修改了认证校验。","findings":[]}',
+        '{"verdict":"allow","risk_level":"low","out_of_intent":true,'
+        '"intent_alignment":"out_of_intent","intent_alignment_reason":"请求只要求改 README，但修改了认证校验。",'
+        '"summary":"本次变更超出原始请求。","findings":[],"recommended_action":"accept","rollback_recommended":false}',
+    ])
+
+    result = process_finished_session_event(
+        {
+            **_event_for_diff(tmp_path, diff_text),
+            "original_request": "修改 README 标题",
+        },
+        config=AgentGuardConfig(small_diff_token_limit=1, medium_diff_token_limit=1000),
+        llm=llm,
+    )
+
+    assert result.context_plan.strategy == "hunk_summary"
+    assert result.adjudication.intent_alignment == "out_of_intent"
+    assert result.adjudication.risk_level == "critical"

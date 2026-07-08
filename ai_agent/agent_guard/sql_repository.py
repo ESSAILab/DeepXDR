@@ -1,13 +1,17 @@
 from __future__ import annotations
 
+from copy import deepcopy
 from datetime import datetime, timezone
 from typing import Any
 
-from sqlalchemy import desc, func, select
+from sqlalchemy import delete, desc, func, nullslast, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from shared.database.models import AgentAdjudication, AgentRollback, AgentSession
 from shared.database.connection import get_db
+
+
+MAX_WEB_UI_DIFF_CHARS_PER_FILE = 8_000
 
 
 class SqlAlchemyAgentSessionRepository:
@@ -59,9 +63,10 @@ class SqlAlchemyAgentSessionRepository:
                 .offset(offset)
             )
         ).scalars().all()
+        rollback_by_run_id = await self._latest_rollbacks_for_runs([row.run_id for row in rows])
         total = await self.db.scalar(select(func.count()).select_from(AgentSession))
         return {
-            "items": [self._session_to_dict(row) for row in rows],
+            "items": [self._session_to_dict(row, rollback_by_run_id.get(row.run_id)) for row in rows],
             "total": total or 0,
             "page": page,
             "size": size,
@@ -71,7 +76,7 @@ class SqlAlchemyAgentSessionRepository:
         row = await self.db.get(AgentSession, run_id)
         if row is None:
             return None
-        return self._session_to_dict(row)
+        return self._session_to_dict(row, await self._latest_rollback_for_run(run_id))
 
     async def update_session(self, run_id: str, updates: dict[str, Any]) -> dict[str, Any] | None:
         row = await self.db.get(AgentSession, run_id)
@@ -82,7 +87,17 @@ class SqlAlchemyAgentSessionRepository:
                 setattr(row, key, value)
         row.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
         await self.db.commit()
-        return self._session_to_dict(row)
+        return self._session_to_dict(row, await self._latest_rollback_for_run(run_id))
+
+    async def delete_session(self, run_id: str) -> bool:
+        row = await self.db.get(AgentSession, run_id)
+        if row is None:
+            return False
+        await self.db.execute(delete(AgentRollback).where(AgentRollback.run_id == run_id))
+        await self.db.execute(delete(AgentAdjudication).where(AgentAdjudication.run_id == run_id))
+        await self.db.delete(row)
+        await self.db.commit()
+        return True
 
     async def store_rollback(self, rollback: dict[str, Any]) -> None:
         row = AgentRollback(
@@ -115,14 +130,45 @@ class SqlAlchemyAgentSessionRepository:
         )
         await self.db.merge(row)
 
+    async def _latest_rollback_for_run(self, run_id: str) -> AgentRollback | None:
+        return (
+            await self.db.execute(
+                select(AgentRollback)
+                .where(AgentRollback.run_id == run_id)
+                .order_by(nullslast(desc(AgentRollback.completed_at)), desc(AgentRollback.requested_at))
+                .limit(1)
+            )
+        ).scalars().first()
+
+    async def _latest_rollbacks_for_runs(self, run_ids: list[str]) -> dict[str, AgentRollback]:
+        if not run_ids:
+            return {}
+        rows = (
+            await self.db.execute(
+                select(AgentRollback)
+                .where(AgentRollback.run_id.in_(run_ids))
+                .order_by(
+                    AgentRollback.run_id,
+                    nullslast(desc(AgentRollback.completed_at)),
+                    desc(AgentRollback.requested_at),
+                )
+            )
+        ).scalars().all()
+        rollback_by_run_id: dict[str, AgentRollback] = {}
+        for row in rows:
+            rollback_by_run_id.setdefault(row.run_id, row)
+        return rollback_by_run_id
+
     @staticmethod
-    def _session_to_dict(row: AgentSession) -> dict[str, Any]:
+    def _session_to_dict(row: AgentSession, rollback: AgentRollback | None = None) -> dict[str, Any]:
         raw_event = row.raw_event if isinstance(row.raw_event, dict) else {}
+        safe_raw_event, changed_files_preview = _build_web_ui_raw_event(raw_event)
         raw_nono = raw_event.get("nono") if isinstance(raw_event.get("nono"), dict) else {}
         nono = {"session_id": row.nono_session_id}
         for key in ("state_home", "rollback_root"):
             if raw_nono.get(key):
                 nono[key] = raw_nono[key]
+        rollback_info = _rollback_to_dict(rollback) if rollback else None
         return {
             "run_id": row.run_id,
             "nono": nono,
@@ -134,7 +180,10 @@ class SqlAlchemyAgentSessionRepository:
             "status": row.status,
             "decision": row.decision,
             "rollback_status": row.rollback_status,
-            "raw_event": row.raw_event,
+            "rollback_error": rollback_info.get("error_message") if rollback_info else None,
+            "rollback": rollback_info,
+            "changed_files_preview": changed_files_preview,
+            "raw_event": safe_raw_event,
             "created_at": row.created_at.isoformat() if row.created_at else None,
             "updated_at": row.updated_at.isoformat() if row.updated_at else None,
         }
@@ -159,6 +208,10 @@ class SqlAlchemyAgentSessionRepositoryProvider:
         async with get_db() as db:
             return await SqlAlchemyAgentSessionRepository(db).update_session(run_id, updates)
 
+    async def delete_session(self, run_id: str) -> bool:
+        async with get_db() as db:
+            return await SqlAlchemyAgentSessionRepository(db).delete_session(run_id)
+
     async def store_rollback(self, rollback: dict[str, Any]) -> None:
         async with get_db() as db:
             await SqlAlchemyAgentSessionRepository(db).store_rollback(rollback)
@@ -173,3 +226,43 @@ def _parse_datetime(value: Any) -> datetime | None:
         return datetime.fromisoformat(str(value).replace("Z", "+00:00")).replace(tzinfo=None)
     except ValueError:
         return None
+
+
+def _rollback_to_dict(row: AgentRollback) -> dict[str, Any]:
+    return {
+        "id": row.id,
+        "run_id": row.run_id,
+        "nono_session_id": row.nono_session_id,
+        "snapshot": row.snapshot,
+        "requested_by": row.requested_by,
+        "status": row.status,
+        "command_results": row.command_results,
+        "error_message": row.error_message,
+        "requested_at": row.requested_at.isoformat() if row.requested_at else None,
+        "completed_at": row.completed_at.isoformat() if row.completed_at else None,
+    }
+
+
+def _build_web_ui_raw_event(raw_event: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    safe_raw_event = deepcopy(raw_event)
+    changed_files = raw_event.get("changed_files") if isinstance(raw_event.get("changed_files"), list) else []
+    changed_files_preview = [_changed_file_preview(changed) for changed in changed_files if isinstance(changed, dict)]
+    if changed_files_preview:
+        safe_raw_event["changed_files"] = deepcopy(changed_files_preview)
+    return safe_raw_event, changed_files_preview
+
+
+def _changed_file_preview(changed_file: dict[str, Any]) -> dict[str, Any]:
+    preview = deepcopy(changed_file)
+    diff = preview.get("diff")
+    if not isinstance(diff, str):
+        preview["diff_truncated"] = False
+        preview["diff_original_chars"] = 0
+        return preview
+    preview["diff_original_chars"] = len(diff)
+    if len(diff) <= MAX_WEB_UI_DIFF_CHARS_PER_FILE:
+        preview["diff_truncated"] = False
+        return preview
+    preview["diff"] = diff[:MAX_WEB_UI_DIFF_CHARS_PER_FILE]
+    preview["diff_truncated"] = True
+    return preview

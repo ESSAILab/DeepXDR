@@ -29,6 +29,24 @@ def test_repository_stores_lists_and_updates_agent_session():
     anyio.run(run_test)
 
 
+def test_repository_deletes_agent_session():
+    async def run_test():
+        repo = InMemoryAgentSessionRepository()
+        await repo.upsert_session(
+            {
+                "run_id": "run-1",
+                "original_request": "修改 README",
+                "rollback_status": "not_requested",
+            }
+        )
+
+        assert await repo.delete_session("run-1") is True
+        assert await repo.get_session("run-1") is None
+        assert await repo.delete_session("run-1") is False
+
+    anyio.run(run_test)
+
+
 def test_repository_returns_none_for_missing_session():
     async def run_test():
         repo = InMemoryAgentSessionRepository()

@@ -326,6 +326,22 @@ async def rollback_agent_session(run_id: str, request: Request):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to request rollback: {str(e)}")
 
+
+@app.delete("/api/agent-sessions/{run_id}")
+async def delete_agent_session(run_id: str):
+    """代理删除智能体会话审计记录"""
+    try:
+        response = request_backend(
+            "DELETE",
+            f"{API_BASE_URL}/agent-sessions/{run_id}",
+            headers=get_backend_headers(),
+            timeout=10,
+        )
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete agent session: {str(e)}")
+
 @app.get("/api/proxy/events/{event_id}")
 async def proxy_event_detail(event_id: str):
     """代理访问事件详情API"""

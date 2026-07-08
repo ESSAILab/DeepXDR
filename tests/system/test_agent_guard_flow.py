@@ -51,6 +51,36 @@ def test_process_finished_session_event_allows_low_risk_readme_change(tmp_path):
     assert result.changed_files[0].path == "README.md"
 
 
+def test_process_finished_session_event_handles_multi_file_change(tmp_path):
+    diff_ref = _write_diff(
+        tmp_path,
+        (
+            "diff --git a/src/service.py b/src/service.py\n"
+            "+++ b/src/service.py\n"
+            "@@\n"
+            "-return 'old'\n"
+            "+return 'new'\n"
+            "diff --git a/config/policy.yaml b/config/policy.yaml\n"
+            "+++ b/config/policy.yaml\n"
+            "@@\n"
+            "-mode: observe\n"
+            "+mode: enforce\n"
+        ),
+    )
+    llm = FakeLLM(
+        '{"verdict":"warn","risk_level":"medium","out_of_intent":false,'
+        '"summary":"多个文件发生变更","findings":[{"file":"src/service.py"},{"file":"config/policy.yaml"}],'
+        '"recommended_action":"ask_user","rollback_recommended":false}'
+    )
+
+    result = process_finished_session_event(_event(diff_ref), config=AgentGuardConfig(), llm=llm)
+
+    assert result.status == "adjudicated"
+    assert [changed.path for changed in result.changed_files] == ["src/service.py", "config/policy.yaml"]
+    assert result.adjudication.summary == "多个文件发生变更"
+    assert result.adjudication.risk_level == "medium"
+
+
 def test_process_finished_session_event_warns_on_sensitive_workflow_change(tmp_path):
     diff_ref = _write_diff(
         tmp_path,

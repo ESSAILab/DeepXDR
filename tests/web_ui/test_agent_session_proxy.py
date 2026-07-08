@@ -40,11 +40,14 @@ def test_web_ui_proxies_agent_session_list_and_actions(monkeypatch):
     assert client.get("/api/agent-sessions/run-1").json()["items"][0]["run_id"] == "run-1"
     assert client.post("/api/agent-sessions/run-1/accept").json()["status"] == "ok"
     assert client.post("/api/agent-sessions/run-1/rollback", json={"requested_by": "user-1"}).json()["status"] == "ok"
+    assert client.delete("/api/agent-sessions/run-1").json()["status"] == "ok"
 
     assert calls[0][1].endswith("/agent-sessions?page=1&size=20")
     assert calls[1][1].endswith("/agent-sessions/run-1")
     assert calls[2][1].endswith("/agent-sessions/run-1/accept")
     assert calls[3][1].endswith("/agent-sessions/run-1/rollback")
+    assert calls[4][0] == "DELETE"
+    assert calls[4][1].endswith("/agent-sessions/run-1")
 
 
 def test_backend_request_ignores_environment_proxy(monkeypatch):

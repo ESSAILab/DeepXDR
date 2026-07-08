@@ -44,3 +44,9 @@ class InMemoryAgentSessionRepository:
         session.update(deepcopy(updates))
         session["updated_at"] = datetime.now(timezone.utc).isoformat()
         return deepcopy(session)
+
+    async def delete_session(self, run_id: str) -> bool:
+        if run_id not in self.sessions:
+            return False
+        del self.sessions[run_id]
+        return True

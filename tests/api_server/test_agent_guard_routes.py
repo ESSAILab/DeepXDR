@@ -53,3 +53,29 @@ def test_agent_session_routes_list_detail_accept_and_rollback():
     assert rollback["status"] == "rollback_requested"
     assert publisher.events[0]["event_type"] == "agent.rollback.requested"
     assert publisher.events[0]["snapshot"] == 0
+
+
+def test_agent_session_route_deletes_session():
+    repo = InMemoryAgentSessionRepository()
+    publisher = FakeRollbackPublisher()
+    client = _client(repo, publisher)
+
+    import anyio
+
+    anyio.run(
+        repo.upsert_session,
+        {
+            "run_id": "run-1",
+            "nono": {"session_id": "nono-1"},
+            "original_request": "修改 README",
+            "rollback_status": "not_requested",
+        },
+    )
+
+    headers = {"X-API-Key": "test-key"}
+    deleted = client.delete("/agent-sessions/run-1", headers=headers)
+
+    assert deleted.status_code == 200
+    assert deleted.json() == {"status": "deleted", "run_id": "run-1"}
+    assert client.get("/agent-sessions/run-1", headers=headers).status_code == 404
+    assert client.delete("/agent-sessions/run-1", headers=headers).status_code == 404
