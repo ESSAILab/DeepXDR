@@ -1,4 +1,3 @@
-# DeepXDR
 <p align="center">
   <img src="assets/images/deepxdr-brand-demo.gif" alt="DeepXDR brand demo" width="760">
 </p>
@@ -9,23 +8,23 @@ English | [中文](README.md)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue)](ai_agent/pyproject.toml)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-DeepXDR is an intelligent threat analysis and investigation system for real-time security operations. It receives security alerts and behavior events from host, application, and network telemetry sources, filters high-value signals through baseline adjudication, and then uses an AI Agent to correlate multi-source evidence and generate MITRE ATT&CK-based TTP analysis. For events that require longer-range reasoning, the system can escalate from Short TTP (cross-domain correlated real-time alerts) to Long TTP (advanced threat attack chain) investigations, and supports analyst feedback to supplement investigation direction. DeepXDR also provides an Agent Security Analysis Mode that integrates AI-agent executions wrapped by nono, analyzes the final code changes, and supports manual acceptance or rollback.
+DeepXDR is an intelligent threat analysis and investigation system for real-time security operations. It receives security alerts and behavior events from host, application, and network telemetry sources, filters high-value signals through baseline adjudication, and then uses an AI Agent to correlate multi-source evidence and generate MITRE ATT&CK-based TTP analysis. For events that require longer-range reasoning, the system can escalate from Short TTP (cross-domain correlated real-time alerts) to Long TTP (advanced threat attack chain) investigations, and supports analyst feedback to supplement investigation direction. DeepXDR also provides an Agent Security Analysis Mode that integrates AI-agent executions wrapped by nono, analyzes intent alignment between the user's original request and the final code changes, and supports manual acceptance or recovery.
 
 ## Project Status
 
-> **Alpha software - investigation-first mode.** DeepXDR is an early research and engineering implementation intended only for single-user, single-application experiments and validation. It does not yet support multi-user, multi-tenant, or multi-application production deployments. The system focuses on real-time alert intake, anomaly discovery, TTP generation, advanced threat investigation, and AI-agent change risk analysis. The current XDR Response capability remains incomplete: production-grade response orchestration, approval workflows, policy validation, cross-control-plane enforcement, and full execution auditing are not yet implemented. Agent Security Analysis Mode supports human-confirmed rollback through nono, but should still be treated as experimental capability. MCP defense interfaces under `ai_agent/defense/` are experimental integrations and should not be treated as complete automated response capability.
+> **Alpha software - investigation-first mode.** DeepXDR is an early research and engineering implementation intended only for single-user, single-application experiments and validation. It does not yet support multi-user, multi-tenant, or multi-application production deployments. The system focuses on real-time alert intake, anomaly discovery, TTP generation, advanced threat investigation, and intent-alignment and risk analysis for AI-agent changes. The current XDR Response capability remains incomplete: production-grade response orchestration, approval workflows, policy validation, cross-control-plane enforcement, and full execution auditing are not yet implemented. Agent Security Analysis Mode supports human-confirmed recovery through nono, but should still be treated as experimental capability. MCP defense interfaces under `ai_agent/defense/` are experimental integrations and should not be treated as complete automated response capability.
 
 ## System Responsibilities And Processing Boundaries
 
-DeepXDR separates the protected application, telemetry sources, data adjudication, AI analysis, and visualization into distinct responsibility boundaries: the protected application is the observed object, telemetry sources produce security data, and the downstream pipeline filters, analyzes, and presents the results.
+DeepXDR separates the protected application, telemetry sources, data adjudication, AI-driven threat analysis and investigation, agent security analysis, and visualization into distinct responsibility boundaries: the protected application is the observed object, telemetry sources produce security data, and the downstream pipeline filters, analyzes, and presents the results.
 
 | Object / Stage | Description | Directory |
 | --- | --- | --- |
 | Application | The business system protected and observed by DeepXDR. The application itself does not perform threat analysis, but it can integrate telemetry sources such as OpenRASP/RASP and share the required workspace with MCP Server according to deployment requirements. | `third_party/dotcms/` |
 | Telemetry sources | Produce security alerts and behavior events from the host, application, and network sides, then pass the data to the data aggregation and baseline adjudication pipeline. | `third_party/falco/`</br>`third_party/openrasp/`</br>`third_party/suricata/` |
 | Data aggregation and baseline adjudication</br> | Receives security data generated by telemetry sources such as Falco, OpenRASP/RASP, and Suricata. Confirmed alerts enter the downstream analysis pipeline directly; raw behavior data is first used to build a normal behavior baseline, and abnormal behaviors that do not match the baseline also enter the downstream analysis pipeline. | `baseline_adjudication/` |
-| AI threat analysis and investigation</br> | Aggregates and analyzes high-value security events that have been filtered and adjudicated, generates Short TTP, and triggers Long TTP / advanced persistent threat investigations as needed. | `ai_agent/` |
-| Agent security analysis | Receives AI-agent session events wrapped by nono, reads diff objects from MinIO/S3, performs change risk analysis, and presents manual review, acceptance, and rollback state in the Web UI. | `scripts/nono`</br>`ai_agent/agent_guard/` |
+| AI-driven threat analysis and investigation</br> | Aggregates and analyzes high-value security events that have been filtered and adjudicated, generates Short TTP, and triggers Long TTP / advanced persistent threat investigations as needed. | `ai_agent/` |
+| Agent security analysis | Receives AI-agent session events wrapped by nono, performs risk analysis around the alignment between the user's original intent and the final incremental changes, and supports human confirmation, change acceptance, and resilient recovery in the Web UI. | `scripts/nono`</br>`ai_agent/agent_guard/` |
 | Visualization and interaction | Presents TTPs, investigation results, and feedback entry points for analysts. | `web_ui/` |
 
 ## Core Capabilities
@@ -38,8 +37,7 @@ DeepXDR separates the protected application, telemetry sources, data adjudicatio
 | Short TTP (cross-domain correlated real-time alert) generation | Outputs MITRE ATT&CK tactics, techniques, procedures, confidence, summaries, attacker IPs, and related event IDs. |
 | Long TTP (advanced threat attack chain) investigation | Triggers longer-range advanced threat investigations from Short TTPs. |
 | Human feedback | Long TTP investigations support LangGraph interrupts, allowing human analysts to add investigation directions, continue the investigation, or finish it. |
-| Agent Security Analysis Mode | Captures final AI-agent changes through the nono PATH shim, stores large diffs in MinIO/S3, and generates change risk analysis through rules and LLM reasoning. |
-| Manual acceptance and rollback | The Web UI supports accepting changes, executing rollback, and deleting alerts for agent sessions. Rollback calls the real `nono rollback restore`. |
+| Agent Security Analysis Mode | Performs intent-alignment and risk analysis on incremental changes produced by AI-agent executions, correlating the user's original request, final changes, and rule signals to identify request drift, out-of-scope edits, sensitive-path changes, and high-risk operations. This mode includes human confirmation and resilient recovery, supporting change acceptance, recovery execution, and alert deletion. |
 | API and dashboard | FastAPI provides query, trigger, feedback, and statistics APIs; `web_ui/` provides the TTP dashboard. |
 
 ## Supported Telemetry Sources
@@ -48,10 +46,10 @@ The current version supports only the following input types:
 
 | Telemetry source | Collected event types |
 | --- | --- |
-| Falco | Native Falco alerts (`falco_alert` type);</br>customized Falco modifications support full collection of `open_write` and `execve` events (`falco_raw` type).</br>`falco_raw` events are used to build behavior baselines. |
-| OpenRASP | Native OpenRASP alerts (`openrasp_alert`);</br>customized OpenRASP modifications additionally collect `sql`, `readfile`, `fileUpload`, and `command` events.</br>Events other than native OpenRASP alerts are used to build behavior baselines. |
-| Suricata | Native Suricata alerts (`suricata_alert` type), which do not participate in baseline adjudication. |
-| nono | AI-agent session events and diff references used by Agent Security Analysis Mode. This source can be used independently and does not require Falco, OpenRASP, Suricata, dotCMS, or other traditional network-security analysis components. |
+| [Falco](third_party/falco/) | Native Falco alerts (`falco_alert` type);</br>customized Falco modifications support full collection of `open_write` and `execve` events (`falco_raw` type).</br>`falco_raw` events are used to build behavior baselines. |
+| [OpenRASP](third_party/openrasp/) | Native OpenRASP alerts (`openrasp_alert`);</br>customized OpenRASP modifications additionally collect `sql`, `readfile`, `fileUpload`, and `command` events.</br>Events other than native OpenRASP alerts are used to build behavior baselines. |
+| [Suricata](https://github.com/OISF/suricata) | Native Suricata alerts (`suricata_alert` type), which do not participate in baseline adjudication. |
+| [nono](https://github.com/nolabs-ai/nono) | AI-agent session events, the user's original request, and diff references used by Agent Security Analysis Mode. This source can be used independently and does not require Falco, OpenRASP, Suricata, dotCMS, or other traditional network-security analysis components. |
 
 Data outside the types listed above does not currently enter the traditional network security analysis pipeline. Agent Security Analysis Mode uses independent nono session events and diff references, can run on its own, and does not depend on Falco, OpenRASP, or Suricata. Future versions plan to expand support for additional host, network, application, and cloud-audit telemetry sources.
 
@@ -133,7 +131,7 @@ DeepXDR is divided into the app side and the agent side by deployment location. 
 
 The app side is deployed on the host where the protected application runs. It includes the protected application, telemetry sources, and data aggregation components such as filebeat and logstash. Some telemetry sources must be integrated with the application, for example OpenRASP/RASP must be installed into the protected application.
 
-The agent side deploys DeepXDR's core analysis and interaction components, including the AI threat analysis and investigation service, API service, and `web_ui` dashboard.
+The agent side deploys DeepXDR's core analysis and interaction components, including the AI-driven threat analysis and investigation service, API service, and `web_ui` dashboard.
 
 The relationships among docker compose components are shown below:
 
@@ -466,12 +464,12 @@ http://<agent-host-ip>:30003
 
 ### 7. Enable Agent Security Analysis Mode
 
-Agent Security Analysis Mode reviews final code changes produced by AI agents running under nono. This mode does not depend on dotCMS, Falco, OpenRASP, or Suricata. The local full-stack environment starts Kafka, PostgreSQL, Redis, MinIO, baseline-adjudication, ai-agent, and web-ui.
+Agent Security Analysis Mode reviews final code changes produced by AI agents running under nono, focusing on whether the user's original intent aligns with the final incremental changes and identifying request drift, out-of-scope edits, and high-risk operations. This mode does not depend on dotCMS, Falco, OpenRASP, or Suricata. The local full-stack environment starts Kafka, PostgreSQL, Redis, MinIO, baseline-adjudication, ai-agent, and web-ui.
 
 #### 7.1 Prerequisites
 
 - Docker and docker-compose are installed.
-- The real nono binary is installed and can be referenced through `DEEPXDR_REAL_NONO`.
+- The real [nono](https://github.com/nolabs-ai/nono) binary is installed and can be referenced through `DEEPXDR_REAL_NONO`.
 - To run the real-agent sample, install a nono-supported agent such as opencode.
 - Prepare OpenAI-compatible LLM settings for change risk analysis and real agent execution.
 

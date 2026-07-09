@@ -1,4 +1,3 @@
-# DeepXDR
 <p align="center">
   <img src="assets/images/deepxdr-brand-demo.gif" alt="DeepXDR 品牌演示" width="760">
 </p>
@@ -9,23 +8,23 @@
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue)](ai_agent/pyproject.toml)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-DeepXDR 是一个面向实时安全运营的智能威胁分析与调查系统。它接收来自主机、应用和网络遥测源的安全告警与行为事件，先通过基线裁决筛选高价值信号，再由 AI Agent 关联多源证据并生成基于 MITRE ATT&CK 的 TTP 分析。对于需要更长时间跨度研判的事件，系统可以从 Short TTP（跨域关联实时告警） 进一步触发 Long TTP（高级威胁攻击链） 调查，并支持分析师通过人机反馈补充调查方向。DeepXDR 也提供智能体安全分析模式，可接入 nono 包裹的 AI 智能体执行过程，对最终代码变更进行变更风险分析，并支持人工接受变更或执行回退。
+DeepXDR 是一个面向实时安全运营的智能威胁分析与调查系统。它接收来自主机、应用和网络遥测源的安全告警与行为事件，先通过基线裁决筛选高价值信号，再由 AI Agent 关联多源证据并生成基于 MITRE ATT&CK 的 TTP 分析。对于需要更长时间跨度研判的事件，系统可以从 Short TTP（跨域关联实时告警） 进一步触发 Long TTP（高级威胁攻击链） 调查，并支持分析师通过人机反馈补充调查方向。DeepXDR 也提供智能体安全分析模式，可接入 nono 包裹的 AI 智能体执行过程，对用户原始意图与最终代码变更进行一致性和风险分析，并支持人工接受变更或执行恢复。
 
 ## 项目状态
 
-> **Alpha software - investigation-first mode.** DeepXDR 当前是早期研究与工程实现，仅适用于单用户、单应用的实验与验证场景，尚未支持多用户、多租户或多应用生产部署。系统重点在实时告警接入、异常行为发现、TTP 生成、高级威胁调查和智能体变更风险分析。当前版本的 XDR Response 能力仍不完整：生产级响应编排、审批流、策略校验、跨控制面联动和完整执行审计尚未完成。智能体安全分析模式已经支持基于 nono 的人工确认回退，但仍应按实验性能力使用。`ai_agent/defense/` 中的 MCP 防御接口属于实验性集成，不应被理解为已经具备完整自动处置能力。
+> **Alpha software - investigation-first mode.** DeepXDR 当前是早期研究与工程实现，仅适用于单用户、单应用的实验与验证场景，尚未支持多用户、多租户或多应用生产部署。系统重点在实时告警接入、异常行为发现、TTP 生成、高级威胁调查，以及面向 AI 智能体变更的意图一致性与风险分析。当前版本的 XDR Response 能力仍不完整：生产级响应编排、审批流、策略校验、跨控制面联动和完整执行审计尚未完成。智能体安全分析模式已经支持基于 nono 的人工确认恢复，但仍应按实验性能力使用。`ai_agent/defense/` 中的 MCP 防御接口属于实验性集成，不应被理解为已经具备完整自动处置能力。
 
 ## 系统职责与处理边界
 
-DeepXDR 将待守护应用、遥测源、数据裁决、AI 分析和可视化交互拆分为不同职责边界：待守护应用是被观测对象，遥测源负责产生安全数据，后续链路负责筛选、分析与呈现结果。
+DeepXDR 将待守护应用、遥测源、数据裁决、AI 驱动的威胁分析与调查、智能体安全分析和可视化交互拆分为不同职责边界：待守护应用是被观测对象，遥测源负责产生安全数据，后续链路负责筛选、分析与呈现结果。
 
 | 对象 / 阶段 | 说明 | 对应目录 |
 | --- | --- | --- |
 | 应用  | 被 DeepXDR 守护和观测的业务系统。应用本身不承担威胁分析职责，但可以集成 OpenRASP/RASP 等遥测源，并按部署要求共享必要工作空间给 MCP Server。| `third_party/dotcms/` |
 | 遥测源 | 负责从主机、应用和网络侧产生安全告警与行为事件，并将数据交给数据汇聚与基线裁决链路。| `third_party/falco/`</br>`third_party/openrasp/`</br>`third_party/suricata/` |
 | 数据汇聚与基线裁决</br> | 接收 Falco、OpenRASP/RASP、Suricata 等遥测源产生的安全数据。明确告警会直接进入后续分析流程；原始行为数据会先用于构建正常行为基线，未命中基线的异常行为也会进入后续分析流程。| `baseline_adjudication/`  |
-| AI 威胁分析与调查</br> | 对已经过筛选和裁决的高价值安全事件进行聚合分析，生成 Short TTP，并按需触发 Long TTP / 高级持续性威胁调查。| `ai_agent/`  |
-| 智能体安全分析 | 接收 nono 包裹的 AI 智能体会话事件，读取 MinIO/S3 中的 diff，执行变更风险分析，并将人工确认、接受变更和回退状态呈现在 Web UI 中。| `scripts/nono`</br>`ai_agent/agent_guard/` |
+| AI 驱动的威胁分析与调查</br> | 对已经过筛选和裁决的高价值安全事件进行聚合分析，生成 Short TTP，并按需触发 Long TTP / 高级持续性威胁调查。| `ai_agent/`  |
+| 智能体安全分析 | 接收 nono 包裹的 AI 智能体会话事件，围绕用户原始意图与最终增量变更的一致性进行风险分析，并在 Web UI 中支持人工确认、接受变更和韧性恢复。| `scripts/nono`</br>`ai_agent/agent_guard/` |
 | 可视化与交互 | 面向分析师展示 TTP、调查结果和反馈入口 | `web_ui/` |
 
 
@@ -39,8 +38,7 @@ DeepXDR 将待守护应用、遥测源、数据裁决、AI 分析和可视化交
 | Short TTP（跨域关联实时告警）生成 | 基于 MITRE ATT&CK 输出战术、技术、过程、置信度、摘要、攻击者 IP 和关联事件 ID。 |
 | Long TTP （高级威胁攻击链）调查 | 从 Short TTP 触发更长时间跨度的高级威胁调查 |
 | 人机反馈 | Long TTP 调查支持 LangGraph interrupt，允许人类分析师补充调查方向、继续或结束调查。 |
-| 智能体安全分析模式 | 通过 nono PATH shim 捕获 AI 智能体最终变更，将大体积 diff 写入 MinIO/S3，并通过规则与 LLM 生成变更风险分析。 |
-| 人工接受与回退 | Web UI 支持对智能体告警执行接受变更、执行回退和删除告警；回退操作会调用真实 nono rollback restore。 |
+| 智能体安全分析模式 | 对 AI 智能体执行产生的增量变更进行意图一致性与风险分析，结合用户原始请求、最终变更和规则信号识别偏离请求、越权修改、敏感路径变更和高风险操作；该模式内置人工确认与韧性恢复能力，支持接受变更、执行恢复和删除告警。 |
 | API 与仪表板 | FastAPI 提供查询、触发、反馈和统计接口；`web_ui/` 提供 TTP 仪表板。 |
 
 ## 支持的遥测源
@@ -49,10 +47,10 @@ DeepXDR 将待守护应用、遥测源、数据裁决、AI 分析和可视化交
 
 | 遥测源 | 采集事件类型 | 
 | --- | --- |
-| Falco | 原生Falco告警（falco_alert类型）；</br>定制化修改Falco，支持全量open_write和execve事件收集（falco_raw类型）。</br>falco_raw类型事件用于构建行为基线 | 
-| OpenRASP | 原生OpenRASP告警（openrasp_alert）；</br> 定制化修改OpenRASP，除原生OpenRASP告警外，还会采集sql，readfile，fileUpload，command事件。 </br> 除原生OpenRASP告警以外的事件用于构建行为基线|
-| Suricata | 原生Sruicata告警（suricata_alert类型），不参与基线裁决。 |
-| nono | AI 智能体会话事件和 diff 引用，用于智能体安全分析模式。该输入源可独立使用，不需要同时部署 Falco、OpenRASP、Suricata、dotCMS 等传统网络安全分析组件。 |
+| [Falco](third_party/falco/) | 原生Falco告警（falco_alert类型）；</br>定制化修改Falco，支持全量open_write和execve事件收集（falco_raw类型）。</br>falco_raw类型事件用于构建行为基线 | 
+| [OpenRASP](third_party/openrasp/) | 原生OpenRASP告警（openrasp_alert）；</br> 定制化修改OpenRASP，除原生OpenRASP告警外，还会采集sql，readfile，fileUpload，command事件。 </br> 除原生OpenRASP告警以外的事件用于构建行为基线|
+| [Suricata](https://github.com/OISF/suricata) | 原生Suricata告警（suricata_alert类型），不参与基线裁决。 |
+| [nono](https://github.com/nolabs-ai/nono) | AI 智能体会话事件、用户原始请求和 diff 引用，用于智能体安全分析模式。该输入源可独立使用，不需要同时部署 Falco、OpenRASP、Suricata、dotCMS 等传统网络安全分析组件。 |
 
 非上述类型的数据当前不会进入传统网络安全分析链路。智能体安全分析模式使用独立的 nono 会话事件和 diff 引用，可单独运行，不依赖 Falco、OpenRASP 或 Suricata。后续计划扩展更多主机、网络、应用和云审计遥测源。
 
@@ -134,7 +132,7 @@ DeepXDR 按部署位置划分为 app 侧和 agent 侧，两侧可以部署在同
 
 app 侧部署在待守护应用所在主机，包含待守护应用、遥测源，以及 filebeat、logstash 等数据汇聚组件。部分遥测源需要与应用集成，例如 OpenRASP/RASP 需要安装到待守护应用中。
 
-agent 侧部署 DeepXDR 的核心分析与交互组件，包括 AI 威胁分析与调查服务、API 服务和 `web_ui` 仪表盘。
+agent 侧部署 DeepXDR 的核心分析与交互组件，包括 AI 驱动的威胁分析与调查服务、API 服务和 `web_ui` 仪表盘。
 
 docker compose 中各组件的关系如下：
 
@@ -471,12 +469,12 @@ http://<agent-host-ip>:30003
 
 ### 7. 启用智能体安全分析模式
 
-智能体安全分析模式用于审查 AI 智能体通过 nono 执行后产生的最终代码变更。该模式不依赖 dotCMS、Falco、OpenRASP 或 Suricata；本地完整运行环境会启动 Kafka、PostgreSQL、Redis、MinIO、baseline-adjudication、ai-agent 和 web-ui。
+智能体安全分析模式用于审查 AI 智能体通过 nono 执行后产生的最终代码变更，重点判断用户原始意图与最终增量变更是否一致，并识别偏离请求、越权修改和高风险操作。该模式不依赖 dotCMS、Falco、OpenRASP 或 Suricata；本地完整运行环境会启动 Kafka、PostgreSQL、Redis、MinIO、baseline-adjudication、ai-agent 和 web-ui。
 
 #### 7.1 前置条件
 
 - 已安装 Docker 和 docker-compose。
-- 已安装真实 nono，并可通过 `DEEPXDR_REAL_NONO` 指定其路径。
+- 已安装真实 [nono](https://github.com/nolabs-ai/nono)，并可通过 `DEEPXDR_REAL_NONO` 指定其路径。
 - 如需运行真实智能体样例，需安装 nono 支持的智能体，例如 opencode。
 - 准备 OpenAI-compatible LLM 配置，用于变更风险分析和真实智能体运行。
 
