@@ -23,7 +23,7 @@ export OPENAI_BASE_URL='https://ark.cn-beijing.volces.com/api/v3'
 ## 2. Start the real environment
 
 ```bash
-docker compose -f deploy/docker-compose-agentguard-smoke.yml up -d --build
+docker compose -f deploy/docker-compose-agentguard.yml up -d --build
 ```
 
 If your host uses the legacy Compose binary, replace `docker compose` with `docker-compose` in the commands below.
@@ -31,7 +31,7 @@ If your host uses the legacy Compose binary, replace `docker compose` with `dock
 Wait until these services are up:
 
 ```bash
-docker compose -f deploy/docker-compose-agentguard-smoke.yml ps
+docker compose -f deploy/docker-compose-agentguard.yml ps
 ```
 
 Useful URLs:
@@ -73,7 +73,7 @@ nono pull always-further/opencode
 ./scripts/agentguard-smoke-nono.sh agent
 ```
 
-The smoke compose sets these AgentGuard planning thresholds so the three cases
+The AgentGuard compose sets these planning thresholds so the smoke cases
 exercise different context strategies:
 
 ```text
@@ -105,8 +105,8 @@ scripts/nono run --profile always-further/opencode --rollback --no-rollback-prom
 The `agent` case installs/runs a real known coding agent, `opencode`, under
 nono's registry-managed `always-further/opencode` profile. The smoke workspace
 contains an `opencode.json` provider config for the OpenAI-compatible Ark
-endpoint, and the script reads `OPENAI_API_KEY` from the shell or from the smoke
-compose file when the shell variable is absent.
+endpoint. The script requires `OPENAI_API_KEY` to be present in the shell for
+this real-agent case.
 
 Expected effects:
 
@@ -151,30 +151,30 @@ old title
 Backend logs:
 
 ```bash
-docker compose -f deploy/docker-compose-agentguard-smoke.yml logs -f ai-agent
+docker compose -f deploy/docker-compose-agentguard.yml logs -f ai-agent
 ```
 
 Baseline logs:
 
 ```bash
-docker compose -f deploy/docker-compose-agentguard-smoke.yml logs -f baseline-adjudication
+docker compose -f deploy/docker-compose-agentguard.yml logs -f baseline-adjudication
 ```
 
 Web UI logs:
 
 ```bash
-docker compose -f deploy/docker-compose-agentguard-smoke.yml logs -f web-ui
+docker compose -f deploy/docker-compose-agentguard.yml logs -f web-ui
 ```
 
 Kafka topics:
 
 ```bash
-docker compose -f deploy/docker-compose-agentguard-smoke.yml exec kafka \
+docker compose -f deploy/docker-compose-agentguard.yml exec kafka \
   kafka-topics.sh --bootstrap-server kafka:9092 --list
 ```
 
 Stop and remove the smoke environment:
 
 ```bash
-docker compose -f deploy/docker-compose-agentguard-smoke.yml down
+docker compose -f deploy/docker-compose-agentguard.yml down
 ```

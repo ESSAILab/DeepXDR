@@ -62,9 +62,9 @@ export AGENT_GUARD_DIFF_SECRET_ACCESS_KEY=${AGENT_GUARD_DIFF_SECRET_ACCESS_KEY:-
 export NO_PROXY=${NO_PROXY:-"localhost,127.0.0.1,minio,kafka"}
 export no_proxy=${no_proxy:-"$NO_PROXY"}
 
-if [ "$CASE" = "agent" ] && [ -z "${OPENAI_API_KEY:-}" ] && [ -f "$REPO_ROOT/deploy/docker-compose-agentguard-smoke.yml" ]; then
-  OPENAI_API_KEY=$(sed -n 's/^[[:space:]]*OPENAI_API_KEY:[[:space:]]*//p' "$REPO_ROOT/deploy/docker-compose-agentguard-smoke.yml" | tail -n 1)
-  export OPENAI_API_KEY
+if [ "$CASE" = "agent" ] && [ -z "${OPENAI_API_KEY:-}" ]; then
+  echo "Set OPENAI_API_KEY before running the real opencode AgentGuard smoke case." >&2
+  exit 2
 fi
 
 printf 'Running nono smoke case=%s in %s with run_id=%s\n' "$CASE" "$WORKSPACE" "$DEEPXDR_AGENT_RUN_ID"

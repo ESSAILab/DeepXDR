@@ -74,8 +74,8 @@ def test_dashboard_exposes_agent_guard_review_workspace():
     assert "bg-red-50 text-red-700 border-red-200" in html
     assert "bg-gray-50 text-gray-600 border-gray-200" in html
     assert "bg-orange-100 text-orange-800 border-orange-200" not in html
-    assert "意图一致性" in html
-    assert "intent_alignment_reason" in html
+    assert "意图一致性" not in html
+    assert "暂无意图一致性说明" not in html
     assert "getAgentChangeTypeLabel(file.change_type)" in html
     assert "getAgentRollbackError(session)" in html
     assert "回退失败原因" in html
