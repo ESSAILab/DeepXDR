@@ -126,7 +126,6 @@ services:
       - "8000:8000"
     volumes:
       - ../ai_agent:/app/ai_agent
-      - ..:/home/shalei/DeepXDR
       - /root/.local/bin/nono:/usr/local/bin/nono:ro
       - /lib64:/lib64:ro
       - /lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:ro
