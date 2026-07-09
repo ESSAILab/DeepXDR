@@ -67,6 +67,7 @@ dependencies = [
     "structlog==24.4.0",
     "supabase==2.15.3",
     "mcp==1.25.0",
+    "boto3>=1.35.0,<2.0.0",
     # ElasticSearch
     "elasticsearch>=8.0.0,<9.0.0",
     # Database migrations
@@ -84,10 +85,14 @@ dev = [
     "mypy==1.11.2",
 ]
 
+[project.scripts]
+deepxdr-nono-shim = "agent_guard.nono_shim:main"
+
 [tool.setuptools.packages.find]
 where = ["."]
 include = [
     "api_server*",
+    "agent_guard*",
     "data_consumer*",
     "defense*",
     "mitre_attck_agent*",

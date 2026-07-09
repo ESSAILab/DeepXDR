@@ -12,7 +12,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from ttp_generator import DynamicEventWindowManager, ShortTTPGenerator
-from api_server.routes import router, set_components
+from api_server.routes import router, set_agent_guard_components, set_components
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +57,9 @@ async def lifespan(_app: FastAPI):
 
 def create_app(
     window_manager: DynamicEventWindowManager,
-    short_ttp_generator: ShortTTPGenerator
+    short_ttp_generator: ShortTTPGenerator,
+    agent_session_repository=None,
+    agent_rollback_publisher=None,
 ) -> FastAPI:
     """创建FastAPI应用"""
 
@@ -80,6 +82,8 @@ def create_app(
 
     # 设置路由组件引用
     set_components(window_manager, short_ttp_generator)
+    if agent_session_repository is not None or agent_rollback_publisher is not None:
+        set_agent_guard_components(agent_session_repository, agent_rollback_publisher)
 
     # 包含API路由
     app.include_router(router)

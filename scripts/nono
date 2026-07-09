@@ -1,0 +1,12 @@
+#!/usr/bin/env sh
+set -eu
+
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
+
+if [ -d "$REPO_ROOT/ai_agent" ]; then
+  PYTHONPATH="$REPO_ROOT:$REPO_ROOT/ai_agent${PYTHONPATH:+:$PYTHONPATH}"
+  export PYTHONPATH
+fi
+
+python3 -m agent_guard.nono_shim "$@"

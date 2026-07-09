@@ -13,6 +13,10 @@ from ttp_generator import DynamicEventWindowManager, ShortTTPGenerator
 from shared.database.connection import init_db_manager
 from shared.database.bootstrap import init_database
 from api_server import create_app
+from agent_guard.config import AgentGuardConfig
+from agent_guard.llm import OpenAICompletionLLM
+from agent_guard.runtime import AgentGuardRuntime
+from agent_guard.sql_repository import SqlAlchemyAgentSessionRepositoryProvider
 from shared.utils.config import ConfigError, load_config
 from shared.utils.logger import setup_logging
 
@@ -35,6 +39,7 @@ class SecurityAnalysisSystem:
         self.short_ttp_generator = None
         self.long_ttp_generator = None
         self.kafka_consumer = None
+        self.agent_guard_runtime = None
         self.api_app = None
         
         self.running = False
@@ -81,11 +86,34 @@ class SecurityAnalysisSystem:
                 max_poll_records=500,
             )
             await self.kafka_consumer.start()
+
+            agent_guard_config = AgentGuardConfig.from_env()
+            if agent_guard_config.enabled:
+                agent_guard_llm = OpenAICompletionLLM(
+                    api_key=self.config.openai_api_key,
+                    base_url=self.config.openai_base_url,
+                    model=self.config.openai_model,
+                )
+                self.agent_guard_runtime = AgentGuardRuntime(
+                    bootstrap_servers=self.config.kafka_bootstrap_servers,
+                    config=agent_guard_config,
+                    llm=agent_guard_llm,
+                    session_topic=os.getenv("KAFKA_AGENT_SESSION_TOPIC", "agent.session.finished"),
+                    rollback_requested_topic=os.getenv("KAFKA_AGENT_ROLLBACK_REQUESTED_TOPIC", "agent.rollback.requested"),
+                    rollback_completed_topic=os.getenv("KAFKA_AGENT_ROLLBACK_COMPLETED_TOPIC", "agent.rollback.completed"),
+                )
+                await self.agent_guard_runtime.start()
             
             # 初始化API服务器
             self.api_app = create_app(
                 window_manager=self.window_manager,
-                short_ttp_generator=self.short_ttp_generator
+                short_ttp_generator=self.short_ttp_generator,
+                agent_session_repository=SqlAlchemyAgentSessionRepositoryProvider(),
+                agent_rollback_publisher=(
+                    self.agent_guard_runtime.rollback_publisher()
+                    if self.agent_guard_runtime
+                    else None
+                ),
             )
             
             logger.info("安全分析系统初始化完成")
@@ -132,6 +160,10 @@ class SecurityAnalysisSystem:
             if self.kafka_consumer:
                 await self.kafka_consumer.stop()
                 logger.info("Kafka消费者已停止")
+
+            if self.agent_guard_runtime:
+                await self.agent_guard_runtime.stop()
+                logger.info("Agent Guard运行时已停止")
             
             # 停止短期TTP生成器
             if self.short_ttp_generator:

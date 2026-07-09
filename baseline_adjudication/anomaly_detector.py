@@ -41,6 +41,7 @@ class AnomalyDetector:
         self.kafka_bootstrap_servers = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'localhost:9092')
         self.source_topic = os.getenv('KAFKA_SOURCE_TOPIC', 'event-source')
         self.agent_topic = os.getenv('KAFKA_AGENT_TOPIC', 'agent')
+        self.agent_session_topic = os.getenv('KAFKA_AGENT_SESSION_TOPIC', 'agent.session.finished')
         
         # Kafka SASL认证配置
         self.kafka_security_protocol = os.getenv('KAFKA_SECURITY_PROTOCOL', 'PLAINTEXT')
@@ -328,6 +329,47 @@ class AnomalyDetector:
         # Suricata 事件特征：type 字段为 "suricata"
         return event.get('type') == 'suricata'
 
+    def is_agent_session_event(self, event):
+        """检查是否为智能体会话事件"""
+        return event.get('type') == 'agent_session'
+
+    def normalize_agent_session_event(self, event):
+        """规范化智能体会话事件，用于后续增量裁决"""
+        required_fields = ['run_id', 'original_request', 'workspace', 'diff_ref', 'nono']
+        missing_fields = [field for field in required_fields if not event.get(field)]
+        if missing_fields:
+            logger.error(f'智能体会话事件缺少必填字段: {missing_fields}')
+            return None
+
+        nono_info = event.get('nono', {})
+        if not isinstance(nono_info, dict) or not nono_info.get('session_id'):
+            logger.error('智能体会话事件缺少 nono.session_id')
+            return None
+
+        diff_ref = event.get('diff_ref', {})
+        if not isinstance(diff_ref, dict) or not diff_ref.get('uri') or not diff_ref.get('sha256'):
+            logger.error('智能体会话事件缺少 diff_ref.uri 或 diff_ref.sha256')
+            return None
+
+        normalized = dict(event)
+        normalized.update({
+            'source': event.get('source', 'nono-wrapper'),
+            'category': 'agent_runtime_change',
+            'baseline_action': 'pass_through',
+            'event_type': event.get('event_type', 'finished'),
+            'received_time': event.get('received_time', datetime.now().isoformat()),
+        })
+        return normalized
+
+    def process_agent_session_event(self, event):
+        """处理智能体会话事件：不进入Redis基线，直接输出到专用Topic"""
+        normalized = self.normalize_agent_session_event(event)
+        if normalized is None:
+            return
+        self.producer.send(self.agent_session_topic, value=normalized)
+        self.producer.flush()
+        logger.debug(f'智能体会话事件已发送到 {self.agent_session_topic}: {normalized.get("run_id")}')
+
     def should_omit_event(self, event):
         """检查事件是否为openrasp文件读取事件"""
         # 根据attack_type动态获取关键字段配置
@@ -414,6 +456,10 @@ class AnomalyDetector:
     
     def process_event(self, event):
         """处理单个事件: 基线阶段添加到Redis，检测阶段判断异常"""
+        if self.is_agent_session_event(event):
+            self.process_agent_session_event(event)
+            return
+
         # Suricata 事件直接透传
         if self.is_suricata_event(event):
             phase = "基线构建阶段" if self.is_baseline_phase else "异常检测阶段"
