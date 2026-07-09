@@ -55,18 +55,18 @@ class DefenseManager:
     
     async def _execute_short_ttp_defense(self, short_ttp: ShortTTP, actions_taken: list) -> None:
         """执行短期TTP的防御措施（阻断IP和增强监控）"""
-        if short_ttp.attacker_fingerprint and self.auto_block_ips:
-            primary_ip = short_ttp.attacker_fingerprint.primary_ip
-            if primary_ip and primary_ip != "unknown":
+        if self.auto_block_ips:
+            block_ip = self._get_short_ttp_block_ip(short_ttp)
+            if block_ip:
                 result = await self._block_ip_async(
-                    primary_ip,
+                    block_ip,
                     self.app_port,
                     self.defense_duration,
                     f"短期TTP置信度{short_ttp.confidence}: {short_ttp.summary[:100]}"
                 )
                 actions_taken.append({
                     "action": "block_ip_port",
-                    "ip": primary_ip,
+                    "ip": block_ip,
                     "port": self.app_port,
                     "duration": self.defense_duration,
                     "result": result
@@ -86,6 +86,20 @@ class DefenseManager:
                         "duration": self.defense_duration,
                         "result": result
                     })
+
+    @staticmethod
+    def _get_short_ttp_block_ip(short_ttp: ShortTTP) -> str | None:
+        """获取短期TTP阻断目标IP，优先使用并列的attacker_ip字段。"""
+        attacker_ip = short_ttp.attacker_ip
+        if attacker_ip and attacker_ip != "unknown":
+            return attacker_ip
+
+        if short_ttp.attacker_fingerprint:
+            primary_ip = short_ttp.attacker_fingerprint.primary_ip
+            if primary_ip and primary_ip != "unknown":
+                return primary_ip
+
+        return None
 
     async def process_short_ttp(self, short_ttp: ShortTTP) -> Dict[str, Any]:
         """处理短期TTP，执行相应防御措施"""

@@ -1,18 +1,17 @@
+# falco 部署说明
 
-English | [中文](README_CN.md)
+[English](README_EN.md) | 中文
 
-# Falco Deployment Guide
+Falco 是一款开源的云原生运行时安全工具，由 CNCF 孵化。它通过监控 Linux 系统调用和容器运行时行为，实时检测异常活动和安全威胁。在本系统中，Falco 部署在app侧服务器上，以内核级探针的方式监控应用容器的行为，将检测到的安全事件以 JSON 格式输出到日志文件，由filebeat采集，经logstash格式化后发送至 Kafka 进行后续分析。 
 
-Falco is an open-source cloud-native runtime security tool, incubated by CNCF. It monitors Linux system calls and container runtime behavior in real-time to detect anomalous activities and security threats. In this system, Falco is deployed on the application-side server as a kernel-level probe to monitor application container behavior. Detected security events are output in JSON format to log files, collected by filebeat, formatted by logstash, and then sent to Kafka for subsequent analysis.
-
-In this system, Falco is deployed in Docker form for quick deployment and ease of use. The Falco Docker version used is `falcosecurity/falco:0.35.1`.
+本系统中falco以docker形式部署，方便用户快速部署和使用，采用的falco docker版本为falcosecurity/falco:0.35.1  。
 
 
-## 1. Falco Image Startup
+## 1. falco镜像启动
 
-The Falco probe needs to be installed as a Docker container on the application-side host. Official documentation reference: https://v0-31.falco.org/zh/docs/installation/
+falco探针需要以docker形式安装在app侧服务器上。  官方文档参考https://v0-31.falco.org/zh/docs/installation/
 
-The docker-compose configuration example for this image is shown below:
+docker-compose中该镜像配置示例展示如下 ：
 ```yaml
   falco:
     image: falcosecurity/falco:0.35.1
@@ -33,87 +32,87 @@ The docker-compose configuration example for this image is shown below:
       - logging_net
 ```
 
-### Configuration Description
+### 配置说明
 
-| Configuration | Description |
-|---------------|-------------|
-| `falco_rules.local.yaml` | Custom rule file mount, defines containers and events to monitor |
-| `falco.yaml` | Falco main configuration file mount, no modification needed |
+| 配置项 | 说明 |
+|--------|------|
+| `falco_rules.local.yaml` | 自定义规则文件挂载，定义需要监控的容器和事件 |
+| `falco.yaml` | Falco 主配置文件挂载,无需修改 |
 
-Startup command:
+启动命令如下：  
 ```bash
 docker-compose up -d falco
 
 ```
 ---  
-Note: Modify the falco_rules.local.yaml configuration file, update the content in line 2 (the `items` field). Fill in the application container names to be monitored according to your actual environment. If you want to monitor all host events, leave this field empty.
+注意：修改falco_rules.local.yaml配置文件，修改第2行items里面的内容，监控的应用容器名称，根据实际情况填写即可，如监控全量主机事件，则此处内容不填。
 
 ```bash
 vi falco_rules.local.yaml
 ```
 
-Example (after modification):
+示例（修改后）：
 ```yaml
 items: [app-dotcms]
 ```
   
-Logs are output to the /var/log/falco/falco-alerts.json file, collected by filebeat.
+日志输出到/var/log/falco/falco-alerts.json文件中，使用filebeat采集。  
 
 
 ---  
 
-## 2. Data Flow
+## 2. 数据流转流程
 
-The data flow process of the Falco probe in the entire system is as follows:
+Falco 探针在整个系统中的数据流转过程如下：
 
 ```
-+---------------+     System Call Monitoring      +------------------+
-|  App Container|  ---------------------->  |   Falco Probe    |
-|  (dotcms etc) |                          | (Privileged Mode)|
-+---------------+                          +------------------+
-                                                  |
-                                                  | Detect Anomaly
-                                                  v
-                                           +------------------+
-                                           | falco-alerts.json|
-                                           |  (JSON Log File) |
-                                           +------------------+
-                                                  |
-                                                  | Filebeat Collect
-                                                  v
-                                           +------------------+
-                                           |    Filebeat      |
-                                           +------------------+
-                                                  |
-                                                  | Forward
-                                                  v
-                                           +------------------+
-                                           |    Logstash      |
-                                           +------------------+
-                                                  |
-                                  +---------------+---------------+
-                                  |                               |
-                                  v                               v
-                           +------------------+          +------------------+
-                           |      Kafka       |          | Elasticsearch    |
-                           | (Security Queue) |          | (Log Storage)    |
-                           +------------------+          +------------------+
-                                  |                               |
-                                  | Consume                       | Query
-                                  v                               v
-                           +------------------+          +------------------+
-                           | Baseline         |          |   AI-Agent       |
-                           | Adjudication     |          | (Long-Term Threat|
-                           | + AI-Agent       |          |   Analysis)      |
-                           |   Analysis       |          +------------------+
-                           +------------------+
++---------------+     系统调用监控      +------------------+
+|  应用容器     |  ------------------>  |   Falco 探针     |
+|  (dotcms等)   |                      |  (特权模式运行)   |
++---------------+                      +------------------+
+                                              |
+                                              | 检测异常
+                                              v
+                                       +------------------+
+                                       | falco-alerts.json|
+                                       |  (JSON日志文件)   |
+                                       +------------------+
+                                              |
+                                              | Filebeat 采集
+                                              v
+                                       +------------------+
+                                       |    Filebeat      |
+                                       +------------------+
+                                              |
+                                              | 转发
+                                              v
+                                       +------------------+
+                                       |    Logstash      |
+                                       +------------------+
+                                              |
+                              +---------------+---------------+
+                              |                               |
+                              v                               v
+                       +------------------+          +------------------+
+                       |      Kafka       |          | Elasticsearch    |
+                       |  (安全事件队列)   |          |  (日志存储)      |
+                       +------------------+          +------------------+
+                              |                               |
+                              | 消费                          | 查询
+                              v                               v
+                       +------------------+          +------------------+
+                       |  Baseline裁决    |          |   AI-Agent       |
+                       |  + AI-Agent分析  |          |   (长期威胁分析)  |
+                       +------------------+          +------------------+
 ```
 
-**Flow Description:**
+**流程说明：**
 
-1. **Falco Captures Anomalies**: The Falco probe runs in privileged mode on the application host, capturing anomalous behavior of application containers in real-time through system call monitoring
-2. **Output Log File**: Detected security events are written in JSON format to `/var/log/falco/falco-alerts.json`
-3. **Filebeat Collects**: Filebeat reads Falco log files through shared volumes and sends event data to Logstash
-4. **Logstash Distributes**: After receiving events, Logstash pushes simultaneously in two directions:
-   - **Push to Kafka**: Security events enter the Kafka queue for baseline adjudication module and AI-Agent to consume and analyze
-   - **Push to Elasticsearch**: Raw log data is stored in Elasticsearch for AI-Agent to query and correlate analysis
+1. **Falco 捕获异常**：Falco 探针以特权模式运行在应用主机上，通过监控系统调用实时捕获应用容器的异常行为
+2. **输出日志文件**：检测到的安全事件以 JSON 格式写入 `/var/log/falco/falco-alerts.json`
+3. **Filebeat 采集**：Filebeat 通过共享卷读取 Falco 日志文件，将事件数据发送给 Logstash
+4. **Logstash 分发**：Logstash 接收事件后，同时向两个方向推送：
+   - **推送到 Kafka**：安全事件进入 Kafka 队列，供基线裁决模块和 AI-Agent 消费分析
+   - **推送到 Elasticsearch**：原始日志数据存入 Elasticsearch，供 AI-Agent 查询和关联分析
+
+

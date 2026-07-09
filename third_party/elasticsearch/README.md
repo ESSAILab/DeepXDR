@@ -1,19 +1,19 @@
-English | [中文](README_CN.md)
+# Elasticsearch 部署文档
 
-# Elasticsearch Deployment Guide
+[English](README_EN.md) | 中文
 
-This service uses three different versions of Elasticsearch for different business scenarios.
+本服务中使用了三个不同版本的 Elasticsearch，分别用于不同的业务场景。
 
 ---
 
-## Elasticsearch Version 1 Image Startup
+## Elasticsearch 版本 1 镜像启动
 
 
-This service is a dedicated search engine for the dotcms application.
+本服务为 dotcms 应用专用的搜索引擎。
 
-This service is deployed as a Docker container on the application-side host server. Official native Docker image: `docker.elastic.co/elasticsearch/elasticsearch:7.9.1`
+本服务以docker形式安装在app侧主机服务器上。  原生官方 Docker 镜像: `docker.elastic.co/elasticsearch/elasticsearch:7.9.1`
 
-The docker-compose configuration example for this image is shown below:
+docker-compose中该镜像配置示例展示如下 ：
 
 ```yaml
 elasticsearch:
@@ -34,13 +34,13 @@ elasticsearch:
 
 ---
 
-## Elasticsearch Version 2 Image Startup
+## Elasticsearch 版本 2 镜像启动
 
-This image service is used for collecting and storing raw telemetry source logs on the application side, as well as storing generated TTP events.
+本镜像服务用于app侧各类遥测源原始日志采集和存储，以及生成的 TTP 事件存储。
 
-This service is deployed as a Docker container on the application-side host server. Official native Docker image: `docker.elastic.co/elasticsearch/elasticsearch:8.19.5`
+本服务以docker形式安装在app侧主机服务器上。  原生官方 Docker 镜像: `docker.elastic.co/elasticsearch/elasticsearch:8.19.5`
 
-The docker-compose configuration example for this image is shown below:
+docker-compose中该镜像配置示例展示如下 ：
 
 
 ```yaml
@@ -58,8 +58,8 @@ es-log-storage:
   networks:
     - logging_net
 ```
-### Special Notes
-After this version of Elasticsearch starts normally, you need to execute the following script to create the corresponding probe index aliases, otherwise subsequent TTP queries will fail with an error indicating that the index alias cannot be found:
+### 特别注意事项
+该版本 Elasticsearch 正常启动后，需要执行以下脚本创建相应探针索引的别名，否则后续 TTP 查询时会提示查询不到索引别名而报错：
 
 ```bash
 elasticsearch/setup_es_templates_new.sh
@@ -68,14 +68,14 @@ elasticsearch/setup_es_templates_new.sh
 
 ---
 
-## Elasticsearch Version 3 Image Startup
+## Elasticsearch 版本 3 镜像启动
 
 
-This service provides data storage support for the agent-side OpenRASP-Cloud management backend.
+本服务为agent侧 OpenRASP-Cloud 管理后台提供数据存储支持。
 
-This service is deployed as a Docker container on the agent-side server. Official native Docker image: `elasticsearch:6.8.23`
+本服务以docker形式安装在agent侧服务器上。  原生官方 Docker 镜像: `elasticsearch:6.8.23`
 
-The docker-compose configuration example for this image is shown below:
+docker-compose中该镜像配置示例展示如下 ：
 
 ```yaml
 elasticsearch:
@@ -105,8 +105,8 @@ elasticsearch:
 
 
 
-## Notes
+## 注意事项
 
-1. **Version 2 requires initialization script**: After starting the es-log-storage service, be sure to run `setup_es_templates_new.sh` to create index aliases, otherwise the TTP query function will not work properly.
-2. The three versions of Elasticsearch run in different docker-compose files, so be aware of port conflicts.
-3. Version 3 is configured with healthcheck, and RASP-Cloud will wait until Elasticsearch is healthy before starting.
+1. **版本 2 必须执行初始化脚本**：启动 es-log-storage 服务后，务必运行 `setup_es_templates_new.sh` 创建索引别名，否则 TTP 查询功能无法正常工作。
+2. 三个版本的 Elasticsearch 分别运行在不同的 docker-compose 文件中，注意端口冲突问题。
+3. 版本 3 配置了 healthcheck，RASP-Cloud 会等待 Elasticsearch 健康后再启动。

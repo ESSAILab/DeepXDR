@@ -1,20 +1,20 @@
-English | [中文](README_CN.md)
+# PostgreSQL 部署文档
 
-# PostgreSQL Deployment Guide
+[English](README_EN.md) | 中文
 
-This service uses two different versions of PostgreSQL databases for different business scenarios.
+本服务中使用了两个不同版本的 PostgreSQL 数据库，分别用于不同的业务场景。
 
 ---
 
-## PostgreSQL Version 1 Image Startup
+## PostgreSQL 版本 1 镜像启动
 
 
 
-This service is a dedicated database for the demo application dotcms. Users can choose whether to deploy this service based on their own application requirements.
+本服务为示范应用 dotcms 专用的数据库。根据使用者应用自身情况选择该服务是否需要同步部署。
 
-This service is deployed as a Docker container on the application-side server. Official native Docker image: `postgres:13`
+本服务以docker形式安装在app侧服务器上。  原生官方 Docker 镜像: `postgres:13`
 
-The docker-compose configuration example for this image is shown below:
+docker-compose中该镜像配置示例展示如下 ：
 
 ```yaml
 db:
@@ -33,13 +33,13 @@ db:
 
 ---
 
-## PostgreSQL Version 2 Image Startup
+## PostgreSQL 版本 2 镜像启动
 
-This service provides data storage support for the Long-Term Threat Analysis (LTTP) function in the AI-Agent module.
+本服务为 AI-Agent 模块中的长期威胁分析（LTTP）功能提供数据存储支持。
 
-This service is deployed as a Docker container on the agent-side server. Official native Docker image: `postgres:15-alpine`
+本服务以docker形式安装在agent侧服务器上。原生官方 Docker 镜像: `postgres:15-alpine`
 
-The docker-compose configuration example for this image is shown below:
+docker-compose中该镜像配置示例展示如下 ：
 
 ```yaml
 postgres:
@@ -62,7 +62,7 @@ postgres:
 
 
 
-## Notes
+## 注意事项
 
-1. Version 1 is optional. If you do not need to run the dotcms demo application, you can skip this service.
-2. Version 2 is a core defense-side service for storing security analysis data and is recommended for mandatory deployment.
+1. 版本 1 为可选部署，如果不需要运行 dotcms 示范应用，可以不启动该服务。
+2. 版本 2 为防御端核心服务，用于存储安全分析数据，建议必须部署。

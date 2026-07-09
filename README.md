@@ -50,10 +50,9 @@ DeepXDR 将待守护应用、遥测源、数据裁决、AI 分析和可视化交
 | 遥测源 | 采集事件类型 | 
 | --- | --- |
 | Falco | 原生Falco告警（falco_alert类型）；</br>定制化修改Falco，支持全量open_write和execve事件收集（falco_raw类型）。</br>falco_raw类型事件用于构建行为基线 | 
-| OpenRASP | 原生OpenRASP告警（openrasp_alert）；</br> 定制化修改OpenRASP，支持全量open_write和execve事件收集（fopenrasp_raw类型、openrasp_raw_sq）。</br>falco_raw类型事件用于构建行为基线|
-| Suricata | 原生Suricata告警（suricata_alert类型），不参与基线裁决。 |
+| OpenRASP | 原生OpenRASP告警（openrasp_alert）；</br> 定制化修改OpenRASP，除原生OpenRASP告警外，还会采集sql，readfile，fileUpload，command事件。 </br> 除原生OpenRASP告警以外的事件用于构建行为基线|
+| Suricata | 原生Sruicata告警（suricata_alert类型），不参与基线裁决。 |
 | nono | AI 智能体会话事件和 diff 引用，用于智能体安全分析模式。该输入源可独立使用，不需要同时部署 Falco、OpenRASP、Suricata、dotCMS 等传统网络安全分析组件。 |
-
 
 非上述类型的数据当前不会进入传统网络安全分析链路。智能体安全分析模式使用独立的 nono 会话事件和 diff 引用，可单独运行，不依赖 Falco、OpenRASP 或 Suricata。后续计划扩展更多主机、网络、应用和云审计遥测源。
 
@@ -234,7 +233,7 @@ services:
       - -c
       - |
         # [Required]执行 RASP 安装，如用户自行编译rasp安装包，则需在构建应用镜像时替换该包
-        cd /tmp/rasp-2025-08-05 && java -jar RaspInstall.jar -heartbeat 90 -appid <your-rasp-cloud-appid> -appsecret <your-rasp-cloud-appsecret> -backendurl http://<agent-ip>:8086/ -install /srv/dotserver/tomcat-9.0.41
+        cd /tmp/rasp-2025-08-05 && java -jar RaspInstall.jar -heartbeat 90 -appid <your-rasp-cloud-appid> -appsecret <your-rasp-cloud-appsecret> -backendurl http://<agent-host-ip>:8086/ -install /srv/dotserver/tomcat-9.0.41
         cd /tmp && rm -rf rasp-2025-08-05 && rm -rf rasp-java.tar.gz
         exec /srv/entrypoint.sh
     volumes:
@@ -274,9 +273,9 @@ services:
       - "5044:5044"
     volumes:
       # [Required]挂载 Logstash 的管道配置文件 `logstash.conf` 和主配置文件 `logstash.yml`。
-      # [Required]logstash.conf文件需替换`<agent-ip>`为agent侧kafka服务对应的实际ip地址，例如：172.19.9.192
+      # [Required]logstash.conf文件需替换`<agent-host-ip>`为agent侧kafka服务对应的实际ip地址，例如：172.19.9.192
       - ../third_party/logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
-      - ../third_party/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
+      - ../third_party/logstash/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
     ...
 
   filebeat:
@@ -467,7 +466,7 @@ services:
 默认访问地址：
 
 ```text
-http://<your-agent-host-ip>:30003
+http://<agent-host-ip>:30003
 ```
 
 ### 7. 启用智能体安全分析模式

@@ -49,7 +49,7 @@ The current version supports only the following input types:
 | Telemetry source | Collected event types |
 | --- | --- |
 | Falco | Native Falco alerts (`falco_alert` type);</br>customized Falco modifications support full collection of `open_write` and `execve` events (`falco_raw` type).</br>`falco_raw` events are used to build behavior baselines. |
-| OpenRASP | Native OpenRASP alerts (`openrasp_alert`);</br>customized OpenRASP modifications support full collection of `open_write` and `execve` events (`fopenrasp_raw` and `openrasp_raw_sq` types).</br>Raw behavior events are used to build behavior baselines. |
+| OpenRASP | Native OpenRASP alerts (`openrasp_alert`);</br>customized OpenRASP modifications additionally collect `sql`, `readfile`, `fileUpload`, and `command` events.</br>Events other than native OpenRASP alerts are used to build behavior baselines. |
 | Suricata | Native Suricata alerts (`suricata_alert` type), which do not participate in baseline adjudication. |
 | nono | AI-agent session events and diff references used by Agent Security Analysis Mode. This source can be used independently and does not require Falco, OpenRASP, Suricata, dotCMS, or other traditional network-security analysis components. |
 
@@ -147,15 +147,15 @@ Note: Suricata is deployed outside containers and is not shown in docker compose
   
 ### 1. Start telemetry sources as needed
 
-Falco reference: [README](third_party/falco/README.md)
-OpenRASP reference: [README](third_party/openrasp/README.md)
-Suricata reference: [README](third_party/suricata/README.md)
+Falco reference: [README](third_party/falco/README_EN.md)
+OpenRASP reference: [README](third_party/openrasp/README_EN.md)
+Suricata reference: [README](third_party/suricata/README_EN.md)
 
 Note: To support baseline construction and anomaly adjudication, the Falco configuration files and OpenRASP source code have been customized.
 
 ### 2. Install the application
 
-Using dotCMS as an example, see the startup instructions here: [README](third_party/dotcms/README.md)
+Using dotCMS as an example, see the startup instructions here: [README](third_party/dotcms/README_EN.md)
 
 ### 3. Install MCP Server
 
@@ -230,7 +230,7 @@ services:
       - -c
       - |
         # [Required] Run RASP installation. If users build their own RASP package, replace this package when building the application image.
-        cd /tmp/rasp-2025-08-05 && java -jar RaspInstall.jar -heartbeat 90 -appid <your-rasp-cloud-appid> -appsecret <your-rasp-cloud-appsecret> -backendurl http://<agent-ip>:8086/ -install /srv/dotserver/tomcat-9.0.41
+        cd /tmp/rasp-2025-08-05 && java -jar RaspInstall.jar -heartbeat 90 -appid <your-rasp-cloud-appid> -appsecret <your-rasp-cloud-appsecret> -backendurl http://<agent-host-ip>:8086/ -install /srv/dotserver/tomcat-9.0.41
         cd /tmp && rm -rf rasp-2025-08-05 && rm -rf rasp-java.tar.gz
         exec /srv/entrypoint.sh
     volumes:
@@ -270,9 +270,9 @@ services:
       - "5044:5044"
     volumes:
       # [Required] Mount the Logstash pipeline configuration file `logstash.conf` and main configuration file `logstash.yml`.
-      # [Required] In logstash.conf, replace `<agent-ip>` with the actual IP address of the Kafka service on the agent side, for example: 172.19.9.192.
+      # [Required] In logstash.conf, replace `<agent-host-ip>` with the actual IP address of the Kafka service on the agent side, for example: 172.19.9.192.
       - ../third_party/logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
-      - ../third_party/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
+      - ../third_party/logstash/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
     ...
 
   filebeat:
@@ -461,7 +461,7 @@ The dashboard is deployed on the agent side. The docker compose YAML configurati
 Default access URL:
 
 ```text
-http://<your-agent-host-ip>:30003
+http://<agent-host-ip>:30003
 ```
 
 ### 7. Enable Agent Security Analysis Mode

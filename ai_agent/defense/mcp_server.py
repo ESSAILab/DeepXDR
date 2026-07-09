@@ -38,72 +38,118 @@ logger.info(f"日志文件位置: {log_file}")
 
 class SecurityTools:
     """安全工具集合"""
-
-    BLOCKED_IPS_FILE = "/etc/nginx/blocked_ips.conf"
-
+    
+    _blocked_ips_file = "/etc/nginx/blocked_ips.conf"
+    BLOCKED_IPS_FILE = _blocked_ips_file
     _block_schedule = {}  # 存储阻断计划 {ip: {'port': port, 'expiry': datetime, 'reason': reason, 'timer': threading.Timer}}
     _persistence_file = "/tmp/security_blocks_schedule.json"
-    
-    @staticmethod
-    def _read_blocked_ips(file_path: str) -> set:
-        """读取已阻断的IP集合"""
-        if not os.path.exists(file_path):
-            return set()
-        try:
-            blocked_ips = set()
-            with open(file_path, 'r') as f:
-                for line in f:
-                    stripped = line.strip()
-                    if stripped and not stripped.startswith('#'):
-                        parts = stripped.split()
-                        if len(parts) >= 2 and parts[1] == '1;':
-                            blocked_ips.add(parts[0])
-            return blocked_ips
-        except Exception as e:
-            logger.error(f"读取阻断配置失败: {e}")
-            return set()
 
     @staticmethod
-    def _remove_ip_from_file(ip: str, file_path: str) -> None:
-        """从阻断文件中删除指定IP"""
-        with open(file_path, 'r') as f:
-            lines = f.readlines()
-        with open(file_path, 'w') as f:
-            target = f"{ip} 1;\n"
-            f.writelines(line for line in lines if line != target)
+    def _normalize_block_address(ip: str) -> str:
+        """验证并规范化可写入nginx阻断配置的IP/CIDR。"""
+        if not isinstance(ip, str):
+            raise ValueError("IP地址必须是字符串")
 
-    @staticmethod
-    def _reload_nginx_with_rollback(ip: str, file_path: str) -> bool:
-        """重载nginx配置，失败时回滚IP写入"""
-        try:
-            subprocess.run(["nginx", "-s", "reload"], capture_output=True, text=True, check=True)
-            return True
-        except subprocess.CalledProcessError:
-            logger.error(f"nginx重载失败，回滚IP阻断规则: {ip}")
-            SecurityTools._remove_ip_from_file(ip, file_path)
-            return False
+        if ip != ip.strip() or any(ch.isspace() or ord(ch) < 32 or ord(ch) == 127 for ch in ip):
+            raise ValueError("IP地址不能包含空白字符或控制字符")
 
-    @staticmethod
-    def _handle_block_file_operation(ip: str, file_path: str) -> bool:
-        """处理阻断文件操作：读取现有IP，若不存在则添加并重载nginx"""
-        blocked_ips = SecurityTools._read_blocked_ips(file_path)
-
-        if ip in blocked_ips:
-            logger.info(f"IP阻断规则已存在: {ip}，跳过添加")
-            return True
+        if any(ch in ip for ch in (';', '{', '}')):
+            raise ValueError("IP地址不能包含nginx配置控制字符")
 
         try:
-            with open(file_path, 'a') as f:
-                f.write(f"{ip} 1;\n")
-            logger.info(f"添加IP阻断规则: {ip}")
-        except Exception as e:
-            logger.error(f"写入阻断配置失败: {e}")
+            if "/" in ip:
+                network = ipaddress.ip_network(ip, strict=True)
+                min_prefixlen = 24 if network.version == 4 else 64
+                if network.prefixlen < min_prefixlen:
+                    raise ValueError(f"CIDR网段范围过大，IPv{network.version}前缀长度必须至少为/{min_prefixlen}")
+                return str(network)
+            return str(ipaddress.ip_address(ip))
+        except ValueError as exc:
+            raise ValueError("必须是有效的IPv4/IPv6地址或允许范围内的CIDR网段") from exc
+
+    @staticmethod
+    def _run_nginx_command(args):
+        """运行nginx命令并在失败时返回可读错误。"""
+        try:
+            return subprocess.run(args, capture_output=True, text=True, check=True)
+        except subprocess.CalledProcessError as exc:
+            raise RuntimeError(SecurityTools._format_nginx_command_error(exc)) from exc
+
+    @staticmethod
+    def _format_nginx_command_error(exc: Exception) -> str:
+        """格式化nginx命令异常，保留stdout/stderr便于定位。"""
+        if isinstance(exc, subprocess.CalledProcessError):
+            details = [
+                f"Command {exc.cmd!r} returned non-zero exit status {exc.returncode}."
+            ]
+            if exc.stdout:
+                details.append(f"stdout: {exc.stdout.strip()}")
+            if exc.stderr:
+                details.append(f"stderr: {exc.stderr.strip()}")
+            return " ".join(details)
+        return str(exc)
+
+    @staticmethod
+    def _commit_nginx_blocklist(blocked_ips_file: str, lines) -> None:
+        """原子写入阻断配置，测试nginx配置，失败时回滚。"""
+        directory = os.path.dirname(blocked_ips_file) or "."
+        original_content = None
+        file_existed = os.path.exists(blocked_ips_file)
+        if file_existed:
+            with open(blocked_ips_file, 'r') as f:
+                original_content = f.read()
+
+        fd, temp_path = tempfile.mkstemp(prefix=".blocked_ips.", suffix=".conf", dir=directory, text=True)
+        try:
+            with os.fdopen(fd, 'w') as f:
+                for line in lines:
+                    f.write(line.rstrip('\n') + '\n')
+                f.flush()
+                os.fsync(f.fileno())
+
+            os.replace(temp_path, blocked_ips_file)
+            try:
+                SecurityTools._run_nginx_command(["nginx", "-t"])
+                SecurityTools._run_nginx_command(["nginx", "-s", "reload"])
+            except Exception as exc:
+                if file_existed:
+                    with open(blocked_ips_file, 'w') as f:
+                        f.write(original_content)
+                else:
+                    try:
+                        os.remove(blocked_ips_file)
+                    except FileNotFoundError:
+                        pass
+                raise RuntimeError(SecurityTools._format_nginx_command_error(exc)) from exc
+        finally:
+            try:
+                os.remove(temp_path)
+            except FileNotFoundError:
+                pass
+
+    @staticmethod
+    def _remove_ip_from_blocklist(ip: str, blocked_ips_file: str) -> Optional[bool]:
+        """从阻断配置中删除指定IP条目，返回None表示文件不存在。"""
+        if not os.path.exists(blocked_ips_file):
+            return None
+
+        with open(blocked_ips_file, 'r') as f:
+            config_lines = [line.rstrip('\n') for line in f]
+
+        updated_lines = []
+        removed = False
+        for line in config_lines:
+            stripped = line.strip()
+            parts = stripped.split()
+            if stripped and not stripped.startswith('#') and len(parts) >= 2 and parts[0] == ip and parts[1] == '1;':
+                removed = True
+                continue
+            updated_lines.append(line)
+
+        if not removed:
             return False
 
-        if not SecurityTools._reload_nginx_with_rollback(ip, file_path):
-            return False
-
-        logger.info("nginx配置已重载")
+        SecurityTools._commit_nginx_blocklist(blocked_ips_file, updated_lines)
         return True
 
     @staticmethod
@@ -137,79 +183,6 @@ class SecurityTools:
                 'reason': reason,
                 'timer': timer
             }
-
-class SecurityTools:
-    """安全工具集合"""
-    
-    _block_schedule = {}  # 存储阻断计划 {ip: {'port': port, 'expiry': datetime, 'reason': reason, 'timer': threading.Timer}}
-    _persistence_file = "/tmp/security_blocks_schedule.json"
-    _blocked_ips_file = "/etc/nginx/blocked_ips.conf"
-
-    @staticmethod
-    def _normalize_block_address(ip: str) -> str:
-        """验证并规范化可写入nginx阻断配置的IP/CIDR。"""
-        if not isinstance(ip, str):
-            raise ValueError("IP地址必须是字符串")
-
-        if ip != ip.strip() or any(ch.isspace() or ord(ch) < 32 or ord(ch) == 127 for ch in ip):
-            raise ValueError("IP地址不能包含空白字符或控制字符")
-
-        if any(ch in ip for ch in (';', '{', '}')):
-            raise ValueError("IP地址不能包含nginx配置控制字符")
-
-        try:
-            if "/" in ip:
-                network = ipaddress.ip_network(ip, strict=True)
-                min_prefixlen = 24 if network.version == 4 else 64
-                if network.prefixlen < min_prefixlen:
-                    raise ValueError(f"CIDR网段范围过大，IPv{network.version}前缀长度必须至少为/{min_prefixlen}")
-                return str(network)
-            return str(ipaddress.ip_address(ip))
-        except ValueError as exc:
-            raise ValueError("必须是有效的IPv4/IPv6地址或允许范围内的CIDR网段") from exc
-
-    @staticmethod
-    def _run_nginx_command(args):
-        """运行nginx命令并在失败时返回可读错误。"""
-        return subprocess.run(args, capture_output=True, text=True, check=True)
-
-    @staticmethod
-    def _commit_nginx_blocklist(blocked_ips_file: str, lines) -> None:
-        """原子写入阻断配置，测试nginx配置，失败时回滚。"""
-        directory = os.path.dirname(blocked_ips_file) or "."
-        original_content = None
-        file_existed = os.path.exists(blocked_ips_file)
-        if file_existed:
-            with open(blocked_ips_file, 'r') as f:
-                original_content = f.read()
-
-        fd, temp_path = tempfile.mkstemp(prefix=".blocked_ips.", suffix=".conf", dir=directory, text=True)
-        try:
-            with os.fdopen(fd, 'w') as f:
-                for line in lines:
-                    f.write(line.rstrip('\n') + '\n')
-                f.flush()
-                os.fsync(f.fileno())
-
-            os.replace(temp_path, blocked_ips_file)
-            try:
-                SecurityTools._run_nginx_command(["nginx", "-t"])
-                SecurityTools._run_nginx_command(["nginx", "-s", "reload"])
-            except Exception:
-                if file_existed:
-                    with open(blocked_ips_file, 'w') as f:
-                        f.write(original_content)
-                else:
-                    try:
-                        os.remove(blocked_ips_file)
-                    except FileNotFoundError:
-                        pass
-                raise
-        finally:
-            try:
-                os.remove(temp_path)
-            except FileNotFoundError:
-                pass
     
     @staticmethod
     def block_ip_port(ip: str, port: str, duration: str = "permanent", reason: str = "Security threat") -> Dict[str, Any]:
@@ -401,7 +374,7 @@ class SecurityTools:
                 logger.warning(f"尝试解除无效IP地址 '{ip}': {validation_reason}")
                 # 这里只是警告，继续执行解封，因为我们可能是在清理旧的无效条目
 
-            blocked_ips_file = SecurityTools.BLOCKED_IPS_FILE
+            blocked_ips_file = SecurityTools._blocked_ips_file
 
             try:
                 result = SecurityTools._remove_ip_from_blocklist(ip, blocked_ips_file)
@@ -462,7 +435,7 @@ class SecurityTools:
     def list_blocked_ips() -> Dict[str, Any]:
         """列出nginx配置文件中已阻断的IP地址"""
         try:
-            blocked_ips_file = SecurityTools.BLOCKED_IPS_FILE
+            blocked_ips_file = SecurityTools._blocked_ips_file
 
             # 检查blocked_ips.conf文件是否存在
             if not os.path.exists(blocked_ips_file):
@@ -763,7 +736,7 @@ def main():
         port = args.port
     
     # 检查nginx配置文件访问权限
-    blocked_ips_file = SecurityTools.BLOCKED_IPS_FILE
+    blocked_ips_file = SecurityTools._blocked_ips_file
     if not os.path.exists(blocked_ips_file):
         logger.warning(f"⚠️  nginx阻断配置文件不存在: {blocked_ips_file}")
         logger.warning(f"   创建文件命令: sudo touch {blocked_ips_file} && sudo chown $USER:$USER {blocked_ips_file}")

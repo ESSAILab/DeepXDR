@@ -1,4 +1,5 @@
 import importlib.util
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -102,4 +103,81 @@ def test_block_ip_accepts_valid_cidr_and_reloads_after_test(tmp_path, mcp_server
     assert result["status"] == "success"
     assert result["ip"] == "198.51.100.128/25"
     assert block_file.read_text() == "198.51.100.128/25 1;\n"
+    assert calls == [["nginx", "-t"], ["nginx", "-s", "reload"]]
+
+
+def test_block_ip_returns_nginx_stderr_when_reload_fails_because_pid_is_missing(tmp_path, mcp_server_module):
+    block_file = tmp_path / "blocked_ips.conf"
+    original_content = "203.0.113.2 1;\n"
+    block_file.write_text(original_content)
+    calls = []
+
+    security_tools = mcp_server_module.SecurityTools
+    security_tools._blocked_ips_file = str(block_file)
+
+    def run_nginx(args):
+        calls.append(args)
+        if args == ["nginx", "-s", "reload"]:
+            raise subprocess.CalledProcessError(
+                1,
+                args,
+                stderr='invalid PID number "" in "/run/nginx.pid"',
+            )
+
+    security_tools._run_nginx_command = staticmethod(run_nginx)
+
+    result = security_tools.block_ip_port("198.51.100.19", "all")
+
+    assert result["status"] == "error"
+    assert "invalid PID number" in result["error"]
+    assert block_file.read_text() == original_content
+    assert calls == [["nginx", "-t"], ["nginx", "-s", "reload"]]
+
+
+def test_block_ip_returns_nginx_stderr_when_reload_fails(tmp_path, mcp_server_module):
+    block_file = tmp_path / "blocked_ips.conf"
+    original_content = "203.0.113.2 1;\n"
+    block_file.write_text(original_content)
+
+    security_tools = mcp_server_module.SecurityTools
+    security_tools._blocked_ips_file = str(block_file)
+
+    def run_nginx(args):
+        if args == ["nginx", "-s", "reload"]:
+            raise subprocess.CalledProcessError(
+                1,
+                args,
+                stderr="open() \"/var/log/nginx/error.log\" failed (13: Permission denied)",
+            )
+
+    security_tools._run_nginx_command = staticmethod(run_nginx)
+
+    result = security_tools.block_ip_port("198.51.100.20", "all")
+
+    assert result["status"] == "error"
+    assert "Permission denied" in result["error"]
+    assert block_file.read_text() == original_content
+
+
+def test_security_tools_keeps_single_complete_class(mcp_server_module):
+    security_tools = mcp_server_module.SecurityTools
+
+    assert security_tools.BLOCKED_IPS_FILE == security_tools._blocked_ips_file
+    assert hasattr(security_tools, "_setup_block_timer")
+    assert hasattr(security_tools, "_remove_ip_from_blocklist")
+
+
+def test_unblock_ip_removes_entry_and_reloads(tmp_path, mcp_server_module):
+    block_file = tmp_path / "blocked_ips.conf"
+    block_file.write_text("203.0.113.10 1;\n198.51.100.7 1;\n")
+    calls = []
+
+    security_tools = mcp_server_module.SecurityTools
+    security_tools._blocked_ips_file = str(block_file)
+    security_tools._run_nginx_command = staticmethod(lambda args: calls.append(args))
+
+    result = security_tools.unblock_ip_port("203.0.113.10", "all")
+
+    assert result["status"] == "success"
+    assert block_file.read_text() == "198.51.100.7 1;\n"
     assert calls == [["nginx", "-t"], ["nginx", "-s", "reload"]]
