@@ -2,11 +2,12 @@
   <img src="assets/images/deepxdr-brand-demo.gif" alt="DeepXDR brand demo" width="760">
 </p>
 
-English | [中文](README.md)
-
-[![Status](https://img.shields.io/badge/status-alpha-orange)](#project-status)
-[![Python](https://img.shields.io/badge/python-3.11%2B-blue)](ai_agent/pyproject.toml)
-[![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+<p align="center">
+  English | <a href="README.md">中文</a>&nbsp;&nbsp;
+  <a href="#project-status"><img src="https://img.shields.io/badge/status-alpha-orange" alt="Status"></a>
+  <a href="ai_agent/pyproject.toml"><img src="https://img.shields.io/badge/python-3.11%2B-blue" alt="Python"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License"></a>
+</p>
 
 DeepXDR is an intelligent threat analysis and investigation system for real-time security operations. It receives security alerts and behavior events from host, application, and network telemetry sources, filters high-value signals through baseline adjudication, and then uses an AI Agent to correlate multi-source evidence and generate MITRE ATT&CK-based TTP analysis. For events that require longer-range reasoning, the system can escalate from Short TTP (cross-domain correlated real-time alerts) to Long TTP (advanced threat attack chain) investigations, and supports analyst feedback to supplement investigation direction. DeepXDR also provides an Agent Security Analysis Mode that integrates AI-agent executions wrapped by nono, analyzes intent alignment between the user's original request and the final code changes, and supports manual acceptance or recovery.
 

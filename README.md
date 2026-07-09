@@ -2,11 +2,12 @@
   <img src="assets/images/deepxdr-brand-demo.gif" alt="DeepXDR 品牌演示" width="760">
 </p>
 
-[English](README_EN.md) | 中文
-
-[![Status](https://img.shields.io/badge/status-alpha-orange)](#项目状态)
-[![Python](https://img.shields.io/badge/python-3.11%2B-blue)](ai_agent/pyproject.toml)
-[![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+<p align="center">
+  <a href="README_EN.md">English</a> | 中文&nbsp;&nbsp;
+  <a href="#项目状态"><img src="https://img.shields.io/badge/status-alpha-orange" alt="Status"></a>
+  <a href="ai_agent/pyproject.toml"><img src="https://img.shields.io/badge/python-3.11%2B-blue" alt="Python"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License"></a>
+</p>
 
 DeepXDR 是一个面向实时安全运营的智能威胁分析与调查系统。它接收来自主机、应用和网络遥测源的安全告警与行为事件，先通过基线裁决筛选高价值信号，再由 AI Agent 关联多源证据并生成基于 MITRE ATT&CK 的 TTP 分析。对于需要更长时间跨度研判的事件，系统可以从 Short TTP（跨域关联实时告警） 进一步触发 Long TTP（高级威胁攻击链） 调查，并支持分析师通过人机反馈补充调查方向。DeepXDR 也提供智能体安全分析模式，可接入 nono 包裹的 AI 智能体执行过程，对用户原始意图与最终代码变更进行一致性和风险分析，并支持人工接受变更或执行恢复。
 
