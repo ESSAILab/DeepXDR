@@ -468,9 +468,16 @@ services:
 http://<agent-host-ip>:30003
 ```
 
-### 7. 启用智能体安全分析模式
+### 7. 启用智能体安全分析模式（按需）
 
 智能体安全分析模式用于审查 AI 智能体通过 nono 执行后产生的最终代码变更，重点判断用户原始意图与最终增量变更是否一致，并识别偏离请求、越权修改和高风险操作。该模式不依赖 dotCMS、Falco、OpenRASP 或 Suricata；本地完整运行环境会启动 Kafka、PostgreSQL、Redis、MinIO、baseline-adjudication、ai-agent 和 web-ui。
+
+智能体安全分析模式采用简化的部署架构：
+
+<p align="center">
+  <img src="assets/images/agent-security-dnalysis-mode-deploy.png" alt="智能体安全分析模式部署图">
+</p>
+
 
 #### 7.1 前置条件
 

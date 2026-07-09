@@ -463,9 +463,15 @@ Default access URL:
 http://<agent-host-ip>:30003
 ```
 
-### 7. Enable Agent Security Analysis Mode
+### 7. Enable Agent Security Analysis Mode (optional)
 
 Agent Security Analysis Mode reviews final code changes produced by AI agents running under nono, focusing on whether the user's original intent aligns with the final incremental changes and identifying request drift, out-of-scope edits, and high-risk operations. This mode does not depend on dotCMS, Falco, OpenRASP, or Suricata. The local full-stack environment starts Kafka, PostgreSQL, Redis, MinIO, baseline-adjudication, ai-agent, and web-ui.
+
+Agent Security Analysis Mode uses a simplified deployment architecture:
+
+<p align="center">
+  <img src="assets/images/agent-security-dnalysis-mode-deploy.png" alt="Agent Security Analysis Mode deployment diagram">
+</p>
 
 #### 7.1 Prerequisites
 
