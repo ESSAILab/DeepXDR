@@ -104,7 +104,7 @@ report_user_prompt_template = """\
 Write an executive incident report from this context in Chinese.\n\n\
 Do NOT mention event status (e.g., contained, under investigation, resolved, in progress, etc.) in the report. \n\n\
 Schema fields (must include all):\n\
-- title, you must clearly describe the observed behavior. Use evidence-bound qualifiers such as '疑似' only when certainty is limited. Do not use vague workflow/status terms like 'Unknown' or 'In Progress.' (<=300)\n\
+- title, you must clearly describe the observed behavior. Do not use vague workflow/status terms like 'Unknown' or 'In Progress.' (<=300)\n\
 - executive_summary (<=900)\n\
 - likely_attack_flow (3-12 bullet lines)\n\
 - mapped_techniques (1-20 lines)\n\
