@@ -1468,8 +1468,7 @@ async def _try_fallback_json_parse(final_report_prompt: str, writer_model_config
         HumanMessage(
             content=(
                 final_report_prompt
-                + "\n\nIMPORTANT: Return ONLY a raw JSON object matching the requested structure. "
-                "Do not use markdown code fences. The final_report field may contain Markdown text as a JSON string."
+                + "\n\nIMPORTANT: Return ONLY a raw JSON object matching the requested structure. Do not use markdown code fences. The final_report field may contain Markdown text as a JSON string."
             )
         )
     ])
