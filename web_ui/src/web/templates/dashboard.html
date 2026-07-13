@@ -1720,6 +1720,7 @@
                 agentSessions: [],
                 agentSessionsLoading: false,
                 agentSessionTimer: null,
+                agentSessionRequestSequence: 0,
                 agentSessionActionInFlight: {},
                 agentSessionPagination: {
                     page: 1,
@@ -2277,7 +2278,7 @@
                 startAgentSessionPolling() {
                     this.stopAgentSessionPolling();
                     this.agentSessionTimer = setInterval(() => {
-                        if (this.searchType === 'agent') {
+                        if (this.searchType === 'agent' && !this.agentSessionsLoading) {
                             this.loadAgentSessions();
                         }
                     }, 5000);
@@ -2656,38 +2657,39 @@
                     }
                 },
 
-                async loadAgentSessions() {
+                async loadAgentSessions(page = this.agentSessionPagination.page) {
+                    const requestSequence = ++this.agentSessionRequestSequence;
                     try {
                         this.agentSessionsLoading = true;
                         const params = new URLSearchParams();
-                        params.append('page', this.agentSessionPagination.page);
+                        params.append('page', page);
                         params.append('size', this.agentSessionPagination.size);
                         const response = await fetch(`/api/agent-sessions?${params.toString()}`);
                         if (!response.ok) {
                             throw new Error('加载智能体告警失败');
                         }
                         const result = await response.json();
+                        if (requestSequence !== this.agentSessionRequestSequence) return;
                         this.agentSessions = result.items || [];
                         this.agentSessionPagination = {
-                            page: result.page || this.agentSessionPagination.page,
+                            page: result.page || page,
                             size: result.size || this.agentSessionPagination.size,
                             total: result.total || 0,
                             pages: result.pages || Math.max(1, Math.ceil((result.total || 0) / this.agentSessionPagination.size))
                         };
                     } catch (error) {
+                        if (requestSequence !== this.agentSessionRequestSequence) return;
                         console.error('加载智能体告警失败:', error);
-                        this.agentSessions = [];
-                        this.agentSessionPagination.total = 0;
-                        this.agentSessionPagination.pages = 1;
                     } finally {
-                        this.agentSessionsLoading = false;
+                        if (requestSequence === this.agentSessionRequestSequence) {
+                            this.agentSessionsLoading = false;
+                        }
                     }
                 },
 
                 async changeAgentSessionPage(page) {
                     if (page < 1 || page > this.agentSessionPagination.pages) return;
-                    this.agentSessionPagination.page = page;
-                    await this.loadAgentSessions();
+                    await this.loadAgentSessions(page);
                 },
 
                 canActOnAgentSession(session) {

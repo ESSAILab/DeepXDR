@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator, Optional
 
 import redis.asyncio as redis
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 
@@ -84,6 +85,7 @@ class DatabaseManager:
         importlib.import_module("shared.database.models")
         async with self.engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
+            await _run_schema_compatibility_migrations(conn)
             logger.info("数据库表创建完成")
     
     @asynccontextmanager
@@ -137,6 +139,196 @@ def get_redis() -> redis.Redis:
     if _db_manager is None:
         raise RuntimeError("数据库管理器未初始化")
     return _db_manager.get_redis_client()
+
+
+async def _run_schema_compatibility_migrations(conn) -> None:
+    """Apply idempotent schema fixes that create_all cannot apply to existing tables."""
+    dialect_name = conn.dialect.name
+    if dialect_name == "postgresql":
+        await conn.execute(
+            text(
+                "ALTER TABLE agent_rollbacks "
+                "ADD COLUMN IF NOT EXISTS nono_state_home TEXT NOT NULL DEFAULT ''"
+            )
+        )
+        await conn.execute(
+            text(
+                "UPDATE agent_rollbacks AS rollback "
+                "SET nono_state_home = COALESCE(session.raw_event->'nono'->>'state_home', '') "
+                "FROM agent_sessions AS session "
+                "WHERE rollback.run_id = session.run_id "
+                "AND rollback.nono_state_home = '' "
+                "AND session.raw_event->'nono'->>'state_home' IS NOT NULL"
+            )
+        )
+        await conn.execute(
+            text("UPDATE agent_rollbacks SET status = 'requested' WHERE status = 'publishing'")
+        )
+        await _isolate_duplicate_agent_rollbacks_postgres(conn)
+    elif dialect_name == "sqlite":
+        columns = await conn.execute(text("PRAGMA table_info(agent_rollbacks)"))
+        if "nono_state_home" not in {row[1] for row in columns}:
+            await conn.execute(
+                text("ALTER TABLE agent_rollbacks ADD COLUMN nono_state_home TEXT NOT NULL DEFAULT ''")
+            )
+        await conn.execute(text("UPDATE agent_rollbacks SET status = 'requested' WHERE status = 'publishing'"))
+        await _isolate_duplicate_agent_rollbacks_sqlite(conn)
+
+
+async def _isolate_duplicate_agent_rollbacks_postgres(conn) -> None:
+    await conn.execute(
+        text(
+            "UPDATE agent_rollbacks AS rollback "
+            "SET status = 'failed', "
+            "    error_message = :reason, "
+            "    completed_at = COALESCE(rollback.completed_at, NOW()) "
+            "WHERE rollback.status IN ('requested', 'queued', 'executing') "
+            "AND EXISTS ("
+            "  SELECT 1 FROM agent_rollbacks AS terminal "
+            "  WHERE terminal.run_id = rollback.run_id "
+            "  AND terminal.nono_session_id = rollback.nono_session_id "
+            "  AND terminal.snapshot = rollback.snapshot "
+            "  AND terminal.nono_state_home = rollback.nono_state_home "
+            "  AND terminal.status IN ('completed', 'failed') "
+            "  AND COALESCE(terminal.error_message, '') != :reason"
+            ")"
+        ),
+        {"reason": "duplicate active rollback isolated during schema migration"},
+    )
+    await conn.execute(
+        text(
+            "WITH ranked AS ("
+            "  SELECT id, ROW_NUMBER() OVER ("
+            "    PARTITION BY run_id, nono_session_id, snapshot, nono_state_home "
+            "    ORDER BY requested_at ASC, id ASC"
+            "  ) AS duplicate_rank "
+            "  FROM agent_rollbacks "
+            "  WHERE status = 'executing'"
+            ") "
+            "UPDATE agent_rollbacks AS rollback "
+            "SET status = 'failed', "
+            "    error_message = :reason, "
+            "    completed_at = COALESCE(rollback.completed_at, NOW()) "
+            "FROM ranked "
+            "WHERE rollback.id = ranked.id "
+            "AND ranked.duplicate_rank > 1"
+        ),
+        {"reason": "duplicate active rollback isolated during schema migration"},
+    )
+    await conn.execute(
+        text(
+            "UPDATE agent_rollbacks AS rollback "
+            "SET status = 'failed', "
+            "    error_message = :reason, "
+            "    completed_at = COALESCE(rollback.completed_at, NOW()) "
+            "WHERE rollback.status IN ('requested', 'queued') "
+            "AND EXISTS ("
+            "  SELECT 1 FROM agent_rollbacks AS executing "
+            "  WHERE executing.run_id = rollback.run_id "
+            "  AND executing.nono_session_id = rollback.nono_session_id "
+            "  AND executing.snapshot = rollback.snapshot "
+            "  AND executing.nono_state_home = rollback.nono_state_home "
+            "  AND executing.status = 'executing'"
+            ")"
+        ),
+        {"reason": "duplicate active rollback isolated during schema migration"},
+    )
+    await conn.execute(
+        text(
+            "WITH ranked AS ("
+            "  SELECT id, ROW_NUMBER() OVER ("
+            "    PARTITION BY run_id, nono_session_id, snapshot, nono_state_home "
+            "    ORDER BY CASE status WHEN 'queued' THEN 0 ELSE 1 END, requested_at ASC, id ASC"
+            "  ) AS duplicate_rank "
+            "  FROM agent_rollbacks "
+            "  WHERE status IN ('requested', 'queued')"
+            ") "
+            "UPDATE agent_rollbacks AS rollback "
+            "SET status = 'failed', "
+            "    error_message = :reason, "
+            "    completed_at = COALESCE(rollback.completed_at, NOW()) "
+            "FROM ranked "
+            "WHERE rollback.id = ranked.id "
+            "AND ranked.duplicate_rank > 1"
+        ),
+        {"reason": "duplicate active rollback isolated during schema migration"},
+    )
+
+
+async def _isolate_duplicate_agent_rollbacks_sqlite(conn) -> None:
+    await conn.execute(
+        text(
+            "UPDATE agent_rollbacks "
+            "SET status = 'failed', "
+            "    error_message = :reason, "
+            "    completed_at = COALESCE(completed_at, CURRENT_TIMESTAMP) "
+            "WHERE status IN ('requested', 'queued', 'executing') "
+            "AND EXISTS ("
+            "  SELECT 1 FROM agent_rollbacks AS terminal "
+            "  WHERE terminal.run_id = agent_rollbacks.run_id "
+            "  AND terminal.nono_session_id = agent_rollbacks.nono_session_id "
+            "  AND terminal.snapshot = agent_rollbacks.snapshot "
+            "  AND terminal.nono_state_home = agent_rollbacks.nono_state_home "
+            "  AND terminal.status IN ('completed', 'failed') "
+            "  AND COALESCE(terminal.error_message, '') != :reason"
+            ")"
+        ),
+        {"reason": "duplicate active rollback isolated during schema migration"},
+    )
+    await conn.execute(
+        text(
+            "WITH ranked AS ("
+            "  SELECT id, ROW_NUMBER() OVER ("
+            "    PARTITION BY run_id, nono_session_id, snapshot, nono_state_home "
+            "    ORDER BY requested_at ASC, id ASC"
+            "  ) AS duplicate_rank "
+            "  FROM agent_rollbacks "
+            "  WHERE status = 'executing'"
+            ") "
+            "UPDATE agent_rollbacks "
+            "SET status = 'failed', "
+            "    error_message = :reason, "
+            "    completed_at = COALESCE(completed_at, CURRENT_TIMESTAMP) "
+            "WHERE id IN (SELECT id FROM ranked WHERE duplicate_rank > 1)"
+        ),
+        {"reason": "duplicate active rollback isolated during schema migration"},
+    )
+    await conn.execute(
+        text(
+            "UPDATE agent_rollbacks "
+            "SET status = 'failed', "
+            "    error_message = :reason, "
+            "    completed_at = COALESCE(completed_at, CURRENT_TIMESTAMP) "
+            "WHERE status IN ('requested', 'queued') "
+            "AND EXISTS ("
+            "  SELECT 1 FROM agent_rollbacks AS executing "
+            "  WHERE executing.run_id = agent_rollbacks.run_id "
+            "  AND executing.nono_session_id = agent_rollbacks.nono_session_id "
+            "  AND executing.snapshot = agent_rollbacks.snapshot "
+            "  AND executing.nono_state_home = agent_rollbacks.nono_state_home "
+            "  AND executing.status = 'executing'"
+            ")"
+        ),
+        {"reason": "duplicate active rollback isolated during schema migration"},
+    )
+    await conn.execute(
+        text(
+            "WITH ranked AS ("
+            "  SELECT id, ROW_NUMBER() OVER ("
+            "    PARTITION BY run_id, nono_session_id, snapshot, nono_state_home "
+            "    ORDER BY CASE status WHEN 'queued' THEN 0 ELSE 1 END, requested_at ASC, id ASC"
+            "  ) AS duplicate_rank "
+            "  FROM agent_rollbacks "
+            "  WHERE status IN ('requested', 'queued')"
+            ") "
+            "UPDATE agent_rollbacks "
+            "SET status = 'failed', "
+            "    error_message = :reason, "
+            "    completed_at = COALESCE(completed_at, CURRENT_TIMESTAMP) "
+            "WHERE id IN (SELECT id FROM ranked WHERE duplicate_rank > 1)"
+        ),
+        {"reason": "duplicate active rollback isolated during schema migration"},
+    )
 
 
 class RedisKeyBuilder:

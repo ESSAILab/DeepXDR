@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import subprocess
 from pathlib import Path
 
 
@@ -157,3 +158,171 @@ def test_agent_guard_fallback_does_not_intercept_alpine_clicks():
     assert "action === 'delete' ? 'DELETE' : 'POST'" in html
     assert "action === 'delete' ? `/api/agent-sessions/${encodeURIComponent(runId)}` : `/api/agent-sessions/${encodeURIComponent(runId)}/${action}`" in html
     assert "}, true);" in html
+
+
+def test_agent_session_refresh_failure_preserves_last_successful_data():
+    html = TEMPLATE.read_text(encoding="utf-8")
+    method = html.split("async loadAgentSessions(", 1)[1].split("async changeAgentSessionPage", 1)[0]
+    catch_block = method.split("} catch (error) {", 1)[1].split("} finally {", 1)[0]
+
+    assert "this.agentSessions =" not in catch_block
+    assert "this.agentSessionPagination =" not in catch_block
+    for field in ("page", "size", "total", "pages"):
+        assert f"this.agentSessionPagination.{field} =" not in catch_block
+
+
+def test_agent_session_loader_uses_requested_page_before_successful_update():
+    html = TEMPLATE.read_text(encoding="utf-8")
+    method = html.split("async loadAgentSessions(", 1)[1].split("async changeAgentSessionPage", 1)[0]
+
+    assert "page = this.agentSessionPagination.page) {" in method
+    assert "params.append('page', page);" in method
+    assert "params.append('page', this.agentSessionPagination.page);" not in method
+
+
+def test_agent_session_page_change_passes_target_page_without_preassigning_it():
+    html = TEMPLATE.read_text(encoding="utf-8")
+    method = html.split("async changeAgentSessionPage(page) {", 1)[1].split("canActOnAgentSession", 1)[0]
+
+    assert "this.agentSessionPagination.page = page;" not in method
+    assert "await this.loadAgentSessions(page);" in method
+
+
+def test_agent_session_loader_ignores_stale_success_and_failure():
+    html = TEMPLATE.read_text(encoding="utf-8")
+    method_start = html.index("async loadAgentSessions(")
+    method_end = html.index("async changeAgentSessionPage", method_start)
+    load_method = html[method_start:method_end]
+
+    script = (
+        """
+const assert = (condition, message) => {
+    if (!condition) throw new Error(message);
+};
+const requests = [];
+global.fetch = (url) => new Promise((resolve, reject) => {
+    requests.push({url, resolve, reject});
+});
+console.error = () => {};
+const response = (body) => ({ok: true, json: async () => body});
+
+(async () => {
+    const component = {
+        agentSessions: [{run_id: 'last-success'}],
+        agentSessionsLoading: false,
+        agentSessionRequestSequence: 0,
+        agentSessionPagination: {page: 1, size: 20, total: 1, pages: 4},
+"""
+        + load_method
+        + """
+        noop() {}
+    };
+
+    const staleSuccess = component.loadAgentSessions(1);
+    const latestSuccess = component.loadAgentSessions(2);
+    requests[1].resolve(response({
+        items: [{run_id: 'latest'}], page: 2, size: 20, total: 2, pages: 4
+    }));
+    await latestSuccess;
+    requests[0].resolve(response({
+        items: [{run_id: 'stale'}], page: 1, size: 20, total: 1, pages: 4
+    }));
+    await staleSuccess;
+
+    assert(component.agentSessions[0].run_id === 'latest', 'stale success overwrote latest data');
+    assert(component.agentSessionPagination.page === 2, 'stale success overwrote pagination');
+    assert(component.agentSessionsLoading === false, 'latest success did not clear loading');
+
+    const staleFailure = component.loadAgentSessions(3);
+    const latestPending = component.loadAgentSessions(4);
+    requests[2].reject(new Error('stale request failed'));
+    await staleFailure;
+
+    assert(component.agentSessions[0].run_id === 'latest', 'stale failure changed last success');
+    assert(component.agentSessionPagination.page === 2, 'stale failure changed pagination');
+    assert(component.agentSessionsLoading === true, 'stale failure cleared latest loading state');
+
+    requests[3].resolve(response({
+        items: [{run_id: 'newest'}], page: 4, size: 20, total: 3, pages: 4
+    }));
+    await latestPending;
+    assert(component.agentSessions[0].run_id === 'newest', 'latest response was not applied');
+    assert(component.agentSessionPagination.page === 4, 'latest pagination was not applied');
+    assert(component.agentSessionsLoading === false, 'latest completion did not clear loading');
+})().catch((error) => {
+    console.log(error.stack || error.message);
+    process.exitCode = 1;
+});
+"""
+    )
+
+    result = subprocess.run(["node", "-e", script], capture_output=True, text=True, check=False)
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "agentSessionRequestSequence: 0" in html
+
+
+def test_agent_session_polling_does_not_supersede_manual_page_change():
+    html = TEMPLATE.read_text(encoding="utf-8")
+    polling_start = html.index("startAgentSessionPolling() {")
+    polling_end = html.index("stopAgentSessionPolling() {", polling_start)
+    polling_method = html[polling_start:polling_end]
+    load_start = html.index("async loadAgentSessions(")
+    load_end = html.index("async changeAgentSessionPage", load_start)
+    load_method = html[load_start:load_end]
+
+    script = (
+        """
+const assert = (condition, message) => {
+    if (!condition) throw new Error(message);
+};
+const requests = [];
+let poll = null;
+global.setInterval = (callback) => {
+    poll = callback;
+    return 1;
+};
+global.fetch = (url) => new Promise((resolve, reject) => {
+    requests.push({url, resolve, reject});
+});
+console.error = () => {};
+const response = (body) => ({ok: true, json: async () => body});
+
+(async () => {
+    const component = {
+        searchType: 'agent',
+        agentSessionTimer: null,
+        agentSessions: [{run_id: 'page-1'}],
+        agentSessionsLoading: false,
+        agentSessionRequestSequence: 0,
+        agentSessionPagination: {page: 1, size: 20, total: 40, pages: 2},
+        stopAgentSessionPolling() {},
+"""
+        + polling_method
+        + load_method
+        + """
+        noop() {}
+    };
+
+    component.startAgentSessionPolling();
+    const manualPage = component.loadAgentSessions(2);
+    poll();
+
+    assert(requests.length === 1, 'poll started a competing request during manual navigation');
+    requests[0].resolve(response({
+        items: [{run_id: 'page-2'}], page: 2, size: 20, total: 40, pages: 2
+    }));
+    await manualPage;
+
+    assert(component.agentSessions[0].run_id === 'page-2', 'manual page data was not retained');
+    assert(component.agentSessionPagination.page === 2, 'poll superseded manual page navigation');
+})().catch((error) => {
+    console.log(error.stack || error.message);
+    process.exitCode = 1;
+});
+"""
+    )
+
+    result = subprocess.run(["node", "-e", script], capture_output=True, text=True, check=False)
+
+    assert result.returncode == 0, result.stdout + result.stderr

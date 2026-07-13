@@ -204,7 +204,12 @@ async def accept_agent_session(run_id: str):
 async def delete_agent_session(run_id: str):
     """删除智能体会话审计记录及其关联裁决/回退记录"""
     repo = _require_agent_guard_repository()
-    deleted = await repo.delete_session(run_id)
+    try:
+        deleted = await repo.delete_session(run_id)
+    except Exception as exc:
+        if exc.__class__.__name__ == "RollbackDeletionBlocked":
+            raise HTTPException(status_code=409, detail=str(exc))
+        raise
     if not deleted:
         raise HTTPException(status_code=404, detail="Agent session not found")
     return {"status": "deleted", "run_id": run_id}
@@ -234,12 +239,43 @@ async def request_agent_session_rollback(run_id: str, request: Dict):
         requested_by=str(request.get("requested_by", "web_ui")),
         approved=True,
         nono_state_home=nono_state_home,
+        snapshot=int(request.get("snapshot", 0)),
     )
-    if hasattr(repo, "store_rollback"):
-        await repo.store_rollback({**event, "status": "requested"})
-    await publisher.publish(event)
-    await repo.update_session(run_id, {"decision": "rollback_requested", "rollback_status": "requested"})
-    return {"status": "rollback_requested", "run_id": run_id}
+    if hasattr(repo, "request_rollback"):
+        operation = await repo.request_rollback({**event, "status": "requested"})
+    else:
+        operation = {**event, "status": "requested"}
+        if hasattr(repo, "store_rollback"):
+            await repo.store_rollback(operation)
+    event = {
+        **event,
+        "id": operation["id"],
+        "nono_state_home": operation.get("nono_state_home", event.get("nono_state_home")),
+        "snapshot": int(operation.get("snapshot", event.get("snapshot", 0))),
+        "requested_by": operation.get("requested_by", event.get("requested_by", "web_ui")),
+    }
+    rollback_status = operation.get("status", "requested")
+    if rollback_status == "requested" and hasattr(repo, "finish_rollback_publication"):
+        try:
+            await publisher.publish(event)
+        except Exception:
+            await repo.finish_rollback_publication(operation["id"], published=False)
+            raise
+        rollback_status = await repo.finish_rollback_publication(operation["id"], published=True)
+    elif operation.get("_created", True) and rollback_status == "requested":
+        await publisher.publish(event)
+    decision = "rollback_requested"
+    if rollback_status == "completed":
+        decision = "rollback_completed"
+    elif rollback_status == "failed":
+        decision = "rollback_failed"
+    await repo.update_session(run_id, {"decision": decision, "rollback_status": rollback_status})
+    return {
+        "status": "rollback_requested",
+        "run_id": run_id,
+        "rollback_id": operation["id"],
+        "rollback_status": rollback_status,
+    }
 
 
 @router.get(

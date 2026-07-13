@@ -277,6 +277,7 @@ class AgentRollback(Base):
     id = Column(String(255), primary_key=True, comment="恢复请求ID")
     run_id = Column(String(255), ForeignKey("agent_sessions.run_id"), nullable=False)
     nono_session_id = Column(String(255), nullable=False, comment="nono rollback session ID")
+    nono_state_home = Column(Text, nullable=False, default="", comment="nono XDG_STATE_HOME")
     snapshot = Column(Integer, nullable=False, default=0, comment="恢复快照")
     requested_by = Column(String(255), nullable=False, comment="请求人")
     status = Column(String(50), nullable=False, comment="恢复状态")

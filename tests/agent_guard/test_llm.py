@@ -45,10 +45,16 @@ def test_openai_completion_llm_requests_json_object_response(monkeypatch):
         lambda **_kwargs: ClientStub(completion),
     )
 
-    llm = OpenAICompletionLLM(api_key="test", base_url="http://example.test", model="model")
+    llm = OpenAICompletionLLM(
+        api_key="test",
+        base_url="http://example.test",
+        model="model",
+        request_timeout_seconds=120,
+    )
 
     assert llm.complete("prompt") == '{"verdict":"allow"}'
     assert completion.calls[0]["response_format"] == {"type": "json_object"}
+    assert completion.calls[0]["timeout"] == 120
 
 
 def test_openai_completion_llm_falls_back_when_json_mode_is_unsupported(monkeypatch):
@@ -59,8 +65,14 @@ def test_openai_completion_llm_falls_back_when_json_mode_is_unsupported(monkeypa
         lambda **_kwargs: ClientStub(completion),
     )
 
-    llm = OpenAICompletionLLM(api_key="test", base_url="http://example.test", model="model")
+    llm = OpenAICompletionLLM(
+        api_key="test",
+        base_url="http://example.test",
+        model="model",
+        request_timeout_seconds=45,
+    )
 
     assert llm.complete("prompt") == '{"verdict":"allow"}'
     assert len(completion.calls) == 2
     assert "response_format" not in completion.calls[1]
+    assert completion.calls[1]["timeout"] == 45

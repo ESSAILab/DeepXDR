@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import hashlib
 
+import pytest
+
+from ai_agent.agent_guard.adjudication_graph import AnalysisCancellationToken, AnalysisCancelled
 from ai_agent.agent_guard.config import AgentGuardConfig
 from ai_agent.agent_guard.service import process_finished_session_event
 
@@ -16,6 +19,30 @@ class QueueLLM:
         if not self.responses:
             raise AssertionError("LLM called more times than expected")
         return self.responses.pop(0)
+
+
+class CancellingLLM(QueueLLM):
+    def __init__(self, responses: list[str], token: AnalysisCancellationToken):
+        super().__init__(responses)
+        self.token = token
+
+    def complete(self, prompt: str) -> str:
+        response = super().complete(prompt)
+        self.token.cancel()
+        return response
+
+
+class CancelOnCallLLM(QueueLLM):
+    def __init__(self, responses: list[str], token: AnalysisCancellationToken, call_number: int):
+        super().__init__(responses)
+        self.token = token
+        self.call_number = call_number
+
+    def complete(self, prompt: str) -> str:
+        response = super().complete(prompt)
+        if len(self.prompts) == self.call_number:
+            self.token.cancel()
+        return response
 
 
 def _event_for_diff(tmp_path, diff_text: str):
@@ -84,6 +111,53 @@ def test_medium_diff_summarizes_each_file_then_adjudicates_merged_summaries(tmp_
     assert "所有面向用户展示的文本必须使用简体中文" in llm.prompts[0]
     assert "所有面向用户展示的文本必须使用简体中文" in llm.prompts[1]
     assert "所有面向用户展示的文本必须使用简体中文" in llm.prompts[2]
+
+
+def test_file_summary_cancellation_stops_before_next_llm_call(tmp_path):
+    diff_text = (
+        "diff --git a/a.py b/a.py\n+++ b/a.py\n@@\n+print('a')\n"
+        "diff --git a/b.py b/b.py\n+++ b/b.py\n@@\n+print('b')\n"
+    )
+    token = AnalysisCancellationToken()
+    llm = CancellingLLM(
+        ['{"path":"a.py","summary":"a changed","risk_level":"low","findings":[]}'],
+        token,
+    )
+
+    with pytest.raises(AnalysisCancelled):
+        process_finished_session_event(
+            _event_for_diff(tmp_path, diff_text),
+            config=AgentGuardConfig(small_diff_token_limit=1, medium_diff_token_limit=1000),
+            llm=llm,
+            cancellation_token=token,
+        )
+
+    assert len(llm.prompts) == 1
+
+
+def test_final_summary_cancellation_is_not_converted_to_fallback_result(tmp_path):
+    diff_text = "diff --git a/a.py b/a.py\n+++ b/a.py\n@@\n+print('a')\n"
+    token = AnalysisCancellationToken()
+    llm = CancelOnCallLLM(
+        [
+            '{"path":"a.py","summary":"a changed","risk_level":"low","findings":[]}',
+            '{"verdict":"allow","risk_level":"low","out_of_intent":false,'
+            '"summary":"safe","findings":[],"recommended_action":"accept",'
+            '"rollback_recommended":false}',
+        ],
+        token,
+        call_number=2,
+    )
+
+    with pytest.raises(AnalysisCancelled):
+        process_finished_session_event(
+            _event_for_diff(tmp_path, diff_text),
+            config=AgentGuardConfig(small_diff_token_limit=1, medium_diff_token_limit=1000),
+            llm=llm,
+            cancellation_token=token,
+        )
+
+    assert len(llm.prompts) == 2
 
 
 def test_huge_diff_clips_file_diff_and_still_uses_llm_adjudication(tmp_path):

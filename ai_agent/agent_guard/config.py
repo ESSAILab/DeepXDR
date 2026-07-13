@@ -4,6 +4,9 @@ import os
 from dataclasses import dataclass
 
 
+KAFKA_POLL_SAFETY_MARGIN_MS = 60 * 1000
+
+
 def _read_bool(name: str, default: bool) -> bool:
     raw = os.getenv(name)
     if raw is None or raw.strip() == "":
@@ -49,6 +52,25 @@ class AgentGuardConfig:
     diff_secret_access_key: str = ""
     diff_region: str = ""
     max_diff_read_bytes: int = 8 * 1024 * 1024
+    kafka_max_poll_interval_ms: int = 3 * 60 * 60 * 1000
+    session_handler_timeout_seconds: int = 45 * 60
+    session_handler_max_attempts: int = 3
+    session_retry_backoff_seconds: int = 1
+    consumer_drain_timeout_seconds: int = 15 * 60 + 30
+    llm_request_timeout_seconds: int = 15 * 60
+
+    def __post_init__(self) -> None:
+        required_poll_interval_ms = (
+            (self.session_handler_timeout_seconds + self.session_retry_backoff_seconds)
+            * self.session_handler_max_attempts
+            * 1000
+            + KAFKA_POLL_SAFETY_MARGIN_MS
+        )
+        if self.kafka_max_poll_interval_ms <= required_poll_interval_ms:
+            raise ValueError(
+                "kafka_max_poll_interval_ms must be greater than the full session handler "
+                f"retry budget plus safety margin ({required_poll_interval_ms}ms)"
+            )
 
     @classmethod
     def from_env(cls) -> "AgentGuardConfig":
@@ -69,4 +91,16 @@ class AgentGuardConfig:
             diff_secret_access_key=_read_str("AGENT_GUARD_DIFF_SECRET_ACCESS_KEY"),
             diff_region=_read_str("AGENT_GUARD_DIFF_REGION"),
             max_diff_read_bytes=_read_int("AGENT_GUARD_MAX_DIFF_READ_BYTES", 8 * 1024 * 1024),
+            kafka_max_poll_interval_ms=_read_int(
+                "AGENT_GUARD_KAFKA_MAX_POLL_INTERVAL_MS",
+                3 * 60 * 60 * 1000,
+            ),
+            session_handler_timeout_seconds=_read_int(
+                "AGENT_GUARD_SESSION_HANDLER_TIMEOUT_SECONDS",
+                45 * 60,
+            ),
+            session_handler_max_attempts=_read_int("AGENT_GUARD_SESSION_HANDLER_MAX_ATTEMPTS", 3),
+            session_retry_backoff_seconds=_read_int("AGENT_GUARD_SESSION_RETRY_BACKOFF_SECONDS", 1),
+            consumer_drain_timeout_seconds=_read_int("AGENT_GUARD_CONSUMER_DRAIN_TIMEOUT_SECONDS", 15 * 60 + 30),
+            llm_request_timeout_seconds=_read_int("AGENT_GUARD_LLM_REQUEST_TIMEOUT_SECONDS", 15 * 60),
         )
