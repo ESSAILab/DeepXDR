@@ -487,13 +487,23 @@ export OPENAI_BASE_URL=https://ark.cn-beijing.volces.com/api/v3
 export DEEPXDR_REAL_NONO="$HOME/.local/bin/nono"
 ```
 
-Do not write real API keys into README files, compose files, or commits. `deploy/docker-compose-agentguard.yml` reads the LLM environment variables from the current shell.
+The rollback worker also needs access to the real host workspaces and nono rollback state. Select existing absolute roots for both data classes:
+
+```bash
+sudo mkdir -p /srv/agent-workspaces /var/lib/deepxdr/nono-state
+export AGENTGUARD_WORKSPACE_ROOT=/srv/agent-workspaces
+export AGENTGUARD_NONO_STATE_ROOT=/var/lib/deepxdr/nono-state
+```
+
+`AGENTGUARD_WORKSPACE_ROOT` is the common parent of all managed workspaces; each nono command's `--allow` argument points to one concrete workspace below it. `AGENTGUARD_NONO_STATE_ROOT` stores nono sessions, snapshots, and metadata, and the effective `DEEPXDR_NONO_STATE_HOME` must stay below it. The two roots must be different existing absolute directories. The launcher canonicalizes and validates them before Compose mounts both roots read-write at the same absolute paths inside the rollback worker, so host paths stored in snapshots remain valid. Do not set either variable to `/`; use dedicated least-privilege directories.
+
+Do not write real API keys into README files, compose files, or commits. `deploy/docker-compose-agentguard.yml` reads the LLM environment variables from the current shell. Always manage this environment through `scripts/agentguard-compose`; it validates host rollback paths before any Docker operation, while direct use of the underlying Compose file fails without its validation marker.
 
 #### 7.2 Start the local full-stack environment
 
 ```bash
-docker-compose -f deploy/docker-compose-agentguard.yml up -d --build
-docker-compose -f deploy/docker-compose-agentguard.yml ps
+./scripts/agentguard-compose up -d --build
+./scripts/agentguard-compose ps
 ```
 
 Default ports:
@@ -555,13 +565,13 @@ Available actions:
 #### 7.6 Stop and clean up
 
 ```bash
-docker-compose -f deploy/docker-compose-agentguard.yml down
+./scripts/agentguard-compose down
 ```
 
 To also remove local PostgreSQL, Kafka, Redis, and MinIO test data:
 
 ```bash
-docker-compose -f deploy/docker-compose-agentguard.yml down -v
+./scripts/agentguard-compose down -v
 ```
 
 #### 7.7 Deployment notes

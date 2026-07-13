@@ -493,13 +493,23 @@ export OPENAI_BASE_URL=https://ark.cn-beijing.volces.com/api/v3
 export DEEPXDR_REAL_NONO="$HOME/.local/bin/nono"
 ```
 
-不要将真实 API key 写入 README、compose 文件或提交记录。`deploy/docker-compose-agentguard.yml` 会从当前 shell 读取上述 LLM 环境变量。
+回退 worker 还需要访问宿主机上的实际工作区和 nono rollback 状态。请为两类数据选择已存在的绝对根目录：
+
+```bash
+sudo mkdir -p /srv/agent-workspaces /var/lib/deepxdr/nono-state
+export AGENTGUARD_WORKSPACE_ROOT=/srv/agent-workspaces
+export AGENTGUARD_NONO_STATE_ROOT=/var/lib/deepxdr/nono-state
+```
+
+`AGENTGUARD_WORKSPACE_ROOT` 是所有受管工作区的共同父目录；每次 nono 命令的 `--allow` 参数指向其中一个具体工作区。`AGENTGUARD_NONO_STATE_ROOT` 保存 nono session、快照和元数据，实际 `DEEPXDR_NONO_STATE_HOME` 必须位于其中。两个根目录必须是不同的已存在绝对目录。启动器会先规范化并验证路径，再让 Compose 以相同绝对路径将两个目录读写挂载到回退 worker，确保快照中的宿主机路径仍然有效。不要将这两个变量设为 `/`，应按最小权限原则选择专用目录。
+
+不要将真实 API key 写入 README、compose 文件或提交记录。`deploy/docker-compose-agentguard.yml` 会从当前 shell 读取上述 LLM 环境变量。必须通过 `scripts/agentguard-compose` 启停本环境；它会在任何 Docker 操作前校验宿主机回退路径，直接执行底层 Compose 文件会因缺少校验标记而失败。
 
 #### 7.2 启动本地完整环境
 
 ```bash
-docker-compose -f deploy/docker-compose-agentguard.yml up -d --build
-docker-compose -f deploy/docker-compose-agentguard.yml ps
+./scripts/agentguard-compose up -d --build
+./scripts/agentguard-compose ps
 ```
 
 默认端口：
@@ -561,13 +571,13 @@ http://localhost:30003
 #### 7.6 停止和清理
 
 ```bash
-docker-compose -f deploy/docker-compose-agentguard.yml down
+./scripts/agentguard-compose down
 ```
 
 如需同时清理 PostgreSQL、Kafka、Redis 和 MinIO 中的本地测试数据：
 
 ```bash
-docker-compose -f deploy/docker-compose-agentguard.yml down -v
+./scripts/agentguard-compose down -v
 ```
 
 #### 7.7 部署注意事项
