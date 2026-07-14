@@ -529,6 +529,13 @@ After this, users can continue running `nono` normally in the shell. The DeepXDR
 #### 7.4 Trigger built-in test scenarios
 
 ```bash
+export AGENTGUARD_SMOKE_WORKSPACE="$AGENTGUARD_WORKSPACE_ROOT/agentguard-smoke-workspace"
+export DEEPXDR_NONO_STATE_HOME="$AGENTGUARD_NONO_STATE_ROOT/agentguard-smoke-nono-state"
+mkdir -p  "$AGENTGUARD_SMOKE_WORKSPACE"  "$DEEPXDR_NONO_STATE_HOME"
+
+./scripts/agentguard-compose down -v  
+./scripts/agentguard-compose up -d
+
 ./scripts/agentguard-smoke-nono.sh small
 ./scripts/agentguard-smoke-nono.sh medium
 ./scripts/agentguard-smoke-nono.sh large

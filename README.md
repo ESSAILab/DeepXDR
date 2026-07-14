@@ -535,6 +535,13 @@ export DEEPXDR_REAL_NONO="$HOME/.local/bin/nono"
 #### 7.4 触发内置测试场景
 
 ```bash
+export AGENTGUARD_SMOKE_WORKSPACE="$AGENTGUARD_WORKSPACE_ROOT/agentguard-smoke-workspace"
+export DEEPXDR_NONO_STATE_HOME="$AGENTGUARD_NONO_STATE_ROOT/agentguard-smoke-nono-state"
+mkdir -p  "$AGENTGUARD_SMOKE_WORKSPACE"  "$DEEPXDR_NONO_STATE_HOME"
+
+./scripts/agentguard-compose down -v  
+./scripts/agentguard-compose up -d
+
 ./scripts/agentguard-smoke-nono.sh small
 ./scripts/agentguard-smoke-nono.sh medium
 ./scripts/agentguard-smoke-nono.sh large
