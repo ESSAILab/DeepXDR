@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import asyncio
 from dataclasses import asdict
 from typing import Any
 
+from .adjudication_graph import AnalysisCancellationToken
 from .adjudicator import LLMClient
 from .config import AgentGuardConfig
 from .repository import InMemoryAgentSessionRepository
@@ -21,8 +23,24 @@ class AgentSessionEventHandler:
         self.config = config
         self.llm = llm
 
-    async def handle(self, event: dict[str, Any]):
-        result = process_finished_session_event(event, config=self.config, llm=self.llm)
+    async def handle(
+        self,
+        event: dict[str, Any],
+        *,
+        cancellation_token: AnalysisCancellationToken | None = None,
+    ):
+        cancellation_token = cancellation_token or AnalysisCancellationToken()
+        try:
+            result = await asyncio.to_thread(
+                process_finished_session_event,
+                event,
+                config=self.config,
+                llm=self.llm,
+                cancellation_token=cancellation_token,
+            )
+        except asyncio.CancelledError:
+            cancellation_token.cancel()
+            raise
         adjudication = asdict(result.adjudication) if result.adjudication else None
         await self.repository.upsert_session(
             {

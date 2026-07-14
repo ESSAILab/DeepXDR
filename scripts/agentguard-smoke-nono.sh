@@ -39,6 +39,17 @@ case "$CASE" in
     ;;
 esac
 
+export DEEPXDR_NONO_STATE_HOME=${DEEPXDR_NONO_STATE_HOME:-"$REPO_ROOT/.tmp/agentguard-nono-state"}
+
+PYTHONPATH="$REPO_ROOT${PYTHONPATH:+:$PYTHONPATH}" python -m scripts.agentguard_path_policy \
+  --workspace "$WORKSPACE" \
+  --state-home "$DEEPXDR_NONO_STATE_HOME"
+
+if [ "$CASE" = "agent" ] && [ -z "${OPENAI_API_KEY:-}" ]; then
+  echo "Set OPENAI_API_KEY before running the real opencode AgentGuard smoke case." >&2
+  exit 2
+fi
+
 if [ -z "$WORKSPACE" ] || [ "$WORKSPACE" = "/" ]; then
   echo "Refusing to reset unsafe smoke workspace: $WORKSPACE" >&2
   exit 2
@@ -48,7 +59,6 @@ rm -rf "$WORKSPACE"
 PYTHONPATH="$REPO_ROOT${PYTHONPATH:+:$PYTHONPATH}" python -m scripts.agentguard_smoke_cases "$CASE" "$WORKSPACE" >/dev/null
 
 export DEEPXDR_REAL_NONO
-export DEEPXDR_NONO_STATE_HOME=${DEEPXDR_NONO_STATE_HOME:-"$REPO_ROOT/.tmp/agentguard-nono-state"}
 export DEEPXDR_AGENT_ORIGINAL_REQUEST=${DEEPXDR_AGENT_ORIGINAL_REQUEST:-"$DEFAULT_ORIGINAL_REQUEST"}
 export DEEPXDR_AGENT_RUN_ID=${DEEPXDR_AGENT_RUN_ID:-"smoke-$CASE-$(date +%Y%m%d%H%M%S)"}
 export KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS:-"localhost:29092"}
@@ -61,11 +71,6 @@ export AGENT_GUARD_DIFF_ACCESS_KEY_ID=${AGENT_GUARD_DIFF_ACCESS_KEY_ID:-"minioad
 export AGENT_GUARD_DIFF_SECRET_ACCESS_KEY=${AGENT_GUARD_DIFF_SECRET_ACCESS_KEY:-"minioadmin"}
 export NO_PROXY=${NO_PROXY:-"localhost,127.0.0.1,minio,kafka"}
 export no_proxy=${no_proxy:-"$NO_PROXY"}
-
-if [ "$CASE" = "agent" ] && [ -z "${OPENAI_API_KEY:-}" ]; then
-  echo "Set OPENAI_API_KEY before running the real opencode AgentGuard smoke case." >&2
-  exit 2
-fi
 
 printf 'Running nono smoke case=%s in %s with run_id=%s\n' "$CASE" "$WORKSPACE" "$DEEPXDR_AGENT_RUN_ID"
 (

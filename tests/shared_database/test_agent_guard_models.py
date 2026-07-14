@@ -9,3 +9,4 @@ def test_agent_guard_tables_are_registered_in_metadata():
     assert AgentRollback.__tablename__ == "agent_rollbacks"
     assert "run_id" in AgentSession.__table__.columns
     assert "diff_ref" in AgentSession.__table__.columns
+    assert "nono_state_home" in AgentRollback.__table__.columns

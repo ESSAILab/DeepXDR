@@ -20,18 +20,30 @@ export OPENAI_API_KEY='<your-api-key>'
 export OPENAI_BASE_URL='https://ark.cn-beijing.volces.com/api/v3'
 ```
 
+Create dedicated smoke roots and export their canonical paths before starting Compose:
+
+```bash
+mkdir -p .tmp/agentguard-workspaces .tmp/agentguard-nono-state
+export AGENTGUARD_WORKSPACE_ROOT="$(realpath .tmp/agentguard-workspaces)"
+export AGENTGUARD_NONO_STATE_ROOT="$(realpath .tmp/agentguard-nono-state)"
+export AGENTGUARD_SMOKE_WORKSPACE="$AGENTGUARD_WORKSPACE_ROOT/smoke-workspace"
+export DEEPXDR_NONO_STATE_HOME="$AGENTGUARD_NONO_STATE_ROOT"
+```
+
+When running from a Git worktree, run these commands from that worktree so both exported roots refer to its directories. The roots must be different existing absolute directories and must not be `/`. The smoke script rejects a workspace or state home outside the configured roots. The `scripts/agentguard-compose` launcher validates and canonicalizes both roots before Compose mounts them read-write at the same absolute paths inside `ai-agent`, which is required because nono snapshots record absolute host paths.
+
 ## 2. Start the real environment
 
 ```bash
-docker compose -f deploy/docker-compose-agentguard.yml up -d --build
+./scripts/agentguard-compose up -d --build
 ```
 
-If your host uses the legacy Compose binary, replace `docker compose` with `docker-compose` in the commands below.
+The launcher uses `docker compose` when available and falls back to the legacy `docker-compose` binary.
 
 Wait until these services are up:
 
 ```bash
-docker compose -f deploy/docker-compose-agentguard.yml ps
+./scripts/agentguard-compose ps
 ```
 
 Useful URLs:
@@ -92,14 +104,14 @@ large   generated_policy.json large diff        risk_only
 agent   real opencode agent edits README.md     hunk_summary
 ```
 
-The script prepares `.tmp/agentguard-smoke-workspace` for the selected case and
+The script prepares `$AGENTGUARD_SMOKE_WORKSPACE` for the selected case and
 runs one of:
 
 ```bash
-scripts/nono run --rollback --no-rollback-prompt --allow .tmp/agentguard-smoke-workspace -- /bin/sh -c "cp after/README.md README.md"
-scripts/nono run --rollback --no-rollback-prompt --allow .tmp/agentguard-smoke-workspace -- /bin/sh -c "cp after/service.py service.py && cp after/policy.yaml policy.yaml"
-scripts/nono run --rollback --no-rollback-prompt --allow .tmp/agentguard-smoke-workspace -- /bin/sh -c "cp after/generated_policy.json generated_policy.json"
-scripts/nono run --profile always-further/opencode --rollback --no-rollback-prompt --allow .tmp/agentguard-smoke-workspace -- /bin/sh -c "opencode run --model deepxdr/deepseek-v3-2-251201 --auto ..."
+scripts/nono run --rollback --no-rollback-prompt --allow "$AGENTGUARD_SMOKE_WORKSPACE" -- /bin/sh -c "cp after/README.md README.md"
+scripts/nono run --rollback --no-rollback-prompt --allow "$AGENTGUARD_SMOKE_WORKSPACE" -- /bin/sh -c "cp after/service.py service.py && cp after/policy.yaml policy.yaml"
+scripts/nono run --rollback --no-rollback-prompt --allow "$AGENTGUARD_SMOKE_WORKSPACE" -- /bin/sh -c "cp after/generated_policy.json generated_policy.json"
+scripts/nono run --profile always-further/opencode --rollback --no-rollback-prompt --allow "$AGENTGUARD_SMOKE_WORKSPACE" -- /bin/sh -c "opencode run --model deepxdr/deepseek-v3-2-251201 --auto ..."
 ```
 
 The `agent` case installs/runs a real known coding agent, `opencode`, under
@@ -137,7 +149,7 @@ After rollback, the host workspace file should return to its before-state conten
 For the small case:
 
 ```bash
-cat .tmp/agentguard-smoke-workspace/README.md
+cat "$AGENTGUARD_SMOKE_WORKSPACE/README.md"
 ```
 
 Expected:
@@ -151,30 +163,32 @@ old title
 Backend logs:
 
 ```bash
-docker compose -f deploy/docker-compose-agentguard.yml logs -f ai-agent
+./scripts/agentguard-compose logs -f ai-agent
 ```
 
 Baseline logs:
 
 ```bash
-docker compose -f deploy/docker-compose-agentguard.yml logs -f baseline-adjudication
+./scripts/agentguard-compose logs -f baseline-adjudication
 ```
 
 Web UI logs:
 
 ```bash
-docker compose -f deploy/docker-compose-agentguard.yml logs -f web-ui
+./scripts/agentguard-compose logs -f web-ui
 ```
 
 Kafka topics:
 
 ```bash
-docker compose -f deploy/docker-compose-agentguard.yml exec kafka \
+./scripts/agentguard-compose exec kafka \
   kafka-topics.sh --bootstrap-server kafka:9092 --list
 ```
+
+If rollback fails with `nono: Session not found`, compare the alert event's `workspace` and `nono.state_home` with `AGENTGUARD_WORKSPACE_ROOT` and `AGENTGUARD_NONO_STATE_ROOT`. Both event paths must be inside their respective roots, and `docker inspect agentguard-ai-agent` must show source and destination paths that are identical.
 
 Stop and remove the smoke environment:
 
 ```bash
-docker compose -f deploy/docker-compose-agentguard.yml down
+./scripts/agentguard-compose down
 ```

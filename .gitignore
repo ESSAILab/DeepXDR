@@ -110,3 +110,7 @@ security-analysis-system/security_analysis.log
 security-analysis-system/*.log
 security-analysis-system/__pycache__/
 security-analysis-system/**/*.pyc
+
+# Local working directories
+.tmp/
+.worktrees/

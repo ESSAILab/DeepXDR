@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import threading
 from dataclasses import dataclass
 from typing import Any, TypedDict
 
@@ -26,11 +27,28 @@ from .rule_engine import RiskSignal, detect_risk_signals
 from .service_types import AgentSessionProcessResult
 
 
+class AnalysisCancelled(RuntimeError):
+    pass
+
+
+class AnalysisCancellationToken:
+    def __init__(self) -> None:
+        self._cancelled = threading.Event()
+
+    def cancel(self) -> None:
+        self._cancelled.set()
+
+    def raise_if_cancelled(self) -> None:
+        if self._cancelled.is_set():
+            raise AnalysisCancelled("agent session analysis cancelled")
+
+
 class AgentAdjudicationState(TypedDict, total=False):
     event: dict[str, Any]
     diff_text: str
     config: AgentGuardConfig
     llm: LLMClient
+    cancellation_token: AnalysisCancellationToken
     changed_files: list[ChangedFile]
     risk_signals_by_file: dict[str, list[RiskSignal]]
     context_plan: ContextPlan
@@ -44,9 +62,20 @@ def run_adjudication_graph(
     diff_text: str,
     config: AgentGuardConfig,
     llm: LLMClient,
+    cancellation_token: AnalysisCancellationToken | None = None,
 ) -> AgentSessionProcessResult:
+    cancellation_token = cancellation_token or AnalysisCancellationToken()
+    cancellation_token.raise_if_cancelled()
     graph = create_adjudication_graph()
-    state = graph.invoke({"event": event, "diff_text": diff_text, "config": config, "llm": llm})
+    state = graph.invoke(
+        {
+            "event": event,
+            "diff_text": diff_text,
+            "config": config,
+            "llm": llm,
+            "cancellation_token": cancellation_token,
+        }
+    )
     return AgentSessionProcessResult(
         status="adjudicated",
         changed_files=state["changed_files"],
@@ -79,6 +108,7 @@ def create_adjudication_graph():
 
 
 def _prepare_context(state: AgentAdjudicationState) -> dict[str, Any]:
+    state["cancellation_token"].raise_if_cancelled()
     diff_text = state["diff_text"]
     changed_files = parse_unified_diff(diff_text)
     risk_signals_by_file = {
@@ -105,6 +135,7 @@ def _route_by_context_strategy(state: AgentAdjudicationState) -> str:
 
 
 def _session_adjudication(state: AgentAdjudicationState) -> dict[str, Any]:
+    state["cancellation_token"].raise_if_cancelled()
     adjudication = adjudicate_session(
         original_request=state["event"].get("original_request", ""),
         changed_files=state["changed_files"],
@@ -112,6 +143,7 @@ def _session_adjudication(state: AgentAdjudicationState) -> dict[str, Any]:
         risk_signals_by_file=state["risk_signals_by_file"],
         llm=state["llm"],
     )
+    state["cancellation_token"].raise_if_cancelled()
     return {"adjudication": adjudication}
 
 
@@ -123,20 +155,24 @@ def _file_summaries(state: AgentAdjudicationState) -> dict[str, Any]:
     else:
         max_chars = config.file_token_limit * 4
 
-    summaries = [
-        _summarize_changed_file(
+    summaries = []
+    for changed in state["changed_files"][: config.max_file_summaries]:
+        state["cancellation_token"].raise_if_cancelled()
+        summaries.append(
+            _summarize_changed_file(
             llm=state["llm"],
             original_request=state["event"].get("original_request", ""),
             changed=changed,
             risk_signals=state["risk_signals_by_file"].get(changed.path, []),
             max_chars=max_chars,
+            )
         )
-        for changed in state["changed_files"][: config.max_file_summaries]
-    ]
+        state["cancellation_token"].raise_if_cancelled()
     return {"file_summaries": summaries}
 
 
 def _summary_adjudication(state: AgentAdjudicationState) -> dict[str, Any]:
+    state["cancellation_token"].raise_if_cancelled()
     prompt = (
         "你是代码变更增量裁决智能体，只输出 JSON。\n"
         "必须返回一个 JSON object，不要使用 Markdown 代码块，不要输出解释文字。\n"
@@ -153,20 +189,29 @@ def _summary_adjudication(state: AgentAdjudicationState) -> dict[str, Any]:
         f"文件变更摘要列表:\n{json.dumps(state.get('file_summaries', []), ensure_ascii=False)}\n"
     )
     try:
-        payload = _load_json_response(state["llm"].complete(prompt))
+        response = state["llm"].complete(prompt)
+    except Exception as exc:
+        return {"adjudication": _fallback_summary_adjudication(exc)}
+    state["cancellation_token"].raise_if_cancelled()
+    try:
+        payload = _load_json_response(response)
         adjudication = _adjudication_from_payload(payload, state["risk_signals_by_file"])
     except Exception as exc:
-        adjudication = AdjudicationResult(
-            verdict="needs_human_review",
-            risk_level="medium",
-            out_of_intent=None,
-            summary=f"增量裁决模型输出不可解析: {exc}",
-            recommended_action="ask_user",
-            rollback_recommended=False,
-            intent_alignment="unknown",
-            intent_alignment_reason="模型输出不可解析，无法判断变更与原始请求的一致性。",
-        )
+        adjudication = _fallback_summary_adjudication(exc)
     return {"adjudication": adjudication}
+
+
+def _fallback_summary_adjudication(exc: Exception) -> AdjudicationResult:
+    return AdjudicationResult(
+        verdict="needs_human_review",
+        risk_level="medium",
+        out_of_intent=None,
+        summary=f"增量裁决模型输出不可解析: {exc}",
+        recommended_action="ask_user",
+        rollback_recommended=False,
+        intent_alignment="unknown",
+        intent_alignment_reason="模型输出不可解析，无法判断变更与原始请求的一致性。",
+    )
 
 
 def _summarize_changed_file(
