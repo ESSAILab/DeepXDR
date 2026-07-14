@@ -31,6 +31,7 @@ from ttp_generator.dx_analyzer.prompts import (
     clarify_with_user_instructions,
     compress_research_simple_human_message,
     compress_research_system_prompt,
+    fallback_json_output_prompt,
     final_report_generation_prompt,
     final_threathunting_generation_prompt,
     lead_researcher_prompt,
@@ -1466,10 +1467,7 @@ async def _try_fallback_json_parse(final_report_prompt: str, writer_model_config
     fallback_model = configurable_model.with_config(writer_model_config)
     fallback_response = await fallback_model.ainvoke([
         HumanMessage(
-            content=(
-                final_report_prompt
-                + "\n\nIMPORTANT: Return ONLY a raw JSON object matching the requested structure. Do not use markdown code fences. The final_report field may contain Markdown text as a JSON string."
-            )
+            content=final_report_prompt + fallback_json_output_prompt
         )
     ])
 
