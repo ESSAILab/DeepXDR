@@ -5,7 +5,7 @@ from typing import Protocol
 
 
 class ProducerLike(Protocol):
-    async def send_and_wait(self, topic: str, value: bytes) -> object:
+    async def send_and_wait(self, topic: str, value: bytes, key: bytes | None = None) -> object:
         ...
 
 
@@ -17,7 +17,9 @@ class JsonKafkaPublisher:
 
     async def publish(self, topic: str, event: dict) -> None:
         payload = json.dumps(event, ensure_ascii=False).encode("utf-8")
-        await self.producer.send_and_wait(topic, payload)
+        key_value = event.get("id") or event.get("run_id")
+        key = str(key_value).encode("utf-8") if key_value else None
+        await self.producer.send_and_wait(topic, payload, key=key)
 
 
 class RollbackRequestPublisher:

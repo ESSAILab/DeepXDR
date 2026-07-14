@@ -126,6 +126,12 @@ services:
       - "8000:8000"
     volumes:
       - ../ai_agent:/app/ai_agent
+      - type: bind
+        source: ${AGENTGUARD_WORKSPACE_ROOT:?AGENTGUARD_WORKSPACE_ROOT must be set}
+        target: ${AGENTGUARD_WORKSPACE_ROOT:?AGENTGUARD_WORKSPACE_ROOT must be set}
+      - type: bind
+        source: ${AGENTGUARD_NONO_STATE_ROOT:?AGENTGUARD_NONO_STATE_ROOT must be set}
+        target: ${AGENTGUARD_NONO_STATE_ROOT:?AGENTGUARD_NONO_STATE_ROOT must be set}
       - /root/.local/bin/nono:/usr/local/bin/nono:ro
       - /lib64:/lib64:ro
       - /lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:ro
@@ -153,6 +159,7 @@ services:
       KAFKA_AGENT_ROLLBACK_REQUESTED_TOPIC: agent.rollback.requested
       KAFKA_AGENT_ROLLBACK_COMPLETED_TOPIC: agent.rollback.completed
       AGENT_GUARD_ENABLED: "true"
+      AGENTGUARD_PATHS_VALIDATED: ${AGENTGUARD_PATHS_VALIDATED:?Use scripts/agentguard-compose to validate host rollback paths}
       AGENT_GUARD_DIFF_STORAGE: minio
       AGENT_GUARD_DIFF_BUCKET: agent-diffs
       AGENT_GUARD_DIFF_PREFIX: smoke

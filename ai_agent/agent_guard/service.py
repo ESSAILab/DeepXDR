@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from .adjudication_graph import run_adjudication_graph
+from .adjudication_graph import AnalysisCancellationToken, run_adjudication_graph
 from .adjudicator import LLMClient
 from .config import AgentGuardConfig
 from .diff_store import DiffEvidenceError, DiffRef, create_boto3_diff_store, load_diff_text
@@ -15,7 +15,10 @@ def process_finished_session_event(
     config: AgentGuardConfig,
     llm: LLMClient,
     diff_text_loader: Callable[[DiffRef], str] | None = None,
+    cancellation_token: AnalysisCancellationToken | None = None,
 ) -> AgentSessionProcessResult:
+    cancellation_token = cancellation_token or AnalysisCancellationToken()
+    cancellation_token.raise_if_cancelled()
     try:
         raw_ref = event["diff_ref"]
         diff_ref = DiffRef(
@@ -27,7 +30,14 @@ def process_finished_session_event(
     except (KeyError, DiffEvidenceError, OSError) as exc:
         return AgentSessionProcessResult(status="evidence_invalid", error=str(exc))
 
-    return run_adjudication_graph(event=event, diff_text=diff_text, config=config, llm=llm)
+    cancellation_token.raise_if_cancelled()
+    return run_adjudication_graph(
+        event=event,
+        diff_text=diff_text,
+        config=config,
+        llm=llm,
+        cancellation_token=cancellation_token,
+    )
 
 
 def _load_diff_text(diff_ref: DiffRef, config: AgentGuardConfig) -> str:
