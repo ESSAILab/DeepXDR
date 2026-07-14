@@ -520,6 +520,10 @@ Format the report in clear markdown with proper structure and include evidence r
 - Do not cite research scope, index names, query templates, investigation methods, tool configuration, tool errors, missing evidence, or negative search results as sources.
 - Do not invent, transform, or infer event IDs.
 - Cite a source only when it directly supports a claim in the report body.
+- Every evidence-based claim in the report body must cite its supporting source using the matching [n] marker.
+- Place each citation marker immediately after the sentence or claim it supports.
+- Every numbered source must be cited at least once in the report body using its matching [n] marker.
+- Do not include source entries that are never cited in the report body.
 - If no valid event IDs were retrieved, state that no verifiable event evidence was obtained and do not create numbered sources.
 - Use a level-3 Markdown source heading localized into Chinese; do not output the English headings "Sources(Events ID)" or "Evidence References(Events ID)".
 - Place the source heading on its own line, followed by a blank line.
@@ -647,6 +651,10 @@ Format the final_report field in clear Markdown with proper structure and includ
 - Do not cite research scope, index names, query templates, investigation methods, tool configuration, tool errors, missing evidence, or negative search results as sources.
 - Do not invent, transform, or infer event IDs.
 - Cite a source only when it directly supports a claim in the report body.
+- Every evidence-based claim in the report body must cite its supporting source using the matching [n] marker.
+- Place each citation marker immediately after the sentence or claim it supports.
+- Every numbered source must be cited at least once in the report body using its matching [n] marker.
+- Do not include source entries that are never cited in the report body.
 - If no valid event IDs were retrieved, state that no verifiable event evidence was obtained and do not create numbered sources.
 - Use a level-3 Markdown source heading localized into Chinese; do not output the English headings "Sources(Events ID)" or "Evidence References(Events ID)".
 - Place the source heading on its own line, followed by a blank line.

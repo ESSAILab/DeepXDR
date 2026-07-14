@@ -32,6 +32,10 @@ Schema fields (must include all):\n\
 - Do not cite research scope, index names, query templates, investigation methods, tool configuration, tool errors, missing evidence, or negative search results as sources.\n\
 - Do not invent, transform, or infer event IDs.\n\
 - Cite a source only when it directly supports a claim in the report body.\n\
+- Every evidence-based claim in the report body must cite its supporting source using the matching [n] marker.\n\
+- Place each citation marker immediately after the sentence or claim it supports.\n\
+- Every numbered source must be cited at least once in the report body using its matching [n] marker.\n\
+- Do not include source entries that are never cited in the report body.\n\
 - The same event_id may appear in multiple evidence groups only when it supports multiple claims.\n\
 - If no valid event IDs were retrieved, state that no verifiable event evidence was obtained and do not create numbered sources.\n\
 - Use a level-3 Markdown source heading localized into Chinese; do not output the English headings "Sources(Events ID)" or "Evidence References(Events ID)".\n\
