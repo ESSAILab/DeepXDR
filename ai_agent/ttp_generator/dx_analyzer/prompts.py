@@ -407,7 +407,7 @@ Only these fully comprehensive cleaned findings are going to be returned to the 
 1. Your output findings should be fully comprehensive and include ALL relevant information gathered from tool calls, event records, files, and security telemetry. It is expected that you repeat key information verbatim.
 2. This report can be as long as necessary to return ALL of the information that the researcher has gathered.
 3. Preserve concrete evidence references inline, especially event_id, timestamp, index name, host, process, command line, file path, URL, IP address, and alert signature when present.
-4. You should include an "Evidence References" section at the end of the report that lists the referenced event IDs, files, indices, and tool results used in the findings.
+4. Include an "Evidence References(Events ID)" section at the end only when the findings contain verifiable security events with actual event_id values returned by investigation tools.
 5. Make sure to include ALL evidence that the researcher gathered in the report, and how it was used to answer the question.
 6. It's really important not to lose evidence references. A later LLM will merge this report with others, so event IDs and tool-result context are critical.
 7. Retain timeline information for subsequent analysis of event correlations; events with closer temporal proximity have stronger correlations.                                                                  
@@ -418,16 +418,24 @@ Only these fully comprehensive cleaned findings are going to be returned to the 
 The report should be structured like this:
 **List of Queries and Tool Calls Made**
 **Fully Comprehensive Findings**
-**Evidence References**
+**Localized source heading**
 </Output Format>
 
 <Citation Rules>
-- Assign each unique evidence group a single citation number in your text. Evidence groups may contain event IDs, Elasticsearch indices, file paths, or tool-result descriptions.
-- End with ### Evidence References that lists each evidence group with corresponding numbers.
-- IMPORTANT: Number evidence references sequentially without gaps (1,2,3,4...) in the final list regardless of which evidence groups you choose
+- Sources must contain only concrete security event evidence returned by investigation tools.
+- Every numbered source must contain at least one actual event_id from tool results.
+- Use the format: [n] Specific observed behavior: event_id1, event_id2.
+- Do not cite research scope, index names, query templates, investigation methods, tool configuration, tool errors, missing evidence, or negative search results as sources.
+- Do not invent, transform, or infer event IDs.
+- Cite a source only when it directly supports a claim in the findings.
+- If no valid event IDs were retrieved, state that no verifiable event evidence was obtained and do not create numbered sources.
+- Use a level-3 Markdown source heading in the same language as the findings.
+- Place the source heading on its own line, followed by a blank line.
+- Each source must be a Markdown bullet in the form "- [n] ...".
+- Number valid sources sequentially without gaps.
 - Example format:
-  [1] Suricata alerts for 2026-03-12: event_id=...
-  [2] File evidence from /path/to/file.jsp and grep result for keyword ...
+  - [1] Webshell file upload evidence: 83d6aa1f-69fb-4d28-afa6-18afd3335386
+  - [2] Shell command execution evidence: 42edbb7a-b46b-4d43-b9d5-c31a2a769e7f
 </Citation Rules>
 
 Critical Reminder: It is extremely important that any information that is even remotely relevant to the user's research topic is preserved verbatim (e.g. don't rewrite it, don't summarize it, don't paraphrase it).
@@ -446,9 +454,7 @@ For more context, here is all of the messages so far. Focus on the research brie
 <Messages>
 {messages}
 </Messages>
-CRITICAL: Make sure the answer is written in the same language as the human messages!
-For example, if the user's messages are in English, then MAKE SURE you write your response in English. If the user's messages are in Chinese, then MAKE SURE you write your entire response in Chinese.
-This is critical. The user will only understand the answer if it is written in the same language as their input message.
+Write the entire report in Chinese, including all headings and source descriptions.
 
 Today's date is {date}.
 
@@ -462,7 +468,7 @@ Please create a detailed answer to the overall research brief that:
 2. Includes specific facts and insights from the research
 3. References relevant evidence groups using citation numbers such as [1], [2], [3]
 4. Provides a balanced, thorough analysis. Be as comprehensive as possible, and include all information that is relevant to the overall research question. People are using you for deep research and will expect detailed, comprehensive answers.
-5. Includes an "Evidence References" section at the end with all referenced event IDs, indices, files, URLs, and tool-result evidence
+5. Includes an "Evidence References(Events ID)" section at the end only when actual event_id values from investigation tool results support claims in the report
 
 You can structure your report in a number of different ways. Here are some examples:
 
@@ -503,20 +509,27 @@ For each section of the report, do the following:
 - Use bullet points to list out information when appropriate, but by default, write in paragraph form.
 
 REMEMBER:
-The brief and research may be in English, but you need to translate this information to the right language when writing the final answer.
-Make sure the final answer report is in the SAME language as the human messages in the message history.
+The brief and research may be in another language, but the final report must be written entirely in Chinese.
 
 Format the report in clear markdown with proper structure and include evidence references where appropriate.
 
 <Citation Rules>
-- Assign each unique evidence group a single citation number in your text. Evidence groups may contain event IDs, Elasticsearch indices, file paths, URLs, or tool-result descriptions.
-- End with ### Evidence References that lists each evidence group with corresponding numbers
-- IMPORTANT: Number evidence references sequentially without gaps (1,2,3,4...) in the final list regardless of which evidence groups you choose
-- Each evidence reference should be a separate line item in a list, so that in markdown it is rendered as a list.
+- Sources must contain only concrete security event evidence returned by investigation tools.
+- Every numbered source must contain at least one actual event_id from tool results.
+- Use the format: [n] Specific observed behavior: event_id1, event_id2.
+- Do not cite research scope, index names, query templates, investigation methods, tool configuration, tool errors, missing evidence, or negative search results as sources.
+- Do not invent, transform, or infer event IDs.
+- Cite a source only when it directly supports a claim in the report body.
+- If no valid event IDs were retrieved, state that no verifiable event evidence was obtained and do not create numbered sources.
+- Use a level-3 Markdown source heading localized into Chinese; do not output the English headings "Sources(Events ID)" or "Evidence References(Events ID)".
+- Place the source heading on its own line, followed by a blank line.
+- Each source must be a Markdown bullet in the form "- [n] ...".
+- Number valid sources sequentially without gaps.
 - Example format:
-  [1] Event evidence: event_id=...
-  [2] File and command evidence: /path/to/file, command_line=...
-- Citations are extremely important. Make sure to include these, and pay a lot of attention to getting these right. Users will often use these citations to look into more information.
+  ### <source heading localized into Chinese>
+
+  - [1] <specific observed behavior in Chinese>: 83d6aa1f-69fb-4d28-afa6-18afd3335386
+  - [2] <specific observed behavior in Chinese>: 42edbb7a-b46b-4d43-b9d5-c31a2a769e7f
 </Citation Rules>
 """
 
@@ -529,9 +542,7 @@ For more context, here is all of the messages so far. Focus on the research brie
 <Messages>
 {messages}
 </Messages>
-CRITICAL: Make sure the answer is written in the same language as the human messages!
-For example, if the user's messages are in English, then MAKE SURE you write your response in English. If the user's messages are in Chinese, then MAKE SURE you write your entire response in Chinese.
-This is critical. The user will only understand the answer if it is written in the same language as their input message.
+Write the entire report in Chinese, including all headings and source descriptions.
 
 Today's date is {date}.
 
@@ -545,7 +556,7 @@ Please create a detailed answer to the overall research brief that:
 2. Includes specific facts and insights from the research
 3. References relevant evidence groups using citation numbers such as [1], [2], [3]
 4. Provides a balanced, thorough analysis. Be as comprehensive as possible, and include all information that is relevant to the overall research question. People are using you for deep research and will expect detailed, comprehensive answers.
-5. Includes an "Evidence References" section at the end of the final_report field with all referenced event IDs, indices, files, and tool-result evidence
+5. Includes an "Evidence References(Events ID)" section at the end of the final_report field only when actual event_id values from investigation tool results support claims in the report
 
 You can organize your report in a way suitable for threat analysis. Here are some examples:
 1/ overview of threats analysis
@@ -625,20 +636,27 @@ For each section of the report, do the following:
 - Use bullet points to list out information when appropriate, but by default, write in paragraph form.
 
 REMEMBER:
-The brief and research may be in English, but you need to translate this information to the right language when writing the final answer.
-Make sure the final answer report is in the SAME language as the human messages in the message history.
+The brief and research may be in another language, but the final report must be written entirely in Chinese.
 
 Format the final_report field in clear Markdown with proper structure and include evidence references where appropriate.
 
 <Citation Rules>
-- Assign each unique evidence group a single citation number in your text. Evidence groups may contain event IDs, Elasticsearch indices, file paths, or tool-result descriptions.
-- End the final_report field with ### Evidence References that lists each evidence group with corresponding numbers.
-- IMPORTANT: Number evidence references sequentially without gaps (1,2,3,4...) in the final list regardless of which evidence groups you choose
-- Each evidence reference should be a separate line item in a list, so that in Markdown it is rendered as a list.
+- Sources must contain only concrete security event evidence returned by investigation tools.
+- Every numbered source must contain at least one actual event_id from tool results.
+- Use the format: [n] Specific observed behavior: event_id1, event_id2.
+- Do not cite research scope, index names, query templates, investigation methods, tool configuration, tool errors, missing evidence, or negative search results as sources.
+- Do not invent, transform, or infer event IDs.
+- Cite a source only when it directly supports a claim in the report body.
+- If no valid event IDs were retrieved, state that no verifiable event evidence was obtained and do not create numbered sources.
+- Use a level-3 Markdown source heading localized into Chinese; do not output the English headings "Sources(Events ID)" or "Evidence References(Events ID)".
+- Place the source heading on its own line, followed by a blank line.
+- Each source must be a Markdown bullet in the form "- [n] ...".
+- Number valid sources sequentially without gaps.
 - Example format:
-  [1] Event evidence: event_id=...
-  [2] File and command evidence: /path/to/file, command_line=...
-- Citations are extremely important. Make sure to include these, and pay a lot of attention to getting these right. Users will often use these citations to look into more information.
+  ### <source heading localized into Chinese>
+
+  - [1] <specific observed behavior in Chinese>: 83d6aa1f-69fb-4d28-afa6-18afd3335386
+  - [2] <specific observed behavior in Chinese>: 42edbb7a-b46b-4d43-b9d5-c31a2a769e7f
 </Citation Rules>
 """
 

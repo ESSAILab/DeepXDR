@@ -12,7 +12,7 @@ Be specific and actionable. Do NOT invent facts.\
 """
 
 report_user_prompt_template = """\
-Write an executive incident report from this context in Chinese.\n\n\
+Write the entire report in Chinese, including all headings and source descriptions.\n\n\
 Do NOT mention event status (e.g., contained, under investigation, resolved, in progress, etc.) in the report. \n\n\
 Schema fields (must include all):\n\
 - title, you must clearly describe the observed behavior. Do not use vague workflow/status terms like 'Unknown' or 'In Progress.' (<=300)\n\
@@ -23,23 +23,25 @@ Schema fields (must include all):\n\
 - detection_recommendations (3-20 lines)\n\
 - immediate_actions (3-15 lines)\n\
 - iocs: {{ suspected_artifacts[], suspicious_processes[], suspicious_network[] }}\n\
-- Sources: at the end with all referenced events evidence\n\n\
+- localized source section: at the end with referenced event evidence only when actual event_id values are available\n\n\
 - markdown (full report in Markdown, <=12000)\n\n\
 <Citation Rules>\n\
-- Key claims in the report must be backed by evidence from the provided events.\n\
-- Use citation numbers like [1], [2], [3] in the report text.\n\
-- Each citation number represents one evidence group: a set of one or more event IDs that jointly support the cited claim.\n\
-- The same event ID may appear in multiple evidence groups if it supports multiple claims.\n\
-- End the markdown report with ### Sources that lists each evidence group with corresponding numbers.\n\
-- IMPORTANT: Number sources sequentially without gaps (1,2,3,4...) in the final list regardless of which sources you choose\n\
-- Each source should be a separate line item in a list, so that in markdown it is rendered as a list.\n\
+- Sources must contain only concrete security event evidence returned by investigation tools.\n\
+- Every numbered source must contain at least one actual event_id from tool results.\n\
+- Use the format: [n] Specific observed behavior: event_id1, event_id2.\n\
+- Do not cite research scope, index names, query templates, investigation methods, tool configuration, tool errors, missing evidence, or negative search results as sources.\n\
+- Do not invent, transform, or infer event IDs.\n\
+- Cite a source only when it directly supports a claim in the report body.\n\
+- The same event_id may appear in multiple evidence groups only when it supports multiple claims.\n\
+- If no valid event IDs were retrieved, state that no verifiable event evidence was obtained and do not create numbered sources.\n\
+- Use a level-3 Markdown source heading localized into Chinese; do not output the English headings "Sources(Events ID)" or "Evidence References(Events ID)".\n\
+- Place the source heading on its own line, followed by a blank line.\n\
+- Each source must be a Markdown bullet in the form "- [n] ...".\n\
+- Number valid sources sequentially without gaps.\n\
 - Example format:\n\
-  [1] User enumeration evidence: e9dc3182-883f-43a0-8864-36823ce9f0cd, a1b2c3d4-e5f6-7890-abcd-ef1234567890\n\
-  [2] File upload and command execution evidence: b2c3d4e5-f6a7-8901-bcde-f23456789012, c3d4e5f6-a7b8-9012-cdef-345678901234\n\
-- IMPORTANT: Review the context and select events relevant to each cited claim. You do not need to cite all events.\n\
-- Source entries must contain specific event IDs from incident_text, not vague descriptions. You can find event IDs as "事件ID" or "Event ID" in the incident_text Sources section.\n\
-- Do not create citation entries for negative search results, missing evidence, or queries that returned no event IDs. Mention these as analysis limitations or investigation notes without citation numbers.\n\
-- Citations are extremely important. Make sure to include these, and pay a lot of attention to getting these right. Users will often use these citations to look into more information.\n\
+  ### <source heading localized into Chinese>\n\n\
+  - [1] <specific observed behavior in Chinese>: 83d6aa1f-69fb-4d28-afa6-18afd3335386\n\
+  - [2] <specific observed behavior in Chinese>: 42edbb7a-b46b-4d43-b9d5-c31a2a769e7f\n\
 </Citation Rules>\n\n\
 CONTEXT JSON:\n\
 {context_json}"""
