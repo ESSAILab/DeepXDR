@@ -353,7 +353,7 @@ async def write_executive_report_llm(
         "mitigations_context": _compact_mitigations(mitigations or {}),
     }
 
-    from ttp_generator.dx_analyzer.mitre_investigation_prompts import (
+    from mitre_attck_agent.agents.report_prompts import (
         report_system_prompt,
         report_user_prompt_template,
     )

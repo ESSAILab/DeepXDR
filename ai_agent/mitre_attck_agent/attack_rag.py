@@ -604,7 +604,7 @@ class OpenAIFinalTechniqueJudge:
         prompt = {
             "task": "Summarize an incident window and extract atomic adversary behavior evidence from it.",
             "rules": [
-                "Return triage_summary in Chinese language, no more than 600 characters.",
+                "Return triage_summary in Chinese, no more than 600 characters.",
                 "triage_summary must summarize all events in the current window, including attack behavior, affected assets, sequence, accounts, processes, files, commands, or network indicators when present.",
                 "Keep triage_summary concise and informative.",
                 "Do not summarize ATT&CK mapping statistics in triage_summary.",
@@ -612,7 +612,7 @@ class OpenAIFinalTechniqueJudge:
                 "Extract concrete adversary behaviors only.",
                 "Keep evidence close to the original text.",
                 "Do not map to MITRE ATT&CK yet.",
-                "If event IDs are present, include them.",
+                "If event IDs are present, preserve them in event_ids.",
             ],
             "output_schema": {
                 "triage_summary": "Chinese summary string <= 600 chars",
@@ -669,14 +669,14 @@ class OpenAIFinalTechniqueJudge:
                 }
             )
         prompt = {
-            "task": "Map one threat-report behavior to MITRE ATT&CK Enterprise techniques.",
+            "task": "Map one observed threat behavior to MITRE ATT&CK Enterprise techniques.",
             "evidence": behavior.evidence,
             "normalized_behavior": behavior.behavior,
             "candidate_techniques": candidate_payload,
             "rules": [
                 "Select only attack_id values from candidate_techniques.",
                 "Prefer a sub-technique when the evidence is specific enough.",
-                "Return an empty matches list if none are directly supported.",
+                "Return an empty matches list if no candidate technique is directly supported by the evidence.",
                 "Do not invent IDs, names, or facts.",
             ],
             "output_schema": {
@@ -697,7 +697,7 @@ class OpenAIFinalTechniqueJudge:
             "messages": [
                 {
                     "role": "system",
-                    "content": "Return only valid JSON. You are precise and evidence-bound.",
+                    "content": "Return only valid JSON. Be precise and evidence-bound.",
                 },
                 {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
             ],

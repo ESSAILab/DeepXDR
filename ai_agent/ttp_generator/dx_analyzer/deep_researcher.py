@@ -31,6 +31,7 @@ from ttp_generator.dx_analyzer.prompts import (
     clarify_with_user_instructions,
     compress_research_simple_human_message,
     compress_research_system_prompt,
+    fallback_json_output_prompt,
     final_report_generation_prompt,
     final_threathunting_generation_prompt,
     lead_researcher_prompt,
@@ -1465,7 +1466,9 @@ async def _try_fallback_json_parse(final_report_prompt: str, writer_model_config
     """备选 JSON 解析方案：使用非结构化模型调用并手动清理 markdown 代码块。"""
     fallback_model = configurable_model.with_config(writer_model_config)
     fallback_response = await fallback_model.ainvoke([
-        HumanMessage(content=final_report_prompt + "\n\nIMPORTANT: Return ONLY raw JSON, no markdown code blocks!")
+        HumanMessage(
+            content=final_report_prompt + fallback_json_output_prompt
+        )
     ])
 
     content = fallback_response.content
@@ -1493,6 +1496,8 @@ async def _try_fallback_json_parse(final_report_prompt: str, writer_model_config
         for tech in ttp.get("techniques", []):
             if "related_event_ids" in tech:
                 del tech["related_event_ids"]
+            if "event_ids" not in tech:
+                tech["event_ids"] = []
 
     ttps_json = json.dumps(ttps_list, ensure_ascii=False)
     return final_report, ttps_json
@@ -1984,4 +1989,3 @@ def create_shorttp_triger_longttp_builder(
 shorttp_triger_longttp_builder = create_shorttp_triger_longttp_builder(
     enable_human_feedback=False
 )
-
