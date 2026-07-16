@@ -11,6 +11,7 @@ import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 COMPOSE_FILE = REPO_ROOT / "deploy" / "docker-compose-agentguard.yml"
+ALL_IN_ONE_COMPOSE_FILE = REPO_ROOT / "deploy" / "docker-compose-agent-all-in-one.yml"
 COMPOSE_WRAPPER = REPO_ROOT / "scripts" / "agentguard-compose"
 WORKSPACE_ROOT_EXPR = "${AGENTGUARD_WORKSPACE_ROOT:?AGENTGUARD_WORKSPACE_ROOT must be set}"
 STATE_ROOT_EXPR = "${AGENTGUARD_NONO_STATE_ROOT:?AGENTGUARD_NONO_STATE_ROOT must be set}"
@@ -36,8 +37,9 @@ def _compose_env(tmp_path: Path) -> dict[str, str]:
     return env
 
 
-def test_ai_agent_mounts_configured_workspace_and_state_roots_at_same_paths():
-    config = yaml.safe_load(COMPOSE_FILE.read_text(encoding="utf-8"))
+@pytest.mark.parametrize("compose_file", [COMPOSE_FILE, ALL_IN_ONE_COMPOSE_FILE])
+def test_ai_agent_mounts_configured_workspace_and_state_roots_at_same_paths(compose_file):
+    config = yaml.safe_load(compose_file.read_text(encoding="utf-8"))
     mounts = config["services"]["ai-agent"]["volumes"]
 
     assert {
@@ -51,6 +53,15 @@ def test_ai_agent_mounts_configured_workspace_and_state_roots_at_same_paths():
         "source": STATE_ROOT_EXPR,
         "target": STATE_ROOT_EXPR,
     } in mounts
+
+
+def test_all_in_one_ai_agent_mounts_nono_runtime():
+    config = yaml.safe_load(ALL_IN_ONE_COMPOSE_FILE.read_text(encoding="utf-8"))
+    mounts = config["services"]["ai-agent"]["volumes"]
+
+    assert "/root/.local/bin/nono:/usr/local/bin/nono:ro" in mounts
+    assert "/lib64:/lib64:ro" in mounts
+    assert "/lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:ro" in mounts
 
 
 @pytest.mark.skipif(shutil.which("docker-compose") is None, reason="docker-compose is unavailable")
@@ -179,6 +190,68 @@ def test_agentguard_compose_validates_and_canonicalizes_roots(tmp_path):
     lines = capture.read_text(encoding="utf-8").splitlines()
     assert lines[:3] == [str(workspace_root.resolve()), str(state_root.resolve()), "1"]
     assert lines[3:] == ["-f", str(COMPOSE_FILE), "config", "--quiet"]
+
+
+def test_agentguard_compose_selects_all_in_one_file(tmp_path):
+    workspace_root = tmp_path / "workspaces"
+    state_root = tmp_path / "state"
+    workspace_root.mkdir()
+    state_root.mkdir()
+    capture = tmp_path / "compose-call.txt"
+    env = os.environ.copy()
+    env.update(
+        {
+            "PATH": f"{_fake_compose_path(tmp_path)}:{env['PATH']}",
+            "AGENTGUARD_WORKSPACE_ROOT": str(workspace_root),
+            "AGENTGUARD_NONO_STATE_ROOT": str(state_root),
+            "AGENTGUARD_COMPOSE_FILE": "deploy/docker-compose-agent-all-in-one.yml",
+            "AGENTGUARD_TEST_CAPTURE": str(capture),
+        }
+    )
+
+    result = subprocess.run(
+        [str(COMPOSE_WRAPPER), "config", "--quiet"],
+        cwd=REPO_ROOT,
+        env=env,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    lines = capture.read_text(encoding="utf-8").splitlines()
+    assert lines[3:] == ["-f", str(ALL_IN_ONE_COMPOSE_FILE), "config", "--quiet"]
+
+
+def test_agentguard_compose_rejects_unapproved_compose_file(tmp_path):
+    workspace_root = tmp_path / "workspaces"
+    state_root = tmp_path / "state"
+    workspace_root.mkdir()
+    state_root.mkdir()
+    capture = tmp_path / "compose-call.txt"
+    env = os.environ.copy()
+    env.update(
+        {
+            "PATH": f"{_fake_compose_path(tmp_path)}:{env['PATH']}",
+            "AGENTGUARD_WORKSPACE_ROOT": str(workspace_root),
+            "AGENTGUARD_NONO_STATE_ROOT": str(state_root),
+            "AGENTGUARD_COMPOSE_FILE": "deploy/docker-compose-unapproved.yml",
+            "AGENTGUARD_TEST_CAPTURE": str(capture),
+        }
+    )
+
+    result = subprocess.run(
+        [str(COMPOSE_WRAPPER), "config", "--quiet"],
+        cwd=REPO_ROOT,
+        env=env,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 2
+    assert "Unsupported AgentGuard Compose file" in result.stderr
+    assert not capture.exists()
 
 
 def test_agentguard_compose_rejects_unsafe_roots_before_docker(tmp_path):

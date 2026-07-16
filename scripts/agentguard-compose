@@ -12,6 +12,25 @@ from pathlib import Path
 from agentguard_path_policy import validate_agentguard_roots
 
 
+REPO_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_COMPOSE_FILE = (REPO_ROOT / "deploy" / "docker-compose-agentguard.yml").resolve()
+ALL_IN_ONE_COMPOSE_FILE = (REPO_ROOT / "deploy" / "docker-compose-agent-all-in-one.yml").resolve()
+ALLOWED_COMPOSE_FILES = {DEFAULT_COMPOSE_FILE, ALL_IN_ONE_COMPOSE_FILE}
+
+
+def resolve_compose_file(configured_file: str | None) -> Path:
+    if not configured_file:
+        return DEFAULT_COMPOSE_FILE
+
+    candidate = Path(configured_file)
+    if not candidate.is_absolute():
+        candidate = REPO_ROOT / candidate
+    compose_file = candidate.resolve()
+    if compose_file not in ALLOWED_COMPOSE_FILES:
+        raise ValueError(f"Unsupported AgentGuard Compose file: {configured_file}")
+    return compose_file
+
+
 def main(argv: list[str] | None = None) -> int:
     workspace_root, state_root = validate_agentguard_roots(
         workspace_root=os.getenv("AGENTGUARD_WORKSPACE_ROOT"),
@@ -25,7 +44,7 @@ def main(argv: list[str] | None = None) -> int:
             "AGENTGUARD_PATHS_VALIDATED": "1",
         }
     )
-    compose_file = Path(__file__).resolve().parents[1] / "deploy" / "docker-compose-agentguard.yml"
+    compose_file = resolve_compose_file(os.getenv("AGENTGUARD_COMPOSE_FILE"))
     arguments = list(sys.argv[1:] if argv is None else argv)
 
     docker = shutil.which("docker")

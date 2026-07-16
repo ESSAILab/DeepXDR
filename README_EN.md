@@ -475,7 +475,7 @@ Agent Security Analysis Mode uses a simplified deployment architecture:
 
 #### 7.1 Prerequisites
 
-- Docker and docker-compose are installed.
+- Python, Docker, and docker-compose are installed.
 - The real [nono](https://github.com/nolabs-ai/nono) binary is installed and can be referenced through `DEEPXDR_REAL_NONO`.
 - To run the real-agent sample, install a nono-supported agent such as opencode.
 - Prepare OpenAI-compatible LLM settings for change risk analysis and real agent execution.
@@ -484,7 +484,7 @@ Agent Security Analysis Mode uses a simplified deployment architecture:
 export OPENAI_MODEL=deepseek-v3-2-251201
 export OPENAI_API_KEY=<your-llm-api-key>
 export OPENAI_BASE_URL=https://ark.cn-beijing.volces.com/api/v3
-export DEEPXDR_REAL_NONO="$HOME/.local/bin/nono"
+export DEEPXDR_REAL_NONO="<your-nono-path>"
 ```
 
 The rollback worker also needs access to the real host workspaces and nono rollback state. Select existing absolute roots for both data classes:
@@ -502,7 +502,7 @@ Do not write real API keys into README files, compose files, or commits. `deploy
 #### 7.2 Start the local full-stack environment
 
 ```bash
-./scripts/agentguard-compose up -d --build
+./scripts/agentguard-compose up -d
 ./scripts/agentguard-compose ps
 ```
 
@@ -521,12 +521,20 @@ Default ports:
 
 ```bash
 export PATH="$PWD/scripts:$PATH"
-export DEEPXDR_REAL_NONO="$HOME/.local/bin/nono"
+export DEEPXDR_REAL_NONO="<your-nono-path>"
 ```
 
 After this, users can continue running `nono` normally in the shell. The DeepXDR shim calls the real nono, writes the diff to MinIO/S3 after the session finishes, and publishes an agent session event to Kafka.
 
-#### 7.4 Trigger built-in test scenarios
+#### 7.4 Prepare host-side nono shim dependencies
+
+`scripts/nono` runs on the host. The shim writes diffs to MinIO/S3 and publishes agent session events to Kafka, so the host Python environment must have the following packages installed:
+
+```bash
+python3 -m pip install boto3 aiokafka
+```
+
+#### 7.5 Trigger built-in test scenarios
 
 ```bash
 export AGENTGUARD_SMOKE_WORKSPACE="$AGENTGUARD_WORKSPACE_ROOT/agentguard-smoke-workspace"
@@ -551,7 +559,7 @@ The four samples cover:
 | `large` | Large diff. Clips high-value snippets, generates per-file summaries, then performs aggregate analysis. |
 | `agent` | Runs a real opencode agent under nono. Requires a valid `OPENAI_API_KEY`. |
 
-#### 7.5 Handle agent alerts in the Web UI
+#### 7.6 Handle agent alerts in the Web UI
 
 Open:
 
@@ -569,7 +577,7 @@ Available actions:
 | Execute rollback | Calls the real `nono rollback restore` for the corresponding session. |
 | Delete alert | Deletes only the DeepXDR alert record. It does not roll back code changes or remove MinIO/S3 objects. |
 
-#### 7.6 Stop and clean up
+#### 7.7 Stop and clean up
 
 ```bash
 ./scripts/agentguard-compose down
@@ -581,7 +589,7 @@ To also remove local PostgreSQL, Kafka, Redis, and MinIO test data:
 ./scripts/agentguard-compose down -v
 ```
 
-#### 7.7 Deployment notes
+#### 7.8 Deployment notes
 
 - Agent Security Analysis Mode passes large diffs through MinIO/S3 by default. The nono side writes diff objects, and AgentGuard reads them by URI from the event.
 - Use `AGENT_GUARD_MAX_DIFF_READ_BYTES` to limit the maximum diff size read per event, preventing very large changes from disrupting later change risk analysis.
