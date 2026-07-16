@@ -481,7 +481,7 @@ http://<agent-host-ip>:30003
 
 #### 7.1 前置条件
 
-- 已安装 Docker 和 docker-compose。
+- 已安装 python, Docker 和 docker-compose。
 - 已安装真实 [nono](https://github.com/nolabs-ai/nono)，并可通过 `DEEPXDR_REAL_NONO` 指定其路径。
 - 如需运行真实智能体样例，需安装 nono 支持的智能体，例如 opencode。
 - 准备 OpenAI-compatible LLM 配置，用于变更风险分析和真实智能体运行。
@@ -490,7 +490,7 @@ http://<agent-host-ip>:30003
 export OPENAI_MODEL=deepseek-v3-2-251201
 export OPENAI_API_KEY=<your-llm-api-key>
 export OPENAI_BASE_URL=https://ark.cn-beijing.volces.com/api/v3
-export DEEPXDR_REAL_NONO="$HOME/.local/bin/nono"
+export DEEPXDR_REAL_NONO="<your-nono-path>"
 ```
 
 回退 worker 还需要访问宿主机上的实际工作区和 nono rollback 状态。请为两类数据选择已存在的绝对根目录：
@@ -508,7 +508,7 @@ export AGENTGUARD_NONO_STATE_ROOT=/var/lib/deepxdr/nono-state
 #### 7.2 启动本地完整环境
 
 ```bash
-./scripts/agentguard-compose up -d --build
+./scripts/agentguard-compose up -d
 ./scripts/agentguard-compose ps
 ```
 
@@ -527,12 +527,20 @@ export AGENTGUARD_NONO_STATE_ROOT=/var/lib/deepxdr/nono-state
 
 ```bash
 export PATH="$PWD/scripts:$PATH"
-export DEEPXDR_REAL_NONO="$HOME/.local/bin/nono"
+export DEEPXDR_REAL_NONO="<your-nono-path>"
 ```
 
 之后用户可以照常在 shell 中执行 `nono`。DeepXDR shim 会调用真实 nono，并在会话结束后将 diff 写入 MinIO/S3，再向 Kafka 发布智能体会话事件。
 
-#### 7.4 触发内置测试场景
+#### 7.4 准备宿主机 nono shim 依赖
+
+`scripts/nono` 在宿主机执行。该 shim 会将 diff 写入 MinIO/S3，并向 Kafka 发布智能体会话事件，因此宿主机 Python 环境需要安装：
+
+```bash
+python3 -m pip install boto3 aiokafka
+```
+
+#### 7.5 触发内置测试场景
 
 ```bash
 export AGENTGUARD_SMOKE_WORKSPACE="$AGENTGUARD_WORKSPACE_ROOT/agentguard-smoke-workspace"
@@ -557,7 +565,7 @@ mkdir -p  "$AGENTGUARD_SMOKE_WORKSPACE"  "$DEEPXDR_NONO_STATE_HOME"
 | `large` | 大 diff，裁剪高价值片段后生成单文件摘要，再汇总分析。 |
 | `agent` | 通过真实 opencode 智能体在 nono 下运行，需要有效 `OPENAI_API_KEY`。 |
 
-#### 7.5 在 Web UI 中处理智能体告警
+#### 7.6 在 Web UI 中处理智能体告警
 
 打开：
 
@@ -575,7 +583,7 @@ http://localhost:30003
 | 执行回退 | 调用真实 `nono rollback restore` 回退对应 session。 |
 | 删除告警 | 仅删除 DeepXDR 中的告警记录，不回滚代码变更，也不清理 MinIO/S3 对象。 |
 
-#### 7.6 停止和清理
+#### 7.7 停止和清理
 
 ```bash
 ./scripts/agentguard-compose down
@@ -587,7 +595,7 @@ http://localhost:30003
 ./scripts/agentguard-compose down -v
 ```
 
-#### 7.7 部署注意事项
+#### 7.8 部署注意事项
 
 - 智能体安全分析模式默认通过 MinIO/S3 传递大体积 diff。nono 侧将 diff 写入对象存储，AgentGuard 侧根据事件中的 URI 读取 diff。
 - 使用 `AGENT_GUARD_MAX_DIFF_READ_BYTES` 限制单次读取的 diff 大小，避免超大变更影响后续变更风险分析。

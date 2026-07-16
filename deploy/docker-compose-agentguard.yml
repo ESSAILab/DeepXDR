@@ -90,8 +90,7 @@ services:
        mc mb --ignore-existing local/agent-diffs"
 
   baseline-adjudication:
-    build:
-      context: ../baseline_adjudication
+    image: essaigroup/deepxdr-baseline:v0.3.0-alpha
     container_name: agentguard-baseline
     networks:
       - agentguard
@@ -132,7 +131,7 @@ services:
       - type: bind
         source: ${AGENTGUARD_NONO_STATE_ROOT:?AGENTGUARD_NONO_STATE_ROOT must be set}
         target: ${AGENTGUARD_NONO_STATE_ROOT:?AGENTGUARD_NONO_STATE_ROOT must be set}
-      - /root/.local/bin/nono:/usr/local/bin/nono:ro
+      - ${DEEPXDR_REAL_NONO:-/usr/local/bin/nono}:/usr/local/bin/nono:ro
       - /lib64:/lib64:ro
       - /lib/x86_64-linux-gnu:/lib/x86_64-linux-gnu:ro
     command: >
@@ -181,8 +180,7 @@ services:
       OPENAI_BASE_URL: ${OPENAI_BASE_URL:?OPENAI_BASE_URL is required}
 
   web-ui:
-    build:
-      context: ../web_ui
+    image: essaigroup/deepxdr-web-ui:v0.3.0-alpha
     container_name: agentguard-web-ui
     networks:
       - agentguard
