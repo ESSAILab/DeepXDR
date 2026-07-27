@@ -14,10 +14,12 @@ ENV PYTHONOPTIMIZE=1
 ENV PYTHONUNBUFFERED=1
 
 # 复制依赖文件
-COPY requirements.txt .
+COPY pyproject.toml .
 
-# 安装Python依赖
-RUN pip install --no-cache-dir -r requirements.txt
+# 从 pyproject.toml 提取依赖并安装（避免 build 隔离下载 setuptools）
+RUN python -c "import tomllib; f=open('pyproject.toml','rb'); deps=tomllib.load(f)['project']['dependencies']; open('requirements.txt','w').write('\n'.join(deps))" && \
+    pip install --no-cache-dir -r requirements.txt && \
+    rm requirements.txt
 
 # 精确复制应用代码（避免复制敏感文件）
 COPY run_dashboard.py .

@@ -3292,6 +3292,7 @@
                         // 处理标题 (## 标题)
                         html = html.replace(/^##\s+(.+)$/gm, '<h3 class="text-base font-bold text-gray-800 mt-2 mb-1">$1</h3>');
                         html = html.replace(/^###\s+(.+)$/gm, '<h4 class="text-sm font-semibold text-gray-700 mt-2 mb-1">$1</h4>');
+                        html = html.replace(/^####\s+(.+)$/gm, '<h5 class="text-sm font-semibold text-gray-700 mt-2 mb-1">$1</h5>');
 
                         // 处理加粗 (**文本**)
                         html = html.replace(/\*\*(.+?)\*\*/g, '<strong class="text-gray-800">$1</strong>');
@@ -3849,30 +3850,40 @@
                 // 获取TTP的最高严重程度
                 getSeverityLevel(ttp) {
                     const tacticTree = this.getTacticTree(ttp);
-                    // 将连字符替换为空格，确保与标准战术名称匹配
-                    const tacticNames = tacticTree.map(t => t.name.toLowerCase().replace(/-/g, ' '));
-                    
-                    // 从高到低检查：严重 > 高危 > 中危 > 低危
-                    const severe = ['exfiltration', 'impact'];
-                    if (severe.some(s => tacticNames.some(name => name.includes(s)))) {
-                        return '严重';
+                    if (!tacticTree || tacticTree.length === 0) {
+                        return null;
                     }
-                    
-                    const high = ['credential access', 'discovery', 'lateral movement', 'collection', 'command and control'];
-                    if (high.some(h => tacticNames.some(name => name.includes(h)))) {
-                        return '高危';
+
+                    // 标准化战术名称：trim、去多余空格、统一分隔符、转小写
+                    const normalize = (name) => {
+                        return (name || '').toString().toLowerCase()
+                            .replace(/&/g, ' and ')       // & → and
+                            .replace(/[-_]/g, ' ')        // 连字符/下划线 → 空格
+                            .replace(/\s+/g, ' ')         // 多余空格合并
+                            .trim();
+                    };
+
+                    const tacticNames = tacticTree.map(t => normalize(t.name));
+
+                    // 战术名称到严重程度的精确映射表（从高到低）
+                    const severityMap = {
+                        '严重': ['exfiltration', 'impact'],
+                        '高危': ['credential access', 'discovery', 'lateral movement', 'collection', 'command and control'],
+                        '中危': ['execution', 'persistence', 'privilege escalation', 'defense evasion'],
+                        '低危': ['reconnaissance', 'resource development', 'initial access']
+                    };
+
+                    // 按严重程度从高到低检查
+                    for (const [severity, keywords] of Object.entries(severityMap)) {
+                        for (const keyword of keywords) {
+                            for (const name of tacticNames) {
+                                if (name === keyword || name.includes(keyword)) {
+                                    return severity;
+                                }
+                            }
+                        }
                     }
-                    
-                    const medium = ['execution', 'persistence', 'privilege escalation', 'defense evasion'];
-                    if (medium.some(m => tacticNames.some(name => name.includes(m)))) {
-                        return '中危';
-                    }
-                    
-                    const low = ['reconnaissance', 'resource development', 'initial access'];
-                    if (low.some(l => tacticNames.some(name => name.includes(l)))) {
-                        return '低危';
-                    }
-                    
+
                     return null;
                 },
                 
