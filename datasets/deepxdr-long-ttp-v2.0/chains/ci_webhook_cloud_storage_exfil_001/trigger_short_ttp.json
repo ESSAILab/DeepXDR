@@ -1,0 +1,92 @@
+{
+  "id": "3ecdc394-4cb8-4884-8a17-bcb1df351fb9",
+  "created_at": "2026-09-09T03:10:00.000Z",
+  "end_at": "2026-09-09T03:10:00.400Z",
+  "ttps": [
+    {
+      "id": "50a3c7f8-a433-431d-a385-73e1fb35d3aa",
+      "name": "exfiltration",
+      "description": "战术: exfiltration",
+      "techniques": [
+        {
+          "tech_id": "T1567.004",
+          "tech_name": "Exfiltration Over Webhook",
+          "description": "Adversaries may exfiltrate data to a webhook endpoint rather than over their primary command and control channel. Webhooks are simple mechanisms for allowing a server to push data over HTTP/S to a client without the need for the client to continuously poll the server.(Citation: RedHat Webhooks) Many public and commercial services, such as Discord, Slack, and `webhook.site`, support the creation of webhook endpoints that can be used by other services, such as Github, Jira, or Trello.(Citation: Discord Intro to Webhooks) When changes happen in the linked services (such as pushing a repository update or modifying a ticket), these services will automatically post the data to the webhook endpoint for use by the consuming application. \n\nAdversaries may link an adversary-owned environment to a victim-owned SaaS service to achieve repeated [Automated Exfiltration](https://attack.mitre.org/techniques/T1020) of emails, chat messages, and other data.(Citation: Push Security SaaS Attacks Repository Webhooks) Alternatively, instead of linking the webhook endpoint to a service, an adversary can manually post staged data directly to the URL in order to exfiltrate it.(Citation: Microsoft SQL Server)\n\nAccess to webhook endpoints is often over HTTPS, which gives the adversary an additional level of protection. Exfiltration leveraging webhooks can also blend in with normal network traffic if the webhook endpoint points to a commonly used SaaS application or collaboration service.(Citation: CyberArk Labs Discord)(Citation: Talos Discord Webhook Abuse)(Citation: Checkmarx Webhooks)",
+          "procedures": [
+            "行为: Network-observed HTTP download of CI diagnostic artifact from target server (attacker pull)；证据: src_ip: 192.0.2.61:51606 -> dest_ip: 192.0.2.106:8080; http_method: GET; url: /api/ci/webhook/diagnostics/download; status: 200; signature: ET WEB_SERVER CI Diagnostic Artifact HTTP Download Exfiltration; exfiltration_context.direction: attacker_pull_from_target"
+          ],
+          "event_ids": [
+            "626ab6ad-0e8e-563f-8b18-fe429b3768a6",
+            "1abe890c-ca59-54ac-bccb-9f21a5cf62f4",
+            "f4533712-8274-5759-92f7-abdef0f136d0"
+          ]
+        },
+        {
+          "tech_id": "T1048",
+          "tech_name": "Exfiltration Over Alternative Protocol",
+          "description": "Adversaries may steal data by exfiltrating it over a different protocol than that of the existing command and control channel. The data may also be sent to an alternate network location from the main command and control server.  \n\nAlternate protocols include FTP, SMTP, HTTP/S, DNS, SMB, or any other network protocol not being used as the main command and control channel. Adversaries may also opt to encrypt and/or obfuscate these alternate channels. \n\n[Exfiltration Over Alternative Protocol](https://attack.mitre.org/techniques/T1048) can be done using various common operating system utilities such as [Net](https://attack.mitre.org/software/S0039)/SMB or FTP.(Citation: Palo Alto OilRig Oct 2016) On macOS and Linux <code>curl</code> may be used to invoke protocols such as HTTP/S or FTP/S to exfiltrate data from a system.(Citation: 20 macOS Common Tools and Techniques)\n\nMany IaaS and SaaS platforms (such as Microsoft Exchange, Microsoft SharePoint, GitHub, and AWS S3) support the direct download of files, emails, source code, and other sensitive information via the web console or [Cloud API](https://attack.mitre.org/techniques/T1059/009).",
+          "procedures": [
+            "行为: HTTP GET request to download CI diagnostic artifact from target endpoint；证据: attack_source: 192.0.2.61; path: /api/ci/webhook/diagnostics/download; request_method: get; plugin_message: CI Diagnostic Artifact HTTP Download Exfiltration; request_id: d1-ci_webhook_cloud_pivot-06; server_hostname: deep-app-d1; target: 192.0.2.106"
+          ],
+          "event_ids": [
+            "626ab6ad-0e8e-563f-8b18-fe429b3768a6",
+            "1abe890c-ca59-54ac-bccb-9f21a5cf62f4",
+            "f4533712-8274-5759-92f7-abdef0f136d0"
+          ]
+        }
+      ],
+      "event_ids": [
+        "626ab6ad-0e8e-563f-8b18-fe429b3768a6",
+        "1abe890c-ca59-54ac-bccb-9f21a5cf62f4",
+        "f4533712-8274-5759-92f7-abdef0f136d0"
+      ]
+    }
+  ],
+  "confidence": 0.6,
+  "summary": "2026-09-09 11:10:00，攻击源 IP 192.0.2.61 使用 HTTP GET 访问目标 192.0.2.106:8080 的 /api/ci/webhook/diagnostics/download，尝试下载/外传 CI 诊断工件。OpenRASP 告警（a7ce986d-6968-4e20-8c20-695717249a3b）记录算法 ci_webhook_cloud_pivot_step_6，插件信息为 CI Diagnostic Artifact HTTP Download Exfiltration，请求 ID 为 d1-ci_webhook_cloud_pivot-06，拦截状态为 log，涉及服务器 deep-app-d1（server_ip 10.21.10.106）；Suricata 告警（7d0af49b-06ab-43e5-8f5d-1fa7ccf81569）在同一路径命中 ET WEB_SERVER CI Diagnostic Artifact HTTP Download Exfiltration，HTTP 状态 200，流量方向为 attacker_pull_from_target，即攻击者从目标拉取数据。",
+  "event_count": 3,
+  "source_events": [
+    "626ab6ad-0e8e-563f-8b18-fe429b3768a6",
+    "1abe890c-ca59-54ac-bccb-9f21a5cf62f4",
+    "f4533712-8274-5759-92f7-abdef0f136d0"
+  ],
+  "attacker_fingerprint": {
+    "primary_ip": "192.0.2.61",
+    "ip_list": [
+      "192.0.2.61"
+    ],
+    "user_agents": [],
+    "patterns": [],
+    "first_seen": "2026-09-09T03:10:00.000Z",
+    "last_seen": "2026-09-09T03:10:00.400Z"
+  },
+  "attacker_ip": "192.0.2.61",
+  "raw_event_count": 3,
+  "filtered_event_count": 2,
+  "ip_group_count": 1,
+  "filter_reason": "current window contains openrasp/suricata; falco events are ignored before offline DeepXDR analysis",
+  "selected_attacker_ip": "192.0.2.61",
+  "analyzed_ip_groups": [
+    {
+      "attacker_ip": "192.0.2.61",
+      "event_count": 2
+    }
+  ],
+  "latency_seconds": 62.143,
+  "event_ids": [
+    "626ab6ad-0e8e-563f-8b18-fe429b3768a6",
+    "1abe890c-ca59-54ac-bccb-9f21a5cf62f4",
+    "f4533712-8274-5759-92f7-abdef0f136d0"
+  ],
+  "fixture_chain_id": "ci_webhook_cloud_storage_exfil_001",
+  "fixture_step_id": "S6",
+  "fixture_event_ref_map": {
+    "suricata:d0100000-1006-4d01-8100-010601000001": "626ab6ad-0e8e-563f-8b18-fe429b3768a6",
+    "openrasp:d0100000-2006-4d01-8200-010602000001": "1abe890c-ca59-54ac-bccb-9f21a5cf62f4",
+    "falco:d0100000-3006-4d01-8300-010603000001": "f4533712-8274-5759-92f7-abdef0f136d0"
+  }
+}
+
+
+
+

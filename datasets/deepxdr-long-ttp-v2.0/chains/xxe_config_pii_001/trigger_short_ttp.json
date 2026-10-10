@@ -1,0 +1,104 @@
+{
+  "id": "e9da8e92-6238-417d-8647-96b820244d95",
+  "created_at": "2026-08-27T05:20:40.000Z",
+  "end_at": "2026-08-27T05:20:40.300Z",
+  "ttps": [
+    {
+      "id": "1f702366-aa6d-460f-8381-57d94cc9c1fd",
+      "name": "exfiltration",
+      "description": "战术: exfiltration",
+      "techniques": [
+        {
+          "tech_id": "T1048.003",
+          "tech_name": "Exfiltration Over Unencrypted Non-C2 Protocol",
+          "description": "Adversaries may steal data by exfiltrating it over an un-encrypted network protocol other than that of the existing command and control channel. The data may also be sent to an alternate network location from the main command and control server.(Citation: copy_cmd_cisco)\n\nAdversaries may opt to obfuscate this data, without the use of encryption, within network protocols that are natively unencrypted (such as HTTP, FTP, or DNS). This may include custom or publicly available encoding/compression algorithms (such as base64) as well as embedding data within protocol headers and fields. ",
+          "procedures": [
+            "行为: Exfiltrate sensitive customer PII data in HTTP response；证据: OpenRASP response_dataLeak detected PII leak in customer audit summary: ID-EXAMPLE-001(Identity Card), MOBILE-EXAMPLE-001(Mobile Number), BANK-EXAMPLE-001(Bank Card)"
+          ],
+          "event_ids": [
+            "011b7134-8eb0-5702-a062-ae7a8251af2a",
+            "ce00655e-85ea-598a-a139-c13ee2004092",
+            "f0fb6ae9-c47d-5984-a1c8-26efdc6ac369"
+          ]
+        }
+      ],
+      "event_ids": [
+        "011b7134-8eb0-5702-a062-ae7a8251af2a",
+        "ce00655e-85ea-598a-a139-c13ee2004092",
+        "f0fb6ae9-c47d-5984-a1c8-26efdc6ac369"
+      ]
+    },
+    {
+      "id": "c6c800ce-ee65-49fc-bbb1-97fb5baa0afd",
+      "name": "collection",
+      "description": "战术: collection",
+      "techniques": [
+        {
+          "tech_id": "T1213.004",
+          "tech_name": "Customer Relationship Management Software",
+          "description": "Adversaries may leverage Customer Relationship Management (CRM) software to mine valuable information. CRM software is used to assist organizations in tracking and managing customer interactions, as well as storing customer data.\n\nOnce adversaries gain access to a victim organization, they may mine CRM software for customer data. This may include personally identifiable information (PII) such as full names, emails, phone numbers, and addresses, as well as additional details such as purchase histories and IT support interactions. By collecting this data, an adversary may be able to send personalized [Phishing](https://attack.mitre.org/techniques/T1566) emails, engage in SIM swapping, or otherwise target the organization’s customers in ways that enable financial gain or the compromise of additional organizations.(Citation: Bleeping Computer US Cellular Hack 2022)(Citation: Bleeping Computer Mint Mobile Hack 2021)(Citation: Bleeping Computer Bank Hack 2020)\n\nCRM software may be hosted on-premises or in the cloud. Information stored in these solutions may vary based on the specific instance or environment. Examples of CRM software include Microsoft Dynamics 365, Salesforce, Zoho, Zendesk, and HubSpot.",
+          "procedures": [
+            "行为: Access sensitive customer audit summary endpoint via HTTP GET；证据: GET /api/v1/audit/customer-summary?region=east&format=csv from 192.0.2.23 to 192.0.2.157:8080 triggered Suricata alert 'ET WEB_SERVER Sensitive Customer Audit Summary Endpoint Access' (signature_id 2901303), status 200, response length 18492"
+          ],
+          "event_ids": [
+            "011b7134-8eb0-5702-a062-ae7a8251af2a",
+            "ce00655e-85ea-598a-a139-c13ee2004092",
+            "f0fb6ae9-c47d-5984-a1c8-26efdc6ac369"
+          ]
+        }
+      ],
+      "event_ids": [
+        "011b7134-8eb0-5702-a062-ae7a8251af2a",
+        "ce00655e-85ea-598a-a139-c13ee2004092",
+        "f0fb6ae9-c47d-5984-a1c8-26efdc6ac369"
+      ]
+    }
+  ],
+  "confidence": 0.6,
+  "summary": "在2026-08-27 13:20:40，攻击源192.0.2.23通过HTTP GET请求访问目标192.0.2.157:8080的/api/v1/audit/customer-summary?region=east&format=csv，Referer为http://192.0.2.157:8080/portal/audit/summary-center，User-Agent为Chrome浏览器。OpenRASP（request_id: xxe-audit-chain-req-03）检测到响应数据泄露（response_dataLeak），响应中包含身份证号ID-EXAMPLE-001、手机号MOBILE-EXAMPLE-001、银行卡号BANK-EXAMPLE-001等PII；同时Suricata产生Web Application Attack告警（ET WEB_SERVER Sensitive Customer Audit Summary Endpoint Access），请求返回200，响应长度18492字节。受影响资产为192.0.2.157:8080上的客户审计汇总接口。",
+  "event_count": 3,
+  "source_events": [
+    "011b7134-8eb0-5702-a062-ae7a8251af2a",
+    "ce00655e-85ea-598a-a139-c13ee2004092",
+    "f0fb6ae9-c47d-5984-a1c8-26efdc6ac369"
+  ],
+  "attacker_fingerprint": {
+    "primary_ip": "192.0.2.23",
+    "ip_list": [
+      "192.0.2.23"
+    ],
+    "user_agents": [],
+    "patterns": [],
+    "first_seen": "2026-08-27T05:20:40.000Z",
+    "last_seen": "2026-08-27T05:20:40.300Z"
+  },
+  "attacker_ip": "192.0.2.23",
+  "raw_event_count": 3,
+  "filtered_event_count": 2,
+  "ip_group_count": 1,
+  "filter_reason": "current window contains openrasp/suricata; falco events are ignored before offline DeepXDR analysis",
+  "selected_attacker_ip": "192.0.2.23",
+  "analyzed_ip_groups": [
+    {
+      "attacker_ip": "192.0.2.23",
+      "event_count": 2
+    }
+  ],
+  "latency_seconds": 45.153,
+  "event_ids": [
+    "011b7134-8eb0-5702-a062-ae7a8251af2a",
+    "ce00655e-85ea-598a-a139-c13ee2004092",
+    "f0fb6ae9-c47d-5984-a1c8-26efdc6ac369"
+  ],
+  "fixture_chain_id": "xxe_config_pii_001",
+  "fixture_step_id": "S3",
+  "fixture_event_ref_map": {
+    "openrasp:1d4e2f81-7c1c-4a66-9df2-8b4d2a640103": "011b7134-8eb0-5702-a062-ae7a8251af2a",
+    "suricata:6c4e7a45-5fb5-4e48-a5cb-56ee2f2d0103": "ce00655e-85ea-598a-a139-c13ee2004092",
+    "falco:4f2e98f1-2d34-4a10-8f3a-8c7711aa0103": "f0fb6ae9-c47d-5984-a1c8-26efdc6ac369"
+  }
+}
+
+
+
+

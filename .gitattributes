@@ -1,0 +1,3 @@
+# Preserve release bytes so published SHA-256 checksums remain valid.
+/datasets/deepxdr-long-ttp-v2.0/** -text
+/datasets/deepxdr-long-ttp-v2.0.zip* -text

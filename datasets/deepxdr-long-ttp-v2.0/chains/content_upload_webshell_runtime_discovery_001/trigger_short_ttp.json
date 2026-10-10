@@ -1,0 +1,148 @@
+{
+  "id": "6370f6a8-9534-4f67-8ba0-99d883ab5f16",
+  "created_at": "2026-09-01T01:02:00.000Z",
+  "end_at": "2026-09-01T01:02:01.600Z",
+  "ttps": [
+    {
+      "id": "2ecb364f-b17c-4030-853f-b5803b85f7cb",
+      "name": "execution",
+      "description": "战术: execution",
+      "techniques": [
+        {
+          "tech_id": "T1059.004",
+          "tech_name": "Unix Shell",
+          "description": "Adversaries may abuse Unix shell commands and scripts for execution. Unix shells are the primary command prompt on Linux, macOS, and ESXi systems, though many variations of the Unix shell exist (e.g. sh, ash, bash, zsh, etc.) depending on the specific OS or distribution.(Citation: DieNet Bash)(Citation: Apple ZShell) Unix shells can control every aspect of a system, with certain commands requiring elevated privileges.\n\nUnix shells also support scripts that enable sequential execution of commands as well as other typical programming operations such as conditionals and loops. Common uses of shell scripts include long or repetitive tasks, or the need to run the same set of commands on multiple systems.\n\nAdversaries may abuse Unix shells to execute various commands or payloads. Interactive shells may be accessed through command and control channels or during lateral movement such as with [SSH](https://attack.mitre.org/techniques/T1021/004). Adversaries may also leverage shell scripts to deliver and execute multiple commands on victims or as part of payloads used for persistence.\n\nSome systems, such as embedded devices, lightweight Linux distributions, and ESXi servers, may leverage stripped-down Unix shells via Busybox, a small executable that contains a variety of tools, including a simple shell.",
+          "procedures": [
+            "行为: Executed system command 'ls' in /tmp via /bin/sh -c；证据: openrasp_alert: attack_type=command, path=/test.jsp, plugin_message=Command execution - Logging all command execution by default, command is /bin/sh -c cd /tmp/ ;ls",
+            "行为: Executed system command 'uname' in /tmp via /bin/sh -c；证据: openrasp_alert: attack_type=command, path=/test.jsp, plugin_message=Command execution - Logging all command execution by default, command is /bin/sh -c cd /tmp/ ;uname",
+            "行为: Executed system command 'whoami' in /tmp via /bin/sh -c；证据: openrasp_alert: attack_type=command, path=/test.jsp, plugin_message=Command execution - Logging all command execution by default, command is /bin/sh -c cd /tmp/ ;whoami"
+          ],
+          "event_ids": [
+            "0025923f-726c-5516-9318-c9d2b0909cac",
+            "89abdd31-c0f0-53d6-83ad-20ed3ec2caa2",
+            "0391eaf9-832d-5f5c-b797-2811cc7c9c9b",
+            "024dc4b4-a5f5-5d1e-9dfa-a94bc2ab1969",
+            "c89821da-8f13-5627-b628-c955d45cda27",
+            "45b50220-1a39-5da8-a24e-ea4df40513b3",
+            "c6e6e86a-d2d6-56b4-a9ee-072ad4c20872",
+            "d772ba4a-6a0f-558c-ad27-96437a9b59cb",
+            "aaaea6ce-094c-50d3-896b-944ef826002a"
+          ]
+        }
+      ],
+      "event_ids": [
+        "0025923f-726c-5516-9318-c9d2b0909cac",
+        "89abdd31-c0f0-53d6-83ad-20ed3ec2caa2",
+        "0391eaf9-832d-5f5c-b797-2811cc7c9c9b",
+        "024dc4b4-a5f5-5d1e-9dfa-a94bc2ab1969",
+        "c89821da-8f13-5627-b628-c955d45cda27",
+        "45b50220-1a39-5da8-a24e-ea4df40513b3",
+        "c6e6e86a-d2d6-56b4-a9ee-072ad4c20872",
+        "d772ba4a-6a0f-558c-ad27-96437a9b59cb",
+        "aaaea6ce-094c-50d3-896b-944ef826002a"
+      ]
+    },
+    {
+      "id": "64bd2c86-31e5-40e1-b958-17c0ff0c67c3",
+      "name": "discovery",
+      "description": "战术: discovery",
+      "techniques": [
+        {
+          "tech_id": "T1033",
+          "tech_name": "System Owner/User Discovery",
+          "description": "Adversaries may attempt to identify the primary user, currently logged in user, set of users that commonly uses a system, or whether a user is actively using the system. They may do this, for example, by retrieving account usernames or by using [OS Credential Dumping](https://attack.mitre.org/techniques/T1003). The information may be collected in a number of different ways using other Discovery techniques, because user and username details are prevalent throughout a system and include running process ownership, file/directory ownership, session information, and system logs. Adversaries may use the information from [System Owner/User Discovery](https://attack.mitre.org/techniques/T1033) during automated discovery to shape follow-on behaviors, including whether or not the adversary fully infects the target and/or attempts specific actions.\n\nVarious utilities and commands may acquire this information, including <code>whoami</code>. In macOS and Linux, the currently logged in user can be identified with <code>w</code> and <code>who</code>. On macOS the <code>dscl . list /Users | grep -v '_'</code> command can also be used to enumerate user accounts. Environment variables, such as <code>%USERNAME%</code> and <code>$USER</code>, may also be used to access this information.\n\nOn network devices, [Network Device CLI](https://attack.mitre.org/techniques/T1059/008) commands such as `show users` and `show ssh` can be used to display users currently logged into the device.(Citation: show_ssh_users_cmd_cisco)(Citation: US-CERT TA18-106A Network Infrastructure Devices 2018)",
+          "procedures": [
+            "行为: Executed system command 'whoami' in /tmp via /bin/sh -c；证据: openrasp_alert: attack_type=command, path=/test.jsp, plugin_message=Command execution - Logging all command execution by default, command is /bin/sh -c cd /tmp/ ;whoami"
+          ],
+          "event_ids": [
+            "0025923f-726c-5516-9318-c9d2b0909cac",
+            "89abdd31-c0f0-53d6-83ad-20ed3ec2caa2",
+            "0391eaf9-832d-5f5c-b797-2811cc7c9c9b",
+            "024dc4b4-a5f5-5d1e-9dfa-a94bc2ab1969",
+            "c89821da-8f13-5627-b628-c955d45cda27",
+            "45b50220-1a39-5da8-a24e-ea4df40513b3",
+            "c6e6e86a-d2d6-56b4-a9ee-072ad4c20872",
+            "d772ba4a-6a0f-558c-ad27-96437a9b59cb",
+            "aaaea6ce-094c-50d3-896b-944ef826002a"
+          ]
+        }
+      ],
+      "event_ids": [
+        "0025923f-726c-5516-9318-c9d2b0909cac",
+        "89abdd31-c0f0-53d6-83ad-20ed3ec2caa2",
+        "0391eaf9-832d-5f5c-b797-2811cc7c9c9b",
+        "024dc4b4-a5f5-5d1e-9dfa-a94bc2ab1969",
+        "c89821da-8f13-5627-b628-c955d45cda27",
+        "45b50220-1a39-5da8-a24e-ea4df40513b3",
+        "c6e6e86a-d2d6-56b4-a9ee-072ad4c20872",
+        "d772ba4a-6a0f-558c-ad27-96437a9b59cb",
+        "aaaea6ce-094c-50d3-896b-944ef826002a"
+      ]
+    }
+  ],
+  "confidence": 0.6,
+  "summary": "2026-09-01 09:02:00至09:02:01，攻击源192.0.2.7持续向目标192.0.2.106:8080的/test.jsp发送POST请求（容器65f8864ca821，server_ip 172.30.0.3，Tomcat 9.0.41.0），RASP均记录为openrasp_alert命令执行告警，intercept_state为log，plugin_confidence=90。三次命令分别为：/bin/sh -c cd /tmp/ ;ls、/bin/sh -c cd /tmp/ ;uname、/bin/sh -c cd /tmp/ ;whoami。请求携带相同JSESSIONID cookie，UA为Chrome/96.0.4664.110，referer为http://192.0.2.106:8080/test.jsp。对应request_id为047a2692c3394ed78ea0e3fde6a28c00、3086563ba9904961949610dace3016dd、f439c149a77b494e8e851dcc92e0f738。未发现其他源IP事件。",
+  "event_count": 9,
+  "source_events": [
+    "0025923f-726c-5516-9318-c9d2b0909cac",
+    "89abdd31-c0f0-53d6-83ad-20ed3ec2caa2",
+    "0391eaf9-832d-5f5c-b797-2811cc7c9c9b",
+    "024dc4b4-a5f5-5d1e-9dfa-a94bc2ab1969",
+    "c89821da-8f13-5627-b628-c955d45cda27",
+    "45b50220-1a39-5da8-a24e-ea4df40513b3",
+    "c6e6e86a-d2d6-56b4-a9ee-072ad4c20872",
+    "d772ba4a-6a0f-558c-ad27-96437a9b59cb",
+    "aaaea6ce-094c-50d3-896b-944ef826002a"
+  ],
+  "attacker_fingerprint": {
+    "primary_ip": "192.0.2.7",
+    "ip_list": [
+      "192.0.2.7"
+    ],
+    "user_agents": [],
+    "patterns": [],
+    "first_seen": "2026-09-01T01:02:00.000Z",
+    "last_seen": "2026-09-01T01:02:01.600Z"
+  },
+  "attacker_ip": "192.0.2.7",
+  "raw_event_count": 9,
+  "filtered_event_count": 3,
+  "ip_group_count": 1,
+  "filter_reason": "current window contains openrasp; falco events are ignored before offline DeepXDR analysis",
+  "selected_attacker_ip": "192.0.2.7",
+  "analyzed_ip_groups": [
+    {
+      "attacker_ip": "192.0.2.7",
+      "event_count": 3
+    }
+  ],
+  "latency_seconds": 63.271,
+  "event_ids": [
+    "0025923f-726c-5516-9318-c9d2b0909cac",
+    "89abdd31-c0f0-53d6-83ad-20ed3ec2caa2",
+    "0391eaf9-832d-5f5c-b797-2811cc7c9c9b",
+    "024dc4b4-a5f5-5d1e-9dfa-a94bc2ab1969",
+    "c89821da-8f13-5627-b628-c955d45cda27",
+    "45b50220-1a39-5da8-a24e-ea4df40513b3",
+    "c6e6e86a-d2d6-56b4-a9ee-072ad4c20872",
+    "d772ba4a-6a0f-558c-ad27-96437a9b59cb",
+    "aaaea6ce-094c-50d3-896b-944ef826002a"
+  ],
+  "fixture_chain_id": "content_upload_webshell_runtime_discovery_001",
+  "fixture_step_id": "S3",
+  "fixture_event_ref_map": {
+    "openrasp:4946e1ac-08a0-4b0c-9fef-145b7bcd32eb": "0025923f-726c-5516-9318-c9d2b0909cac",
+    "falco:f59bcb35-e51b-4cf9-b83b-cf5c992f6066": "89abdd31-c0f0-53d6-83ad-20ed3ec2caa2",
+    "falco:4581aea2-5402-46c1-bbb2-90a61b7961fa": "0391eaf9-832d-5f5c-b797-2811cc7c9c9b",
+    "openrasp:6f22937b-39f9-4853-8062-1489ecb7bb9c": "024dc4b4-a5f5-5d1e-9dfa-a94bc2ab1969",
+    "falco:a747cb2a-b3f5-4bad-a405-c64fa836b23a": "c89821da-8f13-5627-b628-c955d45cda27",
+    "falco:ac42cbe1-1fd6-4152-93ae-d007a9e43917": "45b50220-1a39-5da8-a24e-ea4df40513b3",
+    "openrasp:0c83eee7-7f2a-4929-9170-787daa5ed978": "c6e6e86a-d2d6-56b4-a9ee-072ad4c20872",
+    "falco:5c6f97fa-69c6-4f90-a823-a7c68730ef32": "d772ba4a-6a0f-558c-ad27-96437a9b59cb",
+    "falco:30339081-199b-4577-9c4c-a06ed04454da": "aaaea6ce-094c-50d3-896b-944ef826002a"
+  }
+}
+
+
+
+

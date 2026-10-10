@@ -1,0 +1,38 @@
+{
+  "dataset_type": "deepxdr_long_ttp_release_sample",
+  "chain_id": "xxe_config_pii_001",
+  "source_chain_name": "OpenRASP lab: XXE -> Audit Config Read -> Customer Audit PII Leak",
+  "source_result_path": null,
+  "base_time": "2026-08-27T05:20:00Z",
+  "attacker_ip": "192.0.2.23",
+  "target_host": "192.0.2.157:8080",
+  "trigger_step_id": "S3",
+  "trigger_step_name": "Retrieve customer audit summary with PII in response",
+  "trigger_short_ttp_id": "e9da8e92-6238-417d-8647-96b820244d95",
+  "event_count": 12,
+  "trigger_event_count": 3,
+  "step_count": 3,
+  "telemetry_sources": [
+    "openrasp",
+    "suricata",
+    "falco"
+  ],
+  "technique_ids": [
+    "T1048",
+    "T1083",
+    "T1190",
+    "T1213"
+  ],
+  "files": {
+    "trigger_short_ttp": "trigger_short_ttp.json",
+    "events": "events.jsonl",
+    "long_ttp_ground_truth": "long_ttp_ground_truth.json",
+    "event_id_map": "event_id_map.json",
+    "file_actions": "file_actions.json",
+    "run_config": "run_config.json",
+    "sample_manifest": "sample_manifest.json"
+  },
+  "release_version": "v2.0",
+  "legacy_chain_id": "openrasp_xxe_config_pii_chain_001",
+  "display_name": "XXE to Configuration and PII Access"
+}

@@ -1,0 +1,79 @@
+{
+  "id": "e8db6e3b-3b30-49be-b1fa-e572690e36cd",
+  "created_at": "2026-08-27T06:02:15.000Z",
+  "end_at": "2026-08-27T06:02:15.400Z",
+  "ttps": [
+    {
+      "id": "efe9b9c1-b2c3-4fda-93f0-1e2f2db21026",
+      "name": "collection",
+      "description": "战术: collection",
+      "techniques": [
+        {
+          "tech_id": "T1213.004",
+          "tech_name": "Customer Relationship Management Software",
+          "description": "Adversaries may leverage Customer Relationship Management (CRM) software to mine valuable information. CRM software is used to assist organizations in tracking and managing customer interactions, as well as storing customer data.\n\nOnce adversaries gain access to a victim organization, they may mine CRM software for customer data. This may include personally identifiable information (PII) such as full names, emails, phone numbers, and addresses, as well as additional details such as purchase histories and IT support interactions. By collecting this data, an adversary may be able to send personalized [Phishing](https://attack.mitre.org/techniques/T1566) emails, engage in SIM swapping, or otherwise target the organization’s customers in ways that enable financial gain or the compromise of additional organizations.(Citation: Bleeping Computer US Cellular Hack 2022)(Citation: Bleeping Computer Mint Mobile Hack 2021)(Citation: Bleeping Computer Bank Hack 2020)\n\nCRM software may be hosted on-premises or in the cloud. Information stored in these solutions may vary based on the specific instance or environment. Examples of CRM software include Microsoft Dynamics 365, Salesforce, Zoho, Zendesk, and HubSpot.",
+          "procedures": [
+            "行为: Sensitive Data Exfiltration via Customer Case Repository Export API；证据: OpenRASP: response_dataLeak, plugin_message 'PII leak detected in customer case repository export response', intercept_state 'log', request_id 'acct-persist-chain-req-05'; Suricata: signature 'ET WEB_SERVER Sensitive Customer Case Repository Export', category 'Attempted Information Leak', action 'allowed', HTTP status 200; HTTP GET /api/v1/admin/reports/customer-case-repository-export?region=east&format=json from 192.0.2.66:54205 to 192.0.2.106:8080."
+          ],
+          "event_ids": [
+            "a5c993b8-1ae2-5c51-b7ba-8e5294ac2c0c",
+            "e0b98264-020c-56ae-8cf9-6514db0fedb3",
+            "689b7692-85d6-567d-8737-1a83c59334b2"
+          ]
+        }
+      ],
+      "event_ids": [
+        "a5c993b8-1ae2-5c51-b7ba-8e5294ac2c0c",
+        "e0b98264-020c-56ae-8cf9-6514db0fedb3",
+        "689b7692-85d6-567d-8737-1a83c59334b2"
+      ]
+    }
+  ],
+  "confidence": 0.55,
+  "summary": "2026-08-27 14:02:15，攻击源IP 192.0.2.66（源端口54205）通过HTTP GET请求访问目标192.0.2.106:8080的/api/v1/admin/reports/customer-case-repository-export?region=east&format=json，Referer为http://192.0.2.106:8080/dotAdmin/#/audit/export-center，User-Agent为Chrome/150.0.0.0，并使用Basic认证（support_sync）。OpenRASP检测到响应数据泄露（response_dataLeak，PII leak detected in customer case repository export response），拦截状态为log；Suricata同时告警ET WEB_SERVER Sensitive Customer Case Repository Export（Attempted Information Leak），HTTP状态200，响应字节数18492。受影响资产为Tomcat 9.0.41.0服务器（server_ip 198.51.64.3，主机名3dcd6fd91463），请求ID为acct-persist-chain-req-05。",
+  "event_count": 3,
+  "source_events": [
+    "a5c993b8-1ae2-5c51-b7ba-8e5294ac2c0c",
+    "e0b98264-020c-56ae-8cf9-6514db0fedb3",
+    "689b7692-85d6-567d-8737-1a83c59334b2"
+  ],
+  "attacker_fingerprint": {
+    "primary_ip": "192.0.2.66",
+    "ip_list": [
+      "192.0.2.66"
+    ],
+    "user_agents": [],
+    "patterns": [],
+    "first_seen": "2026-08-27T06:02:15.000Z",
+    "last_seen": "2026-08-27T06:02:15.400Z"
+  },
+  "attacker_ip": "192.0.2.66",
+  "raw_event_count": 3,
+  "filtered_event_count": 2,
+  "ip_group_count": 1,
+  "filter_reason": "current window contains openrasp/suricata; falco events are ignored before offline DeepXDR analysis",
+  "selected_attacker_ip": "192.0.2.66",
+  "analyzed_ip_groups": [
+    {
+      "attacker_ip": "192.0.2.66",
+      "event_count": 2
+    }
+  ],
+  "latency_seconds": 55.158,
+  "event_ids": [
+    "a5c993b8-1ae2-5c51-b7ba-8e5294ac2c0c",
+    "e0b98264-020c-56ae-8cf9-6514db0fedb3",
+    "689b7692-85d6-567d-8737-1a83c59334b2"
+  ],
+  "fixture_chain_id": "account_manipulation_valid_account_export_001",
+  "fixture_step_id": "S4",
+  "fixture_event_ref_map": {
+    "suricata:7c71a001-2201-4a01-9010-b10000000705": "a5c993b8-1ae2-5c51-b7ba-8e5294ac2c0c",
+    "openrasp:6b60a001-1101-4a01-9010-a10000000705": "e0b98264-020c-56ae-8cf9-6514db0fedb3",
+    "falco:8d82b001-3301-4a01-9030-c10000000705": "689b7692-85d6-567d-8737-1a83c59334b2"
+  }
+}
+
+
+
+

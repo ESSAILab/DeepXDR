@@ -1,0 +1,188 @@
+{
+  "chain_id": "template_upload_webshell_secret_echo_001",
+  "ground_truth_type": "long_ttp_chain_level_from_step_annotations",
+  "matching_note": "Use parent-family matching when the experiment ignores MITRE sub-technique suffixes.",
+  "trigger_step_id": "S5",
+  "step_count": 5,
+  "technique_ids": [
+    "T1033",
+    "T1048.003",
+    "T1059.004",
+    "T1505.003",
+    "T1552.001"
+  ],
+  "techniques": [
+    {
+      "tech_id": "T1033",
+      "tech_name": "System Owner/User Discovery",
+      "tactic": "Discovery"
+    },
+    {
+      "tech_id": "T1048.003",
+      "tech_name": "Exfiltration Over Unencrypted Non-C2 Protocol",
+      "tactic": "Exfiltration"
+    },
+    {
+      "tech_id": "T1059.004",
+      "tech_name": "Unix Shell",
+      "tactic": "Execution"
+    },
+    {
+      "tech_id": "T1505.003",
+      "tech_name": "Web Shell",
+      "tactic": "Persistence"
+    },
+    {
+      "tech_id": "T1552.001",
+      "tech_name": "Credentials In Files",
+      "tactic": "Credential Access"
+    }
+  ],
+  "tactic_names": [
+    "Credential Access",
+    "Discovery",
+    "Execution",
+    "Exfiltration",
+    "Persistence"
+  ],
+  "steps": [
+    {
+      "step_id": "S1",
+      "name": "Exploit report-template authorization and archive extraction to import a malicious template package",
+      "attack_techniques": [
+        {
+          "tech_id": "T1505.003",
+          "tech_name": "Web Shell",
+          "tactic": "Persistence"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:2f2e3d40-2201-4a01-9020-b10000000101",
+        "openrasp:1f2e3d40-1101-4a01-9010-a10000000101"
+      ],
+      "expected_signals": [
+        "attack_type=fileUpload",
+        "plugin_algorithm=templateImport_archiveTraversal",
+        "path=/api/v1/admin/report-template/import",
+        "multipart filename=quarterly-preview-template.zip",
+        "authentication_context.authenticated=false",
+        "authentication_context.session_validation=invalid",
+        "authentication_context.authorization_result=bypassed",
+        "attack_params.archive_entry=../report-preview/quarterly-template-preview.jsp",
+        "attack_params.archive_path_validation=bypassed",
+        "attack_params.upload_result=accepted",
+        "http.url=/api/v1/admin/report-template/import",
+        "alert.signature=ET WEB_SERVER Unauthenticated Report Template Authorization Bypass with Archive Path Traversal Upload",
+        "request_id=tpl-chain-20260814-import-01"
+      ]
+    },
+    {
+      "step_id": "S2",
+      "name": "Drop the uploaded JSP into a web-accessible preview directory",
+      "attack_techniques": [
+        {
+          "tech_id": "T1505.003",
+          "tech_name": "Web Shell",
+          "tactic": "Persistence"
+        }
+      ],
+      "expected_event_refs": [
+        "openrasp:1f2e3d40-1101-4a01-9010-a10000000102",
+        "falco:3f2e3d40-3301-4a01-9030-c10000000102"
+      ],
+      "expected_signals": [
+        "attack_type=writeFile",
+        "plugin_algorithm=writeFile_script",
+        "realpath=/srv/dotserver/tomcat-9.0.41/webapps/report-preview/quarterly-template-preview.jsp",
+        "plugin_message=File write - Creating or appending to a server-side script file",
+        "fd.name=/srv/dotserver/tomcat-9.0.41/webapps/report-preview/quarterly-template-preview.jsp"
+      ]
+    },
+    {
+      "step_id": "S3",
+      "name": "Trigger command execution through the dropped preview JSP",
+      "attack_techniques": [
+        {
+          "tech_id": "T1059.004",
+          "tech_name": "Unix Shell",
+          "tactic": "Execution"
+        },
+        {
+          "tech_id": "T1033",
+          "tech_name": "System Owner/User Discovery",
+          "tactic": "Discovery"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:2f2e3d40-2201-4a01-9020-b10000000103",
+        "openrasp:1f2e3d40-1101-4a01-9010-a10000000103",
+        "falco:3f2e3d40-3301-4a01-9030-c10000000103"
+      ],
+      "expected_signals": [
+        "attack_type=command",
+        "plugin_algorithm=command_other",
+        "http.url=/report-preview/quarterly-template-preview.jsp?mode=healthcheck&cmd=whoami",
+        "attack_params.command=sh -c whoami",
+        "alert.signature=ET WEB_SERVER Suspicious Template Preview Shell Healthcheck",
+        "proc.cmdline=sh -c whoami"
+      ]
+    },
+    {
+      "step_id": "S4",
+      "name": "Collect signing credentials from a local properties file through the web shell",
+      "attack_techniques": [
+        {
+          "tech_id": "T1552.001",
+          "tech_name": "Credentials In Files",
+          "tactic": "Credential Access"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:2f2e3d40-2201-4a01-9020-b10000000104",
+        "openrasp:1f2e3d40-1101-4a01-9010-a10000000104",
+        "falco:3f2e3d40-3301-4a01-9030-c10000000104"
+      ],
+      "expected_signals": [
+        "attack_type=command",
+        "plugin_algorithm=command_other",
+        "http.url=/report-preview/quarterly-template-preview.jsp?mode=collect",
+        "attack_params.command=sh -c cat /srv/dotserver/tomcat-9.0.41/webapps/ROOT/WEB-INF/classes/report-template-signing.properties > /srv/dotserver/tomcat-9.0.41/temp/report-preview/quarterly-preview-cache.txt",
+        "attack_params.collection_target=local_system_file",
+        "attack_params.collection_operation=local_secret_copy",
+        "attack_params.sensitive_file_type=java_properties",
+        "alert.signature=ET WEB_SERVER Local Signing Secret Collection from Properties File via Template Preview WebShell",
+        "fd.name=/srv/dotserver/tomcat-9.0.41/webapps/ROOT/WEB-INF/classes/report-template-signing.properties"
+      ]
+    },
+    {
+      "step_id": "S5",
+      "name": "Echo the collected secret material back over HTTP",
+      "attack_techniques": [
+        {
+          "tech_id": "T1048.003",
+          "tech_name": "Exfiltration Over Unencrypted Non-C2 Protocol",
+          "tactic": "Exfiltration"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:2f2e3d40-2201-4a01-9020-b10000000105",
+        "openrasp:1f2e3d40-1101-4a01-9010-a10000000105",
+        "falco:3f2e3d40-3301-4a01-9030-c10000000105"
+      ],
+      "expected_signals": [
+        "attack_type=response",
+        "plugin_algorithm=response_dataLeak",
+        "http.url=/report-preview/quarterly-template-preview.jsp?mode=preview",
+        "alert.signature=ET WEB_SERVER Template Preview Secret Echo Response",
+        "template.signing.api_token=tpl-2026-east-signing-token",
+        "template.signing.key_id=quarterly-preview-key-01",
+        "template.signing.service_account=preview_exporter",
+        "proc.cmdline=cat /srv/dotserver/tomcat-9.0.41/temp/report-preview/quarterly-preview-cache.txt"
+      ]
+    }
+  ]
+}
+
+
+
+

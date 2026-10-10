@@ -1,0 +1,82 @@
+[
+  {
+    "legacy_chain_id": "openrasp_account_manipulation_valid_account_export_001",
+    "chain_id": "account_manipulation_valid_account_export_001",
+    "display_name": "Account Manipulation to Valid Account Export"
+  },
+  {
+    "legacy_chain_id": "openrasp_backup_job_poisoning_secret_bundle_chain_001",
+    "chain_id": "backup_job_poisoning_secret_bundle_001",
+    "display_name": "Backup Job Poisoning to Secret Bundle Access"
+  },
+  {
+    "legacy_chain_id": "openrasp_ci_webhook_cloud_storage_exfil_chain_001",
+    "chain_id": "ci_webhook_cloud_storage_exfil_001",
+    "display_name": "CI Webhook to Cloud Storage Exfiltration"
+  },
+  {
+    "legacy_chain_id": "openrasp_content_upload_webshell_runtime_discovery_001",
+    "chain_id": "content_upload_webshell_runtime_discovery_001",
+    "display_name": "Content Upload Webshell Runtime Discovery"
+  },
+  {
+    "legacy_chain_id": "openrasp_deserialize_defense_impair_log_cleanup_chain_001",
+    "chain_id": "deserialize_defense_impair_log_cleanup_001",
+    "display_name": "Deserialization to Defense Impairment and Log Cleanup"
+  },
+  {
+    "legacy_chain_id": "openrasp_image_parser_container_escape_prep_chain_001",
+    "chain_id": "image_parser_container_escape_prep_001",
+    "display_name": "Image Parser to Container Escape Preparation"
+  },
+  {
+    "legacy_chain_id": "openrasp_jsp_log_history_clear_docker_socket_probe_chain_001",
+    "chain_id": "jsp_log_history_clear_docker_socket_probe_001",
+    "display_name": "JSP Log History Clear and Docker Socket Probe"
+  },
+  {
+    "legacy_chain_id": "openrasp_path_traversal_multi_config_read_001",
+    "chain_id": "path_traversal_multi_config_read_001",
+    "display_name": "Path Traversal to Multi-Configuration Read"
+  },
+  {
+    "legacy_chain_id": "openrasp_proxy_route_poisoning_internal_export_chain_001",
+    "chain_id": "proxy_route_poisoning_internal_export_001",
+    "display_name": "Proxy Route Poisoning to Internal Export"
+  },
+  {
+    "legacy_chain_id": "openrasp_queue_deserialize_kubernetes_secret_chain_001",
+    "chain_id": "queue_deserialize_kubernetes_secret_001",
+    "display_name": "Queue Deserialization to Kubernetes Secret Access"
+  },
+  {
+    "legacy_chain_id": "openrasp_report_template_cron_archive_chain_001",
+    "chain_id": "report_template_cron_archive_001",
+    "display_name": "Report Template to Cron Archive Access"
+  },
+  {
+    "legacy_chain_id": "openrasp_sqli_session_hijack_report_001",
+    "chain_id": "sqli_session_hijack_report_001",
+    "display_name": "SQL Injection to Session Hijacking and Report Access"
+  },
+  {
+    "legacy_chain_id": "openrasp_ssrf_internal_audit_pii_chain_001",
+    "chain_id": "ssrf_internal_audit_pii_001",
+    "display_name": "SSRF to Internal Audit PII Access"
+  },
+  {
+    "legacy_chain_id": "openrasp_template_upload_webshell_secret_archive_chain_001",
+    "chain_id": "template_upload_webshell_secret_archive_001",
+    "display_name": "Template Upload Webshell to Secret Archive Access"
+  },
+  {
+    "legacy_chain_id": "openrasp_template_upload_webshell_secret_echo_chain_001",
+    "chain_id": "template_upload_webshell_secret_echo_001",
+    "display_name": "Template Upload Webshell to Secret Echo"
+  },
+  {
+    "legacy_chain_id": "openrasp_xxe_config_pii_chain_001",
+    "chain_id": "xxe_config_pii_001",
+    "display_name": "XXE to Configuration and PII Access"
+  }
+]

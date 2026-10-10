@@ -1,0 +1,41 @@
+{
+  "dataset_type": "deepxdr_long_ttp_release_sample",
+  "chain_id": "template_upload_webshell_secret_archive_001",
+  "source_chain_name": "OpenRASP lab: Template Upload -> WebShell Drop -> Runtime Fingerprint -> Secret File Discovery -> Credential Collection -> Archive Staging -> HTTP Secret Leak",
+  "source_result_path": null,
+  "base_time": "2026-08-28T01:00:00Z",
+  "attacker_ip": "192.0.2.2",
+  "target_host": "192.0.2.106:8080",
+  "trigger_step_id": "S7",
+  "trigger_step_name": "Leak the staged secret material back in the HTTP response",
+  "trigger_short_ttp_id": "c0551333-02a5-4ec3-8fd6-eed8e3a3dab0",
+  "event_count": 19,
+  "trigger_event_count": 3,
+  "step_count": 7,
+  "telemetry_sources": [
+    "openrasp",
+    "suricata",
+    "falco"
+  ],
+  "technique_ids": [
+    "T1033",
+    "T1048.003",
+    "T1082",
+    "T1083",
+    "T1505.003",
+    "T1552.001",
+    "T1560.001"
+  ],
+  "files": {
+    "trigger_short_ttp": "trigger_short_ttp.json",
+    "events": "events.jsonl",
+    "long_ttp_ground_truth": "long_ttp_ground_truth.json",
+    "event_id_map": "event_id_map.json",
+    "file_actions": "file_actions.json",
+    "run_config": "run_config.json",
+    "sample_manifest": "sample_manifest.json"
+  },
+  "release_version": "v2.0",
+  "legacy_chain_id": "openrasp_template_upload_webshell_secret_archive_chain_001",
+  "display_name": "Template Upload Webshell to Secret Archive Access"
+}

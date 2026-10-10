@@ -1,0 +1,79 @@
+{
+  "id": "2daa25ca-f996-4de3-a7d6-655e13353f6d",
+  "created_at": "2026-09-09T01:50:00.000Z",
+  "end_at": "2026-09-09T01:50:00.400Z",
+  "ttps": [
+    {
+      "id": "76f1e79a-631d-4220-8a85-004116a60afc",
+      "name": "exfiltration",
+      "description": "战术: exfiltration",
+      "techniques": [
+        {
+          "tech_id": "T1048.003",
+          "tech_name": "Exfiltration Over Unencrypted Non-C2 Protocol",
+          "description": "Adversaries may steal data by exfiltrating it over an un-encrypted network protocol other than that of the existing command and control channel. The data may also be sent to an alternate network location from the main command and control server.(Citation: copy_cmd_cisco)\n\nAdversaries may opt to obfuscate this data, without the use of encryption, within network protocols that are natively unencrypted (such as HTTP, FTP, or DNS). This may include custom or publicly available encoding/compression algorithms (such as base64) as well as embedding data within protocol headers and fields. ",
+          "procedures": [
+            "行为: Exfiltration of report attachment via HTTP GET download request；证据: GET /api/reports/attachments/download from 192.0.2.61:51606 to 192.0.2.106:8080; OpenRASP plugin_message: 'Report Attachment Exfiltration'; Suricata signature: 'ET WEB_SERVER Report Attachment Exfiltration'"
+          ],
+          "event_ids": [
+            "0562a763-2d74-52fd-bf87-45737f8f1b75",
+            "29d3dbc1-3487-5c0d-a459-81f9a75aa32b",
+            "3773f90c-0279-5c8a-be63-1f31cd87c073"
+          ]
+        }
+      ],
+      "event_ids": [
+        "0562a763-2d74-52fd-bf87-45737f8f1b75",
+        "29d3dbc1-3487-5c0d-a459-81f9a75aa32b",
+        "3773f90c-0279-5c8a-be63-1f31cd87c073"
+      ]
+    }
+  ],
+  "confidence": 0.55,
+  "summary": "在2026-09-09 09:50:00，攻击源IP 192.0.2.61（源端口51606）通过HTTP GET请求访问目标192.0.2.106:8080的/api/reports/attachments/download路径，触发OpenRASP告警（plugin_algorithm: report_template_cron_archive_step_6，plugin_message: Report Attachment Exfiltration，intercept_state: log）和Suricata告警（signature: ET WEB_SERVER Report Attachment Exfiltration，action: allowed，HTTP状态200）。请求ID为d8-report_template_cron_archive-06，deep_chain_id为report_template_cron_archive_001，deep_step_id为S6，目标服务器为deep-app-d8（tomcat）。事件ID包括bb033244-5d6d-4407-99f2-b21a12449594和16bad555-1758-4408-af26-4fc6ae2b57c6。",
+  "event_count": 3,
+  "source_events": [
+    "0562a763-2d74-52fd-bf87-45737f8f1b75",
+    "29d3dbc1-3487-5c0d-a459-81f9a75aa32b",
+    "3773f90c-0279-5c8a-be63-1f31cd87c073"
+  ],
+  "attacker_fingerprint": {
+    "primary_ip": "192.0.2.61",
+    "ip_list": [
+      "192.0.2.61"
+    ],
+    "user_agents": [],
+    "patterns": [],
+    "first_seen": "2026-09-09T01:50:00.000Z",
+    "last_seen": "2026-09-09T01:50:00.400Z"
+  },
+  "attacker_ip": "192.0.2.61",
+  "raw_event_count": 3,
+  "filtered_event_count": 2,
+  "ip_group_count": 1,
+  "filter_reason": "current window contains openrasp/suricata; falco events are ignored before offline DeepXDR analysis",
+  "selected_attacker_ip": "192.0.2.61",
+  "analyzed_ip_groups": [
+    {
+      "attacker_ip": "192.0.2.61",
+      "event_count": 2
+    }
+  ],
+  "latency_seconds": 54.62,
+  "event_ids": [
+    "0562a763-2d74-52fd-bf87-45737f8f1b75",
+    "29d3dbc1-3487-5c0d-a459-81f9a75aa32b",
+    "3773f90c-0279-5c8a-be63-1f31cd87c073"
+  ],
+  "fixture_chain_id": "report_template_cron_archive_001",
+  "fixture_step_id": "S6",
+  "fixture_event_ref_map": {
+    "suricata:d0800000-1006-4d08-8100-080601000001": "0562a763-2d74-52fd-bf87-45737f8f1b75",
+    "openrasp:d0800000-2006-4d08-8200-080602000001": "29d3dbc1-3487-5c0d-a459-81f9a75aa32b",
+    "falco:d0800000-3006-4d08-8300-080603000001": "3773f90c-0279-5c8a-be63-1f31cd87c073"
+  }
+}
+
+
+
+

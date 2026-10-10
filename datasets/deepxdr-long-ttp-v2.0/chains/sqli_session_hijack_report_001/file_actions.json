@@ -1,0 +1,49 @@
+{
+  "chain_id": "sqli_session_hijack_report_001",
+  "actions": [
+    {
+      "action_id": "prepare_admin_user_role_cache",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/tomcat-9.0.41/temp/support-cache/admin-user-role-search-admin.csv",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 0.4,
+      "content": "user_id,username,email,role_names,last_login,is_backend\n1001,admin_reporter,admin.reporter@dotcms.com,\"Customer Audit Administrator|Report Export Administrator\",2026-08-14T20:11:42Z,true\n1002,finance_admin,finance.admin@dotcms.com,\"Billing Administrator|Report Export Administrator\",2026-08-14T19:53:10Z,true\n"
+    },
+    {
+      "action_id": "prepare_admin_session_material_cache",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/tomcat-9.0.41/temp/support-cache/admin-session-material-east.json",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 20.4,
+      "content": "{\"session_owner\":\"admin_reporter\",\"session_id\":\"synthetic-session-001\",\"remember_me_token\":\"synthetic-remember-token-001\",\"last_seen\":\"2026-08-15T03:10:19Z\",\"role_names\":[\"Customer Audit Administrator\",\"Report Export Administrator\"],\"scope\":\"customer-audit-east\"}\n"
+    },
+    {
+      "action_id": "prepare_hijacked_admin_access_log",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/tomcat-9.0.41/temp/admin-audit/customer-audit-access.log",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 40.4,
+      "content": "{\"session_id\":\"synthetic-session-001\",\"remember_me_token\":\"synthetic-remember-token-001\",\"actor\":\"admin_reporter\",\"endpoint\":\"/api/v1/admin/reports/customer-audit-access?region=east\",\"status\":200,\"access_mode\":\"session-reuse\",\"request_id\":\"sqli-hijack-chain-req-03\"}\n"
+    },
+    {
+      "action_id": "prepare_sensitive_customer_audit_export",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/tomcat-9.0.41/temp/admin-audit/customer-audit-export-east.csv",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 60.4,
+      "content": "customer_name,id_number,mobile,settlement_card,region,case_id\nAlice Chen,ID-EXAMPLE-001,MOBILE-EXAMPLE-001,BANK-EXAMPLE-001,East,CASE-2026-08-104\n"
+    }
+  ]
+}
+
+
+
+

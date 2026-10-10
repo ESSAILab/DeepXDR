@@ -1,0 +1,182 @@
+{
+  "chain_id": "deserialize_defense_impair_log_cleanup_001",
+  "ground_truth_type": "long_ttp_chain_level_from_step_annotations",
+  "matching_note": "Use parent-family matching when the experiment ignores MITRE sub-technique suffixes.",
+  "trigger_step_id": "S4",
+  "step_count": 4,
+  "technique_ids": [
+    "T1033",
+    "T1059.004",
+    "T1070.002",
+    "T1082",
+    "T1562.001",
+    "T1613"
+  ],
+  "techniques": [
+    {
+      "tech_id": "T1033",
+      "tech_name": "System Owner/User Discovery",
+      "tactic": "Discovery"
+    },
+    {
+      "tech_id": "T1059.004",
+      "tech_name": "Unix Shell",
+      "tactic": "Execution"
+    },
+    {
+      "tech_id": "T1070.002",
+      "tech_name": "Clear Linux or Mac System Logs",
+      "tactic": "Defense Evasion"
+    },
+    {
+      "tech_id": "T1082",
+      "tech_name": "System Information Discovery",
+      "tactic": "Discovery"
+    },
+    {
+      "tech_id": "T1562.001",
+      "tech_name": "Disable or Modify Tools",
+      "tactic": "Defense Evasion"
+    },
+    {
+      "tech_id": "T1613",
+      "tech_name": "Container and Resource Discovery",
+      "tactic": "Discovery"
+    }
+  ],
+  "tactic_names": [
+    "Defense Evasion",
+    "Discovery",
+    "Execution"
+  ],
+  "steps": [
+    {
+      "step_id": "S1",
+      "name": "Launch a Unix shell via Runtime.exec from an unsafe deserialization path",
+      "attack_techniques": [
+        {
+          "tech_id": "T1059.004",
+          "tech_name": "Unix Shell",
+          "tactic": "Execution"
+        },
+        {
+          "tech_id": "T1033",
+          "tech_name": "System Owner/User Discovery",
+          "tactic": "Discovery"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:5a61c102-1201-4c21-9120-d10000000101",
+        "openrasp:4a51b101-1101-4b11-9110-c10000000101",
+        "falco:6a71d103-1301-4d31-9130-e10000000101"
+      ],
+      "expected_signals": [
+        "attack_type=command",
+        "plugin_algorithm=deserialization_transformer",
+        "alert.signature=ET WEB_SERVER Unix Shell Runtime Exec via Unsafe Java Deserialization",
+        "path=/api/v1/admin/theme/legacy-restore",
+        "request_id=deserialize-defev-chain-req-01",
+        "attack_params.command=sh -c id",
+        "attack_params.shell_family=unix-shell",
+        "attack_params.exec_target=/usr/bin/sh",
+        "plugin_message=Unsafe Java deserialization launched Runtime.exec and executed /usr/bin/sh -c id",
+        "payload.profile=legacy-theme-cache-v2",
+        "rule=Unix_Shell_Execve_Behavior_Collector"
+      ]
+    },
+    {
+      "step_id": "S2",
+      "name": "Weaken RASP policy through the same deserialization primitive",
+      "attack_techniques": [
+        {
+          "tech_id": "T1562.001",
+          "tech_name": "Disable or Modify Tools",
+          "tactic": "Defense Evasion"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:5a61c102-1201-4c21-9120-d10000000102",
+        "openrasp:4a51b101-1101-4b11-9110-c10000000102",
+        "falco:6a71d103-1301-4d31-9130-e10000000102"
+      ],
+      "expected_signals": [
+        "attack_type=command",
+        "plugin_algorithm=command_other",
+        "alert.signature=ET WEB_SERVER Disable RASP Response and SSRF Detection Rules",
+        "path=/api/v1/admin/theme/legacy-restore",
+        "request_id=deserialize-defev-chain-req-02",
+        "attack_params.command=sh -c cat <<'EOF' > /srv/dotserver/tomcat-9.0.41/rasp/conf/openrasp.yml",
+        "plugin_message=Modified openrasp.yml to disable response_dataLeak and ssrf_userinput actions",
+        "fd.name=/srv/dotserver/tomcat-9.0.41/rasp/conf/openrasp.yml",
+        "response_dataLeak.action=ignore",
+        "ssrf_userinput.action=ignore"
+      ]
+    },
+    {
+      "step_id": "S3",
+      "name": "Clean or rotate Tomcat access evidence through command execution",
+      "attack_techniques": [
+        {
+          "tech_id": "T1070.002",
+          "tech_name": "Clear Linux or Mac System Logs",
+          "tactic": "Defense Evasion"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:5a61c102-1201-4c21-9120-d10000000103",
+        "openrasp:4a51b101-1101-4b11-9110-c10000000103",
+        "falco:6a71d103-1301-4d31-9130-e10000000103"
+      ],
+      "expected_signals": [
+        "attack_type=command",
+        "plugin_algorithm=command_other",
+        "alert.signature=ET WEB_SERVER Legacy Restore Access Log Cleanup",
+        "path=/api/v1/admin/theme/legacy-restore",
+        "request_id=deserialize-defev-chain-req-03",
+        "attack_params.command=sh -c : > /srv/dotserver/tomcat-9.0.41/logs/localhost_access_log.2026-08-19.txt",
+        "fd.name=/srv/dotserver/tomcat-9.0.41/logs/localhost_access_log.2026-08-19.txt",
+        "audit_export_access_log=/srv/dotserver/tomcat-9.0.41/logs/audit-export-access.log"
+      ]
+    },
+    {
+      "step_id": "S4",
+      "name": "Fingerprint container runtime identity for follow-on operations",
+      "attack_techniques": [
+        {
+          "tech_id": "T1613",
+          "tech_name": "Container and Resource Discovery",
+          "tactic": "Discovery"
+        },
+        {
+          "tech_id": "T1033",
+          "tech_name": "System Owner/User Discovery",
+          "tactic": "Discovery"
+        },
+        {
+          "tech_id": "T1082",
+          "tech_name": "System Information Discovery",
+          "tactic": "Discovery"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:5a61c102-1201-4c21-9120-d10000000104",
+        "openrasp:4a51b101-1101-4b11-9110-c10000000104",
+        "falco:6a71d103-1301-4d31-9130-e10000000104"
+      ],
+      "expected_signals": [
+        "attack_type=command",
+        "plugin_algorithm=command_other",
+        "alert.signature=ET WEB_SERVER Legacy Restore Container Runtime Discovery",
+        "path=/api/v1/admin/theme/legacy-restore",
+        "request_id=deserialize-defev-chain-req-04",
+        "attack_params.command=sh -c cat /proc/1/cgroup > /srv/dotserver/tomcat-9.0.41/temp/ops/runtime-fingerprint.txt",
+        "fd.name=/proc/1/cgroup",
+        "runtime_probe_output=/srv/dotserver/tomcat-9.0.41/temp/ops/runtime-fingerprint.txt"
+      ]
+    }
+  ]
+}
+
+
+
+

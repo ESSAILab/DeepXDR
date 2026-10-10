@@ -1,0 +1,201 @@
+{
+  "chain_id": "ci_webhook_cloud_storage_exfil_001",
+  "ground_truth_type": "long_ttp_chain_level_from_step_annotations",
+  "matching_note": "Use parent-family matching when the experiment ignores MITRE sub-technique suffixes.",
+  "trigger_step_id": "S6",
+  "step_count": 6,
+  "technique_ids": [
+    "T1048.003",
+    "T1074.001",
+    "T1190",
+    "T1530",
+    "T1552.005",
+    "T1580"
+  ],
+  "techniques": [
+    {
+      "tech_id": "T1048.003",
+      "tech_name": "Exfiltration Over Unencrypted Non-C2 Protocol",
+      "tactic": "Exfiltration"
+    },
+    {
+      "tech_id": "T1074.001",
+      "tech_name": "Local Data Staging",
+      "tactic": "Collection"
+    },
+    {
+      "tech_id": "T1190",
+      "tech_name": "Exploit Public-Facing Application",
+      "tactic": "Initial Access"
+    },
+    {
+      "tech_id": "T1530",
+      "tech_name": "Data from Cloud Storage",
+      "tactic": "Collection"
+    },
+    {
+      "tech_id": "T1552.005",
+      "tech_name": "Cloud Instance Metadata API",
+      "tactic": "Credential Access"
+    },
+    {
+      "tech_id": "T1580",
+      "tech_name": "Cloud Infrastructure Discovery",
+      "tactic": "Discovery"
+    }
+  ],
+  "tactic_names": [
+    "Collection",
+    "Credential Access",
+    "Discovery",
+    "Exfiltration",
+    "Initial Access"
+  ],
+  "steps": [
+    {
+      "step_id": "S1",
+      "name": "Exploit exposed CI webhook with SSRF",
+      "attack_techniques": [
+        {
+          "tech_id": "T1190",
+          "tech_name": "Exploit Public-Facing Application",
+          "tactic": "Initial Access"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:d0100000-1001-4d01-8100-010101000001",
+        "openrasp:d0100000-2001-4d01-8200-010102000001",
+        "falco:d0100000-3001-4d01-8300-010103000001"
+      ],
+      "expected_signals": [
+        "path=/api/ci/webhook/test",
+        "signature=CI Webhook SSRF to Metadata Service",
+        "deep_chain_id=ci_webhook_cloud_storage_exfil_001",
+        "deep_step_id=S1",
+        "fd.name=/srv/dotserver/ci_webhook_cloud_storage_exfil_001/stage-1-ci_webhook_cloud_pivot.json"
+      ]
+    },
+    {
+      "step_id": "S2",
+      "name": "Read instance identity from cloud metadata",
+      "attack_techniques": [
+        {
+          "tech_id": "T1552.005",
+          "tech_name": "Cloud Instance Metadata API",
+          "tactic": "Credential Access"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:d0100000-1002-4d01-8100-010201000001",
+        "openrasp:d0100000-2002-4d01-8200-010202000001",
+        "falco:d0100000-3002-4d01-8300-010203000001"
+      ],
+      "expected_signals": [
+        "path=/latest/meta-data/iam/security-credentials/",
+        "signature=Cloud Instance Metadata Credential Access",
+        "deep_chain_id=ci_webhook_cloud_storage_exfil_001",
+        "deep_step_id=S2",
+        "fd.name=/srv/dotserver/ci_webhook_cloud_storage_exfil_001/stage-2-ci_webhook_cloud_pivot.json"
+      ]
+    },
+    {
+      "step_id": "S3",
+      "name": "Use temporary credentials to enumerate object storage",
+      "attack_techniques": [
+        {
+          "tech_id": "T1580",
+          "tech_name": "Cloud Infrastructure Discovery",
+          "tactic": "Discovery"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:d0100000-1003-4d01-8100-010301000001",
+        "openrasp:d0100000-2003-4d01-8200-010302000001",
+        "falco:d0100000-3003-4d01-8300-010303000001"
+      ],
+      "expected_signals": [
+        "path=/internal/cloud/storage/buckets",
+        "signature=Cloud Object Storage Enumeration",
+        "deep_chain_id=ci_webhook_cloud_storage_exfil_001",
+        "deep_step_id=S3",
+        "fd.name=/srv/dotserver/ci_webhook_cloud_storage_exfil_001/stage-3-ci_webhook_cloud_pivot.json"
+      ]
+    },
+    {
+      "step_id": "S4",
+      "name": "Collect build artifacts from the release bucket",
+      "attack_techniques": [
+        {
+          "tech_id": "T1530",
+          "tech_name": "Data from Cloud Storage",
+          "tactic": "Collection"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:d0100000-1004-4d01-8100-010401000001",
+        "openrasp:d0100000-2004-4d01-8200-010402000001",
+        "falco:d0100000-3004-4d01-8300-010403000001"
+      ],
+      "expected_signals": [
+        "path=/internal/cloud/storage/release-artifacts",
+        "signature=Release Artifact Collection",
+        "deep_chain_id=ci_webhook_cloud_storage_exfil_001",
+        "deep_step_id=S4",
+        "fd.name=/srv/dotserver/ci_webhook_cloud_storage_exfil_001/stage-4-ci_webhook_cloud_pivot.json"
+      ]
+    },
+    {
+      "step_id": "S5",
+      "name": "Stage source maps and deployment manifests",
+      "attack_techniques": [
+        {
+          "tech_id": "T1074.001",
+          "tech_name": "Local Data Staging",
+          "tactic": "Collection"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:d0100000-1005-4d01-8100-010501000001",
+        "openrasp:d0100000-2005-4d01-8200-010502000001",
+        "falco:d0100000-3005-4d01-8300-010503000001"
+      ],
+      "expected_signals": [
+        "path=/tmp/ci-release-stage.tar",
+        "signature=CI Artifact Local Staging",
+        "deep_chain_id=ci_webhook_cloud_storage_exfil_001",
+        "deep_step_id=S5",
+        "fd.name=/srv/dotserver/ci_webhook_cloud_storage_exfil_001/stage-5-ci_webhook_cloud_pivot.json"
+      ]
+    },
+    {
+      "step_id": "S6",
+      "name": "Download staged artifacts from target over HTTP diagnostics endpoint",
+      "attack_techniques": [
+        {
+          "tech_id": "T1048.003",
+          "tech_name": "Exfiltration Over Unencrypted Non-C2 Protocol",
+          "tactic": "Exfiltration"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:d0100000-1006-4d01-8100-010601000001",
+        "openrasp:d0100000-2006-4d01-8200-010602000001",
+        "falco:d0100000-3006-4d01-8300-010603000001"
+      ],
+      "expected_signals": [
+        "path=/api/ci/webhook/diagnostics/download",
+        "signature=CI Diagnostic Artifact HTTP Download Exfiltration",
+        "attack_params.exfiltration_direction=attacker_pull_from_target",
+        "attack_params.exfiltration_protocol=http",
+        "attack_params.external_webhook_delivery=false",
+        "deep_chain_id=ci_webhook_cloud_storage_exfil_001",
+        "deep_step_id=S6",
+        "fd.name=/srv/dotserver/ci_webhook_cloud_storage_exfil_001/stage-6-ci_webhook_cloud_pivot.json"
+      ]
+    }
+  ]
+}
+
+
+
+

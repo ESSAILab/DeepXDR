@@ -1,0 +1,37 @@
+{
+  "event_id_map": {
+    "openrasp:22fbf232-9ee3-4619-abdd-474439165b86": "f0fd4fc1-3e7a-5289-9b90-a538385857cf",
+    "falco:994dd454-91c5-45b4-b736-945626dad625": "1675dc60-6bde-54f4-b5d1-ac939b91253c",
+    "falco:771c6066-ff2c-4edd-8ad2-51e391f00b57": "7eea5dc7-7ff5-5a8f-9673-fbc97c8b8f43",
+    "openrasp:2f4a5c10-1101-4a01-9010-a10000000201": "b0eb26c0-b8b0-57f8-ba37-bf2942b36b3a",
+    "suricata:3f4a5c10-2201-4a01-9020-b10000000201": "7c60ec9e-fa3c-5a16-9c08-cc686e9bb070",
+    "falco:6ca7aa5b-9cd7-435b-8e4b-74d567add4f6": "dacd8d48-8d15-5c27-938c-15051d384036",
+    "falco:c53d52ff-14bf-4590-8f43-58deb0d3803c": "de924536-e047-5407-885e-99a79d609da5",
+    "falco:4dfb930c-3548-4e8a-a6aa-7628f9f61e2d": "15833b99-74c1-552b-9ada-12848d7abb8b",
+    "falco:8e22cec8-3306-4be4-85f9-e02c48f28e2a": "62e06e14-9da0-59c4-aa60-c86f90686eeb",
+    "openrasp:4946e1ac-08a0-4b0c-9fef-145b7bcd32eb": "0025923f-726c-5516-9318-c9d2b0909cac",
+    "falco:f59bcb35-e51b-4cf9-b83b-cf5c992f6066": "89abdd31-c0f0-53d6-83ad-20ed3ec2caa2",
+    "falco:4581aea2-5402-46c1-bbb2-90a61b7961fa": "0391eaf9-832d-5f5c-b797-2811cc7c9c9b",
+    "openrasp:6f22937b-39f9-4853-8062-1489ecb7bb9c": "024dc4b4-a5f5-5d1e-9dfa-a94bc2ab1969",
+    "falco:a747cb2a-b3f5-4bad-a405-c64fa836b23a": "c89821da-8f13-5627-b628-c955d45cda27",
+    "falco:ac42cbe1-1fd6-4152-93ae-d007a9e43917": "45b50220-1a39-5da8-a24e-ea4df40513b3",
+    "openrasp:0c83eee7-7f2a-4929-9170-787daa5ed978": "c6e6e86a-d2d6-56b4-a9ee-072ad4c20872",
+    "falco:5c6f97fa-69c6-4f90-a823-a7c68730ef32": "d772ba4a-6a0f-558c-ad27-96437a9b59cb",
+    "falco:30339081-199b-4577-9c4c-a06ed04454da": "aaaea6ce-094c-50d3-896b-944ef826002a"
+  },
+  "trigger_event_id_map": {
+    "openrasp:4946e1ac-08a0-4b0c-9fef-145b7bcd32eb": "0025923f-726c-5516-9318-c9d2b0909cac",
+    "falco:f59bcb35-e51b-4cf9-b83b-cf5c992f6066": "89abdd31-c0f0-53d6-83ad-20ed3ec2caa2",
+    "falco:4581aea2-5402-46c1-bbb2-90a61b7961fa": "0391eaf9-832d-5f5c-b797-2811cc7c9c9b",
+    "openrasp:6f22937b-39f9-4853-8062-1489ecb7bb9c": "024dc4b4-a5f5-5d1e-9dfa-a94bc2ab1969",
+    "falco:a747cb2a-b3f5-4bad-a405-c64fa836b23a": "c89821da-8f13-5627-b628-c955d45cda27",
+    "falco:ac42cbe1-1fd6-4152-93ae-d007a9e43917": "45b50220-1a39-5da8-a24e-ea4df40513b3",
+    "openrasp:0c83eee7-7f2a-4929-9170-787daa5ed978": "c6e6e86a-d2d6-56b4-a9ee-072ad4c20872",
+    "falco:5c6f97fa-69c6-4f90-a823-a7c68730ef32": "d772ba4a-6a0f-558c-ad27-96437a9b59cb",
+    "falco:30339081-199b-4577-9c4c-a06ed04454da": "aaaea6ce-094c-50d3-896b-944ef826002a"
+  }
+}
+
+
+
+

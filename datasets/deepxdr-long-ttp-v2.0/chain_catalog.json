@@ -1,0 +1,273 @@
+[
+  {
+    "chain_id": "account_manipulation_valid_account_export_001",
+    "legacy_chain_id": "openrasp_account_manipulation_valid_account_export_001",
+    "display_name": "Account Manipulation to Valid Account Export",
+    "source_chain_name": "OpenRASP lab: Durable Backend Privilege Grant -> Protected Audit Access Validation -> Repository Preview -> Sensitive Case Repository Export",
+    "application": "dotCMS",
+    "category": "web",
+    "telemetry_sources": [
+      "openrasp",
+      "suricata",
+      "falco"
+    ],
+    "step_count": 4,
+    "event_count": 12,
+    "trigger_step_id": "S4",
+    "ground_truth_file": "long_ttp_ground_truth.json"
+  },
+  {
+    "chain_id": "backup_job_poisoning_secret_bundle_001",
+    "legacy_chain_id": "openrasp_backup_job_poisoning_secret_bundle_chain_001",
+    "display_name": "Backup Job Poisoning to Secret Bundle Access",
+    "source_chain_name": "OpenRASP lab: Backup Workflow Component Discovery -> Persistent Backup Workflow Rebinding -> Backup Runner Profile Probe -> Backup Credential Profile Access -> Archive Utility Staging -> Backup Archive Leak",
+    "application": "dotCMS",
+    "category": "web",
+    "telemetry_sources": [
+      "openrasp",
+      "suricata",
+      "falco"
+    ],
+    "step_count": 6,
+    "event_count": 18,
+    "trigger_step_id": "S6",
+    "ground_truth_file": "long_ttp_ground_truth.json"
+  },
+  {
+    "chain_id": "ci_webhook_cloud_storage_exfil_001",
+    "legacy_chain_id": "openrasp_ci_webhook_cloud_storage_exfil_chain_001",
+    "display_name": "CI Webhook to Cloud Storage Exfiltration",
+    "source_chain_name": "OpenRASP lab: CI Webhook SSRF -> Cloud Metadata Credential Theft -> Object Storage Exfiltration",
+    "application": "dotCMS",
+    "category": "web",
+    "telemetry_sources": [
+      "suricata",
+      "openrasp",
+      "falco"
+    ],
+    "step_count": 6,
+    "event_count": 18,
+    "trigger_step_id": "S6",
+    "ground_truth_file": "long_ttp_ground_truth.json"
+  },
+  {
+    "chain_id": "content_upload_webshell_runtime_discovery_001",
+    "legacy_chain_id": "openrasp_content_upload_webshell_runtime_discovery_001",
+    "display_name": "Content Upload Webshell Runtime Discovery",
+    "source_chain_name": "OpenRASP lab: Content Upload -> WebShell Activation -> Runtime Discovery Commands",
+    "application": "dotCMS",
+    "category": "web",
+    "telemetry_sources": [
+      "openrasp",
+      "suricata",
+      "falco"
+    ],
+    "step_count": 3,
+    "event_count": 18,
+    "trigger_step_id": "S3",
+    "ground_truth_file": "long_ttp_ground_truth.json"
+  },
+  {
+    "chain_id": "deserialize_defense_impair_log_cleanup_001",
+    "legacy_chain_id": "openrasp_deserialize_defense_impair_log_cleanup_chain_001",
+    "display_name": "Deserialization to Defense Impairment and Log Cleanup",
+    "source_chain_name": "OpenRASP lab: Deserialization -> Defense Impairment -> Log Cleanup -> Container Runtime Discovery",
+    "application": "dotCMS",
+    "category": "web",
+    "telemetry_sources": [
+      "openrasp",
+      "suricata",
+      "falco"
+    ],
+    "step_count": 4,
+    "event_count": 12,
+    "trigger_step_id": "S4",
+    "ground_truth_file": "long_ttp_ground_truth.json"
+  },
+  {
+    "chain_id": "image_parser_container_escape_prep_001",
+    "legacy_chain_id": "openrasp_image_parser_container_escape_prep_chain_001",
+    "display_name": "Image Parser to Container Escape Preparation",
+    "source_chain_name": "OpenRASP lab: Image Parser Exploit -> Container Discovery -> Docker Socket Escape Preparation",
+    "application": "dotCMS",
+    "category": "web",
+    "telemetry_sources": [
+      "suricata",
+      "openrasp",
+      "falco"
+    ],
+    "step_count": 6,
+    "event_count": 18,
+    "trigger_step_id": "S6",
+    "ground_truth_file": "long_ttp_ground_truth.json"
+  },
+  {
+    "chain_id": "jsp_log_history_clear_docker_socket_probe_001",
+    "legacy_chain_id": "openrasp_jsp_log_history_clear_docker_socket_probe_chain_001",
+    "display_name": "JSP Log History Clear and Docker Socket Probe",
+    "source_chain_name": "OpenRASP lab: JSP Command Execution -> Log and Shell-History Clearing -> Docker Socket Discovery",
+    "application": "dotCMS",
+    "category": "web",
+    "telemetry_sources": [
+      "openrasp",
+      "falco"
+    ],
+    "step_count": 3,
+    "event_count": 14,
+    "trigger_step_id": "S3",
+    "ground_truth_file": "long_ttp_ground_truth.json"
+  },
+  {
+    "chain_id": "path_traversal_multi_config_read_001",
+    "legacy_chain_id": "openrasp_path_traversal_multi_config_read_001",
+    "display_name": "Path Traversal to Multi-Configuration Read",
+    "source_chain_name": "OpenRASP lab: Path Traversal -> Credential File Leak -> Export Mapping File Discovery -> Sensitive Report Export",
+    "application": "dotCMS",
+    "category": "web",
+    "telemetry_sources": [
+      "openrasp",
+      "suricata",
+      "falco"
+    ],
+    "step_count": 3,
+    "event_count": 9,
+    "trigger_step_id": "S3",
+    "ground_truth_file": "long_ttp_ground_truth.json"
+  },
+  {
+    "chain_id": "proxy_route_poisoning_internal_export_001",
+    "legacy_chain_id": "openrasp_proxy_route_poisoning_internal_export_chain_001",
+    "display_name": "Proxy Route Poisoning to Internal Export",
+    "source_chain_name": "OpenRASP lab: Alias Catalog Exposure -> Route Map Poisoning -> Service Profile Probe -> Module Catalog Exposure -> Auth Profile Access -> Staged Case Leak",
+    "application": "dotCMS",
+    "category": "web",
+    "telemetry_sources": [
+      "openrasp",
+      "suricata",
+      "falco"
+    ],
+    "step_count": 7,
+    "event_count": 21,
+    "trigger_step_id": "S7",
+    "ground_truth_file": "long_ttp_ground_truth.json"
+  },
+  {
+    "chain_id": "queue_deserialize_kubernetes_secret_001",
+    "legacy_chain_id": "openrasp_queue_deserialize_kubernetes_secret_chain_001",
+    "display_name": "Queue Deserialization to Kubernetes Secret Access",
+    "source_chain_name": "OpenRASP lab: Message Queue Deserialization -> Kubernetes Token Theft -> Secret Collection",
+    "application": "dotCMS",
+    "category": "web",
+    "telemetry_sources": [
+      "suricata",
+      "openrasp",
+      "falco"
+    ],
+    "step_count": 6,
+    "event_count": 18,
+    "trigger_step_id": "S6",
+    "ground_truth_file": "long_ttp_ground_truth.json"
+  },
+  {
+    "chain_id": "report_template_cron_archive_001",
+    "legacy_chain_id": "openrasp_report_template_cron_archive_chain_001",
+    "display_name": "Report Template to Cron Archive Access",
+    "source_chain_name": "OpenRASP lab: Report Template Injection -> Cron Persistence -> Analytics Archive Theft",
+    "application": "dotCMS",
+    "category": "web",
+    "telemetry_sources": [
+      "suricata",
+      "openrasp",
+      "falco"
+    ],
+    "step_count": 6,
+    "event_count": 18,
+    "trigger_step_id": "S6",
+    "ground_truth_file": "long_ttp_ground_truth.json"
+  },
+  {
+    "chain_id": "sqli_session_hijack_report_001",
+    "legacy_chain_id": "openrasp_sqli_session_hijack_report_001",
+    "display_name": "SQL Injection to Session Hijacking and Report Access",
+    "source_chain_name": "OpenRASP lab: SQLi -> Admin Account Discovery -> Session Token Theft -> Hijacked Admin Report Access",
+    "application": "dotCMS",
+    "category": "web",
+    "telemetry_sources": [
+      "openrasp",
+      "suricata",
+      "falco"
+    ],
+    "step_count": 4,
+    "event_count": 13,
+    "trigger_step_id": "S4",
+    "ground_truth_file": "long_ttp_ground_truth.json"
+  },
+  {
+    "chain_id": "ssrf_internal_audit_pii_001",
+    "legacy_chain_id": "openrasp_ssrf_internal_audit_pii_chain_001",
+    "display_name": "SSRF to Internal Audit PII Access",
+    "source_chain_name": "OpenRASP lab: SSRF -> Internal Audit Service Discovery -> Route Enumeration -> Credential Access -> Proxied PII Leak",
+    "application": "dotCMS",
+    "category": "web",
+    "telemetry_sources": [
+      "openrasp",
+      "suricata",
+      "falco"
+    ],
+    "step_count": 4,
+    "event_count": 12,
+    "trigger_step_id": "S4",
+    "ground_truth_file": "long_ttp_ground_truth.json"
+  },
+  {
+    "chain_id": "template_upload_webshell_secret_archive_001",
+    "legacy_chain_id": "openrasp_template_upload_webshell_secret_archive_chain_001",
+    "display_name": "Template Upload Webshell to Secret Archive Access",
+    "source_chain_name": "OpenRASP lab: Template Upload -> WebShell Drop -> Runtime Fingerprint -> Secret File Discovery -> Credential Collection -> Archive Staging -> HTTP Secret Leak",
+    "application": "dotCMS",
+    "category": "web",
+    "telemetry_sources": [
+      "openrasp",
+      "suricata",
+      "falco"
+    ],
+    "step_count": 7,
+    "event_count": 19,
+    "trigger_step_id": "S7",
+    "ground_truth_file": "long_ttp_ground_truth.json"
+  },
+  {
+    "chain_id": "template_upload_webshell_secret_echo_001",
+    "legacy_chain_id": "openrasp_template_upload_webshell_secret_echo_chain_001",
+    "display_name": "Template Upload Webshell to Secret Echo",
+    "source_chain_name": "OpenRASP lab: Template Upload -> WebShell Drop -> Command Execution -> Local Secret Collection -> HTTP Echo Leak",
+    "application": "dotCMS",
+    "category": "web",
+    "telemetry_sources": [
+      "openrasp",
+      "suricata",
+      "falco"
+    ],
+    "step_count": 5,
+    "event_count": 13,
+    "trigger_step_id": "S5",
+    "ground_truth_file": "long_ttp_ground_truth.json"
+  },
+  {
+    "chain_id": "xxe_config_pii_001",
+    "legacy_chain_id": "openrasp_xxe_config_pii_chain_001",
+    "display_name": "XXE to Configuration and PII Access",
+    "source_chain_name": "OpenRASP lab: XXE -> Audit Config Read -> Customer Audit PII Leak",
+    "application": "dotCMS",
+    "category": "web",
+    "telemetry_sources": [
+      "openrasp",
+      "suricata",
+      "falco"
+    ],
+    "step_count": 3,
+    "event_count": 12,
+    "trigger_step_id": "S3",
+    "ground_truth_file": "long_ttp_ground_truth.json"
+  }
+]

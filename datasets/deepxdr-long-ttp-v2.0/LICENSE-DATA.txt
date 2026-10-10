@@ -1,0 +1,22 @@
+DeepXDR Long TTP Offline Dataset v2.0
+Copyright (c) 2026 Purple Mountain Laboratories
+
+The dataset files in this directory are licensed under the Creative Commons
+Attribution 4.0 International license (CC BY 4.0).
+
+You may share and adapt the dataset, including for commercial purposes, as
+long as you provide appropriate credit, link to the license, and indicate
+whether changes were made.
+
+License deed:
+https://creativecommons.org/licenses/by/4.0/
+
+Legal code:
+https://creativecommons.org/licenses/by/4.0/legalcode.en
+
+Suggested attribution:
+"DeepXDR Long TTP Offline Dataset v2.0, Purple Mountain Laboratories, 2026."
+
+This license applies only to the original dataset material provided by the
+DeepXDR authors. Third-party material, trademarks, and reproduced knowledge
+base content remain subject to their respective notices and terms.

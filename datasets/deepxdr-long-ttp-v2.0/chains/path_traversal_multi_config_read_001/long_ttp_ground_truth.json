@@ -1,0 +1,137 @@
+{
+  "chain_id": "path_traversal_multi_config_read_001",
+  "ground_truth_type": "long_ttp_chain_level_from_step_annotations",
+  "matching_note": "Use parent-family matching when the experiment ignores MITRE sub-technique suffixes.",
+  "trigger_step_id": "S3",
+  "step_count": 3,
+  "technique_ids": [
+    "T1048.003",
+    "T1083",
+    "T1190",
+    "T1213",
+    "T1552.001"
+  ],
+  "techniques": [
+    {
+      "tech_id": "T1048.003",
+      "tech_name": "Exfiltration Over Unencrypted Non-C2 Protocol",
+      "tactic": "Exfiltration"
+    },
+    {
+      "tech_id": "T1083",
+      "tech_name": "File and Directory Discovery",
+      "tactic": "Discovery"
+    },
+    {
+      "tech_id": "T1190",
+      "tech_name": "Exploit Public-Facing Application",
+      "tactic": "Initial Access"
+    },
+    {
+      "tech_id": "T1213",
+      "tech_name": "Data from Information Repositories",
+      "tactic": "Collection"
+    },
+    {
+      "tech_id": "T1552.001",
+      "tech_name": "Credentials In Files",
+      "tactic": "Credential Access"
+    }
+  ],
+  "tactic_names": [
+    "Collection",
+    "Credential Access",
+    "Discovery",
+    "Exfiltration",
+    "Initial Access"
+  ],
+  "steps": [
+    {
+      "step_id": "S1",
+      "name": "Read backend credential file via path traversal",
+      "attack_techniques": [
+        {
+          "tech_id": "T1190",
+          "tech_name": "Exploit Public-Facing Application",
+          "tactic": "Initial Access"
+        },
+        {
+          "tech_id": "T1552.001",
+          "tech_name": "Credentials In Files",
+          "tactic": "Credential Access"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:0a1f65d4-3a1d-49df-a67a-9671a1311103",
+        "openrasp:7b660f17-a893-472a-9f56-7d2fb5db1103",
+        "falco:4f6d4b79-a25b-4bc9-a3f1-3cf8feba1103"
+      ],
+      "expected_signals": [
+        "alert.signature=ET WEB_SERVER Backend Credential File Access via Path Traversal",
+        "attack_type=readFile",
+        "plugin_algorithm=readFile_userinput",
+        "attack_params.realpath=/srv/dotserver/tomcat-9.0.41/webapps/ROOT/WEB-INF/classes/admin-report-auth-secrets.properties",
+        "fd.name=/srv/dotserver/tomcat-9.0.41/webapps/ROOT/WEB-INF/classes/admin-report-auth-secrets.properties",
+        "report.export.api.username=export_service",
+        "report.export.api.password=synthetic-password-001"
+      ]
+    },
+    {
+      "step_id": "S2",
+      "name": "Discover export endpoint mapping file via path traversal",
+      "attack_techniques": [
+        {
+          "tech_id": "T1083",
+          "tech_name": "File and Directory Discovery",
+          "tactic": "Discovery"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:0a1f65d4-3a1d-49df-a67a-9671a1311104",
+        "openrasp:7b660f17-a893-472a-9f56-7d2fb5db1104",
+        "falco:4f6d4b79-a25b-4bc9-a3f1-3cf8feba1104"
+      ],
+      "expected_signals": [
+        "alert.signature=ET WEB_SERVER Export Endpoint Mapping File Discovery via Path Traversal",
+        "attack_type=readFile",
+        "plugin_algorithm=readFile_userinput",
+        "attack_params.realpath=/srv/dotserver/tomcat-9.0.41/webapps/ROOT/WEB-INF/classes/admin-report-export-endpoint-map.properties",
+        "fd.name=/srv/dotserver/tomcat-9.0.41/webapps/ROOT/WEB-INF/classes/admin-report-export-endpoint-map.properties",
+        "report.export.endpoint=/api/v1/admin/reports/export",
+        "report.export.allowedReports=customer-quarterly"
+      ]
+    },
+    {
+      "step_id": "S3",
+      "name": "Export a sensitive backend business report",
+      "attack_techniques": [
+        {
+          "tech_id": "T1213",
+          "tech_name": "Data from Information Repositories",
+          "tactic": "Collection"
+        },
+        {
+          "tech_id": "T1048.003",
+          "tech_name": "Exfiltration Over Unencrypted Non-C2 Protocol",
+          "tactic": "Exfiltration"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:0a1f65d4-3a1d-49df-a67a-9671a1311201",
+        "openrasp:7b660f17-a893-472a-9f56-7d2fb5db1201",
+        "falco:4f6d4b79-a25b-4bc9-a3f1-3cf8feba1201"
+      ],
+      "expected_signals": [
+        "http.url=/api/v1/admin/reports/export?report=customer-quarterly&format=csv&scope=region-east",
+        "attack_type=response",
+        "plugin_algorithm=response_dataLeak",
+        "path=/api/v1/admin/reports/export",
+        "fd.name=/srv/dotserver/tomcat-9.0.41/temp/report-cache/customer-quarterly-region-east-2026Q3.csv"
+      ]
+    }
+  ]
+}
+
+
+
+

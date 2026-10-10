@@ -1,0 +1,69 @@
+{
+  "chain_id": "queue_deserialize_kubernetes_secret_001",
+  "actions": [
+    {
+      "action_id": "prepare_d9_step_1_artifact",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/queue_deserialize_kubernetes_secret_001/stage-1-queue_deserialize_kubernetes_secret.json",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 0.3,
+      "content": "{\"dataset\": \"synthetic-deep-chain\", \"chain\": \"queue_deserialize_kubernetes_secret_001\", \"step\": \"S1\", \"scenario\": \"Submit a crafted serialized queue message\"}\n"
+    },
+    {
+      "action_id": "prepare_d9_step_2_artifact",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/queue_deserialize_kubernetes_secret_001/stage-2-queue_deserialize_kubernetes_secret.json",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 120.3,
+      "content": "{\"dataset\": \"synthetic-deep-chain\", \"chain\": \"queue_deserialize_kubernetes_secret_001\", \"step\": \"S2\", \"scenario\": \"Spawn a shell in the queue worker\"}\n"
+    },
+    {
+      "action_id": "prepare_d9_step_3_artifact",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/queue_deserialize_kubernetes_secret_001/stage-3-queue_deserialize_kubernetes_secret.json",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 240.3,
+      "content": "{\"dataset\": \"synthetic-deep-chain\", \"chain\": \"queue_deserialize_kubernetes_secret_001\", \"step\": \"S3\", \"scenario\": \"Read the mounted Kubernetes service account token\"}\n"
+    },
+    {
+      "action_id": "prepare_d9_step_4_artifact",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/queue_deserialize_kubernetes_secret_001/stage-4-queue_deserialize_kubernetes_secret.json",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 360.3,
+      "content": "{\"dataset\": \"synthetic-deep-chain\", \"chain\": \"queue_deserialize_kubernetes_secret_001\", \"step\": \"S4\", \"scenario\": \"Enumerate namespaces and workloads\"}\n"
+    },
+    {
+      "action_id": "prepare_d9_step_5_artifact",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/queue_deserialize_kubernetes_secret_001/stage-5-queue_deserialize_kubernetes_secret.json",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 480.3,
+      "content": "{\"dataset\": \"synthetic-deep-chain\", \"chain\": \"queue_deserialize_kubernetes_secret_001\", \"step\": \"S5\", \"scenario\": \"Collect production namespace secrets\"}\n"
+    },
+    {
+      "action_id": "prepare_d9_step_6_artifact",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/queue_deserialize_kubernetes_secret_001/stage-6-queue_deserialize_kubernetes_secret.json",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 600.3,
+      "content": "{\"dataset\": \"synthetic-deep-chain\", \"chain\": \"queue_deserialize_kubernetes_secret_001\", \"step\": \"S6\", \"scenario\": \"Return encoded secrets in queue task output\"}\n"
+    }
+  ]
+}
+
+
+
+

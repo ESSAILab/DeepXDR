@@ -1,0 +1,79 @@
+{
+  "id": "8ed4e883-2acf-4e4f-8eec-0eb3b2fc06f3",
+  "created_at": "2026-08-14T08:21:20.000Z",
+  "end_at": "2026-08-14T08:21:20.400Z",
+  "ttps": [
+    {
+      "id": "425491ec-6775-40d5-9594-cda04aa70457",
+      "name": "exfiltration",
+      "description": "战术: exfiltration",
+      "techniques": [
+        {
+          "tech_id": "T1048",
+          "tech_name": "Exfiltration Over Alternative Protocol",
+          "description": "Adversaries may steal data by exfiltrating it over a different protocol than that of the existing command and control channel. The data may also be sent to an alternate network location from the main command and control server.  \n\nAlternate protocols include FTP, SMTP, HTTP/S, DNS, SMB, or any other network protocol not being used as the main command and control channel. Adversaries may also opt to encrypt and/or obfuscate these alternate channels. \n\n[Exfiltration Over Alternative Protocol](https://attack.mitre.org/techniques/T1048) can be done using various common operating system utilities such as [Net](https://attack.mitre.org/software/S0039)/SMB or FTP.(Citation: Palo Alto OilRig Oct 2016) On macOS and Linux <code>curl</code> may be used to invoke protocols such as HTTP/S or FTP/S to exfiltrate data from a system.(Citation: 20 macOS Common Tools and Techniques)\n\nMany IaaS and SaaS platforms (such as Microsoft Exchange, Microsoft SharePoint, GitHub, and AWS S3) support the direct download of files, emails, source code, and other sensitive information via the web console or [Cloud API](https://attack.mitre.org/techniques/T1059/009).",
+          "procedures": [
+            "行为: Command execution via template preview endpoint to read and leak sensitive file contents in HTTP response；证据: GET /report-preview/quarterly-template-preview.jsp?mode=preview&cmd=cat%20%2Fsrv%2Fdotserver%2Ftomcat-9.0.41%2Ftemp%2Freport-preview%2Fquarterly-preview-cache.txt; OpenRASP plugin_message: Sensitive configuration leak detected: tpl-2026-east-signing-token(API Token), quarterly-preview-key-01(Key ID), preview_exporter(Service Account); Suricata signature: ET WEB_SERVER Template Preview Secret Echo Response"
+          ],
+          "event_ids": [
+            "85b138b4-262f-5d53-aeb6-777a99c1ba6d",
+            "c5637298-bab9-588a-96e0-34882368fbf3",
+            "76e7f60c-3130-569f-9f67-d1355815e621"
+          ]
+        }
+      ],
+      "event_ids": [
+        "85b138b4-262f-5d53-aeb6-777a99c1ba6d",
+        "c5637298-bab9-588a-96e0-34882368fbf3",
+        "76e7f60c-3130-569f-9f67-d1355815e621"
+      ]
+    }
+  ],
+  "confidence": 0.55,
+  "summary": "2026-08-14 16:21:20，攻击源 192.0.2.2（源端口 52113）向目标资产 192.0.2.106:8080 发起 GET /report-preview/quarterly-template-preview.jsp?mode=preview&cmd=cat%20%2Fsrv%2Fdotserver%2Ftomcat-9.0.41%2Ftemp%2Freport-preview%2Fquarterly-preview-cache.txt 请求，通过模板预览接口执行 cat 命令读取服务器上的 quarterly-preview-cache.txt。OpenRASP 检测到响应数据泄露（plugin_algorithm=response_dataLeak），泄露内容包含 tpl-2026-east-signing-token(API Token)、quarterly-preview-key-01(Key ID)、preview_exporter(Service Account)；Suricata 同时产生 Attempted Information Leak / Template Preview Secret Echo Response 告警，HTTP 状态 200。相关服务器信息：server_ip=172.21.0.3，server_hostname。",
+  "event_count": 3,
+  "source_events": [
+    "85b138b4-262f-5d53-aeb6-777a99c1ba6d",
+    "c5637298-bab9-588a-96e0-34882368fbf3",
+    "76e7f60c-3130-569f-9f67-d1355815e621"
+  ],
+  "attacker_fingerprint": {
+    "primary_ip": "192.0.2.2",
+    "ip_list": [
+      "192.0.2.2"
+    ],
+    "user_agents": [],
+    "patterns": [],
+    "first_seen": "2026-08-14T08:21:20.000Z",
+    "last_seen": "2026-08-14T08:21:20.400Z"
+  },
+  "attacker_ip": "192.0.2.2",
+  "raw_event_count": 3,
+  "filtered_event_count": 2,
+  "ip_group_count": 1,
+  "filter_reason": "current window contains openrasp/suricata; falco events are ignored before offline DeepXDR analysis",
+  "selected_attacker_ip": "192.0.2.2",
+  "analyzed_ip_groups": [
+    {
+      "attacker_ip": "192.0.2.2",
+      "event_count": 2
+    }
+  ],
+  "latency_seconds": 38.783,
+  "event_ids": [
+    "85b138b4-262f-5d53-aeb6-777a99c1ba6d",
+    "c5637298-bab9-588a-96e0-34882368fbf3",
+    "76e7f60c-3130-569f-9f67-d1355815e621"
+  ],
+  "fixture_chain_id": "template_upload_webshell_secret_echo_001",
+  "fixture_step_id": "S5",
+  "fixture_event_ref_map": {
+    "suricata:2f2e3d40-2201-4a01-9020-b10000000105": "85b138b4-262f-5d53-aeb6-777a99c1ba6d",
+    "openrasp:1f2e3d40-1101-4a01-9010-a10000000105": "c5637298-bab9-588a-96e0-34882368fbf3",
+    "falco:3f2e3d40-3301-4a01-9030-c10000000105": "76e7f60c-3130-569f-9f67-d1355815e621"
+  }
+}
+
+
+
+

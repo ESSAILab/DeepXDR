@@ -1,0 +1,38 @@
+{
+  "dataset_type": "deepxdr_long_ttp_release_sample",
+  "chain_id": "account_manipulation_valid_account_export_001",
+  "source_chain_name": "OpenRASP lab: Durable Backend Privilege Grant -> Protected Audit Access Validation -> Repository Preview -> Sensitive Case Repository Export",
+  "source_result_path": null,
+  "base_time": "2026-08-27T06:00:00Z",
+  "attacker_ip": "192.0.2.66",
+  "target_host": "192.0.2.106:8080",
+  "trigger_step_id": "S4",
+  "trigger_step_name": "Export sensitive customer case repository data and return PII",
+  "trigger_short_ttp_id": "e8db6e3b-3b30-49be-b1fa-e572690e36cd",
+  "event_count": 12,
+  "trigger_event_count": 3,
+  "step_count": 4,
+  "telemetry_sources": [
+    "openrasp",
+    "suricata",
+    "falco"
+  ],
+  "technique_ids": [
+    "T1048.003",
+    "T1078",
+    "T1098",
+    "T1213"
+  ],
+  "files": {
+    "trigger_short_ttp": "trigger_short_ttp.json",
+    "events": "events.jsonl",
+    "long_ttp_ground_truth": "long_ttp_ground_truth.json",
+    "event_id_map": "event_id_map.json",
+    "file_actions": "file_actions.json",
+    "run_config": "run_config.json",
+    "sample_manifest": "sample_manifest.json"
+  },
+  "release_version": "v2.0",
+  "legacy_chain_id": "openrasp_account_manipulation_valid_account_export_001",
+  "display_name": "Account Manipulation to Valid Account Export"
+}

@@ -1,0 +1,142 @@
+{
+  "id": "c0551333-02a5-4ec3-8fd6-eed8e3a3dab0",
+  "created_at": "2026-08-28T01:02:00.000Z",
+  "end_at": "2026-08-28T01:02:00.400Z",
+  "ttps": [
+    {
+      "id": "7f411791-70fa-4710-945f-bd56516b5974",
+      "name": "exfiltration",
+      "description": "战术: exfiltration",
+      "techniques": [
+        {
+          "tech_id": "T1048.003",
+          "tech_name": "Exfiltration Over Unencrypted Non-C2 Protocol",
+          "description": "Adversaries may steal data by exfiltrating it over an un-encrypted network protocol other than that of the existing command and control channel. The data may also be sent to an alternate network location from the main command and control server.(Citation: copy_cmd_cisco)\n\nAdversaries may opt to obfuscate this data, without the use of encryption, within network protocols that are natively unencrypted (such as HTTP, FTP, or DNS). This may include custom or publicly available encoding/compression algorithms (such as base64) as well as embedding data within protocol headers and fields. ",
+          "procedures": [
+            "行为: Network Signature Alert for Staged Secret HTTP Leak；证据: ET WEB_SERVER Ops Theme Preview Staged Secret HTTP Leak"
+          ],
+          "event_ids": [
+            "0c4169a5-350d-5b60-b52f-6b95157f8d39",
+            "f74c2b82-165c-53ba-9c52-b509cd0c008e",
+            "dc645863-aaae-5a3c-a9d2-2805cd2ea9ea"
+          ]
+        },
+        {
+          "tech_id": "T1048",
+          "tech_name": "Exfiltration Over Alternative Protocol",
+          "description": "Adversaries may steal data by exfiltrating it over a different protocol than that of the existing command and control channel. The data may also be sent to an alternate network location from the main command and control server.  \n\nAlternate protocols include FTP, SMTP, HTTP/S, DNS, SMB, or any other network protocol not being used as the main command and control channel. Adversaries may also opt to encrypt and/or obfuscate these alternate channels. \n\n[Exfiltration Over Alternative Protocol](https://attack.mitre.org/techniques/T1048) can be done using various common operating system utilities such as [Net](https://attack.mitre.org/software/S0039)/SMB or FTP.(Citation: Palo Alto OilRig Oct 2016) On macOS and Linux <code>curl</code> may be used to invoke protocols such as HTTP/S or FTP/S to exfiltrate data from a system.(Citation: 20 macOS Common Tools and Techniques)\n\nMany IaaS and SaaS platforms (such as Microsoft Exchange, Microsoft SharePoint, GitHub, and AWS S3) support the direct download of files, emails, source code, and other sensitive information via the web console or [Cloud API](https://attack.mitre.org/techniques/T1059/009).",
+          "procedures": [
+            "行为: HTTP Request to Download Staged Secret Artifact；证据: GET /theme-preview/ops-theme-preview.jsp?mode=download&artifact=ops-theme-secret-stage HTTP/1.1"
+          ],
+          "event_ids": [
+            "0c4169a5-350d-5b60-b52f-6b95157f8d39",
+            "f74c2b82-165c-53ba-9c52-b509cd0c008e",
+            "dc645863-aaae-5a3c-a9d2-2805cd2ea9ea"
+          ]
+        }
+      ],
+      "event_ids": [
+        "0c4169a5-350d-5b60-b52f-6b95157f8d39",
+        "f74c2b82-165c-53ba-9c52-b509cd0c008e",
+        "dc645863-aaae-5a3c-a9d2-2805cd2ea9ea"
+      ]
+    },
+    {
+      "id": "eac6139a-0828-41e3-92f4-5180d9544159",
+      "name": "credential-access",
+      "description": "战术: credential-access",
+      "techniques": [
+        {
+          "tech_id": "T1552.005",
+          "tech_name": "Cloud Instance Metadata API",
+          "description": "Adversaries may attempt to access the Cloud Instance Metadata API to collect credentials and other sensitive data.\n\nMost cloud service providers support a Cloud Instance Metadata API which is a service provided to running virtual instances that allows applications to access information about the running virtual instance. Available information generally includes name, security group, and additional metadata including sensitive data such as credentials and UserData scripts that may contain additional secrets. The Instance Metadata API is provided as a convenience to assist in managing applications and is accessible by anyone who can access the instance.(Citation: AWS Instance Metadata API) A cloud metadata API has been used in at least one high profile compromise.(Citation: Krebs Capital One August 2019)\n\nIf adversaries have a presence on the running virtual instance, they may query the Instance Metadata API directly to identify credentials that grant access to additional resources. Additionally, adversaries may exploit a Server-Side Request Forgery (SSRF) vulnerability in a public facing web proxy that allows them to gain access to the sensitive information via a request to the Instance Metadata API.(Citation: RedLock Instance Metadata API 2018)\n\nThe de facto standard across cloud service providers is to host the Instance Metadata API at <code>http[:]//169.254.169.254</code>.\n",
+          "procedures": [
+            "行为: Sensitive Configuration Leak via Application Response；证据: Sensitive configuration leak detected: synthetic-token-theme-001(API Token), synthetic-key-002(Key ID), ops_theme_exporter(Service Account)"
+          ],
+          "event_ids": [
+            "0c4169a5-350d-5b60-b52f-6b95157f8d39",
+            "f74c2b82-165c-53ba-9c52-b509cd0c008e",
+            "dc645863-aaae-5a3c-a9d2-2805cd2ea9ea"
+          ]
+        }
+      ],
+      "event_ids": [
+        "0c4169a5-350d-5b60-b52f-6b95157f8d39",
+        "f74c2b82-165c-53ba-9c52-b509cd0c008e",
+        "dc645863-aaae-5a3c-a9d2-2805cd2ea9ea"
+      ]
+    },
+    {
+      "id": "af4955a5-758c-46ad-b7d0-18573f98decb",
+      "name": "collection",
+      "description": "战术: collection",
+      "techniques": [
+        {
+          "tech_id": "T1074",
+          "tech_name": "Data Staged",
+          "description": "Adversaries may stage collected data in a central location or directory prior to Exfiltration. Data may be kept in separate files or combined into one file through techniques such as [Archive Collected Data](https://attack.mitre.org/techniques/T1560). Interactive command shells may be used, and common functionality within [cmd](https://attack.mitre.org/software/S0106) and bash may be used to copy data into a staging location.(Citation: PWC Cloud Hopper April 2017)\n\nIn cloud environments, adversaries may stage data within a particular instance or virtual machine before exfiltration. An adversary may [Create Cloud Instance](https://attack.mitre.org/techniques/T1578/002) and stage data in that instance.(Citation: Mandiant M-Trends 2020)\n\nAdversaries may choose to stage data from a victim network in a centralized location prior to Exfiltration to minimize the number of connections made to their C2 server and better evade detection.",
+          "procedures": [
+            "行为: Network Signature Alert for Staged Secret HTTP Leak；证据: ET WEB_SERVER Ops Theme Preview Staged Secret HTTP Leak"
+          ],
+          "event_ids": [
+            "0c4169a5-350d-5b60-b52f-6b95157f8d39",
+            "f74c2b82-165c-53ba-9c52-b509cd0c008e",
+            "dc645863-aaae-5a3c-a9d2-2805cd2ea9ea"
+          ]
+        }
+      ],
+      "event_ids": [
+        "0c4169a5-350d-5b60-b52f-6b95157f8d39",
+        "f74c2b82-165c-53ba-9c52-b509cd0c008e",
+        "dc645863-aaae-5a3c-a9d2-2805cd2ea9ea"
+      ]
+    }
+  ],
+  "confidence": 0.7,
+  "summary": "2026-08-28 09:02:00，攻击源192.0.2.2通过HTTP GET请求访问192.0.2.106:8080的/theme-preview/ops-theme-preview.jsp?mode=download&artifact=ops-theme-secret-stage，Referer为http://192.0.2.106:8080/dotAdmin/#/ops/theme-center，请求ID为ops-theme-chain-20260821-webshell-06。OpenRASP检测到响应数据泄露，泄露内容包含synthetic-token-theme-001(API Token)、synthetic-key-002(Key ID)、ops_theme_exporter(Service Account)。Suricata同时告警“ET WEB_SERVER Ops Theme Preview Staged Secret HTTP Leak”，类别为Attempted Information Leak，动作为allowed，HTTP状态200。受影响资产为192.0.2.106上的Tomcat服务（服务器IP 198.51.64.3）。相关事件ID：b3d6fbb1-d3cb-4a0b-86b0-cddbcbcc1b2f、b897。",
+  "event_count": 3,
+  "source_events": [
+    "0c4169a5-350d-5b60-b52f-6b95157f8d39",
+    "f74c2b82-165c-53ba-9c52-b509cd0c008e",
+    "dc645863-aaae-5a3c-a9d2-2805cd2ea9ea"
+  ],
+  "attacker_fingerprint": {
+    "primary_ip": "192.0.2.2",
+    "ip_list": [
+      "192.0.2.2"
+    ],
+    "user_agents": [],
+    "patterns": [],
+    "first_seen": "2026-08-28T01:02:00.000Z",
+    "last_seen": "2026-08-28T01:02:00.400Z"
+  },
+  "attacker_ip": "192.0.2.2",
+  "raw_event_count": 3,
+  "filtered_event_count": 2,
+  "ip_group_count": 1,
+  "filter_reason": "current window contains openrasp/suricata; falco events are ignored before offline DeepXDR analysis",
+  "selected_attacker_ip": "192.0.2.2",
+  "analyzed_ip_groups": [
+    {
+      "attacker_ip": "192.0.2.2",
+      "event_count": 2
+    }
+  ],
+  "latency_seconds": 99.139,
+  "event_ids": [
+    "0c4169a5-350d-5b60-b52f-6b95157f8d39",
+    "f74c2b82-165c-53ba-9c52-b509cd0c008e",
+    "dc645863-aaae-5a3c-a9d2-2805cd2ea9ea"
+  ],
+  "fixture_chain_id": "template_upload_webshell_secret_archive_001",
+  "fixture_step_id": "S7",
+  "fixture_event_ref_map": {
+    "suricata:6b7c1001-2201-4a01-9020-b10000000807": "0c4169a5-350d-5b60-b52f-6b95157f8d39",
+    "openrasp:5a7c1001-1101-4a01-9010-a10000000807": "f74c2b82-165c-53ba-9c52-b509cd0c008e",
+    "falco:7d8e3001-3301-4a01-9030-c10000000807": "dc645863-aaae-5a3c-a9d2-2805cd2ea9ea"
+  }
+}
+
+
+
+

@@ -1,0 +1,212 @@
+{
+  "chain_id": "sqli_session_hijack_report_001",
+  "ground_truth_type": "long_ttp_chain_level_from_step_annotations",
+  "matching_note": "Use parent-family matching when the experiment ignores MITRE sub-technique suffixes.",
+  "trigger_step_id": "S4",
+  "step_count": 4,
+  "technique_ids": [
+    "T1048.003",
+    "T1069",
+    "T1074.001",
+    "T1087",
+    "T1190",
+    "T1213",
+    "T1539",
+    "T1550.004"
+  ],
+  "techniques": [
+    {
+      "tech_id": "T1048.003",
+      "tech_name": "Exfiltration Over Unencrypted Non-C2 Protocol",
+      "tactic": "Exfiltration"
+    },
+    {
+      "tech_id": "T1069",
+      "tech_name": "Permission Groups Discovery",
+      "tactic": "Discovery"
+    },
+    {
+      "tech_id": "T1074.001",
+      "tech_name": "Local Data Staging",
+      "tactic": "Collection"
+    },
+    {
+      "tech_id": "T1087",
+      "tech_name": "Account Discovery",
+      "tactic": "Discovery"
+    },
+    {
+      "tech_id": "T1190",
+      "tech_name": "Exploit Public-Facing Application",
+      "tactic": "Initial Access"
+    },
+    {
+      "tech_id": "T1213",
+      "tech_name": "Data from Information Repositories",
+      "tactic": "Collection"
+    },
+    {
+      "tech_id": "T1539",
+      "tech_name": "Steal Web Session Cookie",
+      "tactic": "Credential Access"
+    },
+    {
+      "tech_id": "T1550.004",
+      "tech_name": "Web Session Cookie",
+      "tactic": "Lateral Movement"
+    }
+  ],
+  "tactic_names": [
+    "Collection",
+    "Credential Access",
+    "Discovery",
+    "Exfiltration",
+    "Initial Access",
+    "Lateral Movement"
+  ],
+  "steps": [
+    {
+      "step_id": "S1",
+      "name": "Enumerate privileged backend users and roles through SQL injection",
+      "attack_techniques": [
+        {
+          "tech_id": "T1190",
+          "tech_name": "Exploit Public-Facing Application",
+          "tactic": "Initial Access"
+        },
+        {
+          "tech_id": "T1087",
+          "tech_name": "Account Discovery",
+          "tactic": "Discovery"
+        },
+        {
+          "tech_id": "T1069",
+          "tech_name": "Permission Groups Discovery",
+          "tactic": "Discovery"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:9b2d6302-1e22-4bc2-ad32-6b000002e101",
+        "openrasp:8a1c5201-0d11-4ab1-9c21-6b000001d101",
+        "falco:ac3e7403-2f33-4cd3-be43-6b000003f101"
+      ],
+      "expected_signals": [
+        "alert.signature=ET WEB_SERVER SQLi Privileged Account Enumeration via Support User Search",
+        "attack_type=sql",
+        "plugin_algorithm=sql_userinput",
+        "path=/api/v1/support/user-search",
+        "request_id=sqli-hijack-chain-req-01",
+        "query=admin' UNION SELECT username,role_names,email,last_login FROM backend_user_roles WHERE is_backend=true -- ",
+        "admin.username=admin_reporter",
+        "admin.role_names=Customer Audit Administrator, Report Export Administrator"
+      ]
+    },
+    {
+      "step_id": "S2",
+      "name": "Read active admin session material through SQL injection",
+      "attack_techniques": [
+        {
+          "tech_id": "T1190",
+          "tech_name": "Exploit Public-Facing Application",
+          "tactic": "Initial Access"
+        },
+        {
+          "tech_id": "T1539",
+          "tech_name": "Steal Web Session Cookie",
+          "tactic": "Credential Access"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:9b2d6302-1e22-4bc2-ad32-6b000002e102",
+        "openrasp:8a1c5201-0d11-4ab1-9c21-6b000001d102",
+        "falco:ac3e7403-2f33-4cd3-be43-6b000003f102"
+      ],
+      "expected_signals": [
+        "alert.signature=ET WEB_SERVER SQLi Admin Session Material Disclosure via Support Session Search",
+        "attack_type=sql",
+        "plugin_algorithm=sql_userinput",
+        "path=/api/v1/support/session-search",
+        "request_id=sqli-hijack-chain-req-02",
+        "session_id=synthetic-session-001",
+        "remember_me_token=synthetic-remember-token-001",
+        "session_owner=admin_reporter"
+      ]
+    },
+    {
+      "step_id": "S3",
+      "name": "Reuse the stolen session to access a backend admin report endpoint",
+      "attack_techniques": [
+        {
+          "tech_id": "T1550.004",
+          "tech_name": "Web Session Cookie",
+          "tactic": "Lateral Movement"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:9b2d6302-1e22-4bc2-ad32-6b000002e103",
+        "openrasp:8a1c5201-0d11-4ab1-9c21-6b000001d103",
+        "falco:ac3e7403-2f33-4cd3-be43-6b000003f103"
+      ],
+      "expected_signals": [
+        "alert.signature=ET WEB_SERVER Hijacked Admin Session Customer Audit Access",
+        "attack_type=web",
+        "plugin_algorithm=session_hijack_indicator",
+        "path=/api/v1/admin/reports/customer-audit-access",
+        "request_id=sqli-hijack-chain-req-03",
+        "cookie.JSESSIONID=synthetic-session-001",
+        "cookie.rememberMe=synthetic-remember-token-001",
+        "session_owner=admin_reporter"
+      ]
+    },
+    {
+      "step_id": "S4",
+      "name": "Retrieve a sensitive customer audit export with PII in the response",
+      "attack_techniques": [
+        {
+          "tech_id": "T1550.004",
+          "tech_name": "Web Session Cookie",
+          "tactic": "Lateral Movement"
+        },
+        {
+          "tech_id": "T1213",
+          "tech_name": "Data from Information Repositories",
+          "tactic": "Collection"
+        },
+        {
+          "tech_id": "T1074.001",
+          "tech_name": "Local Data Staging",
+          "tactic": "Collection"
+        },
+        {
+          "tech_id": "T1048.003",
+          "tech_name": "Exfiltration Over Unencrypted Non-C2 Protocol",
+          "tactic": "Exfiltration"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:9b2d6302-1e22-4bc2-ad32-6b000002e104",
+        "openrasp:8a1c5201-0d11-4ab1-9c21-6b000001d104",
+        "openrasp:8a1c5201-0d11-4ab1-9c21-6b000001d105",
+        "falco:ac3e7403-2f33-4cd3-be43-6b000003f104"
+      ],
+      "expected_signals": [
+        "alert.signature=ET WEB_SERVER Sensitive Customer Audit Export via Hijacked Session",
+        "attack_type=response",
+        "plugin_algorithm=response_dataLeak",
+        "attack_type=writeFile",
+        "plugin_algorithm=writeFile_export_staging",
+        "path=/api/v1/admin/reports/customer-audit-export",
+        "request_id=sqli-hijack-chain-req-04",
+        "Identity Card",
+        "Mobile Number",
+        "Bank Card",
+        "realpath=/srv/dotserver/tomcat-9.0.41/temp/admin-audit/customer-audit-export-east.csv",
+        "fd.name=/srv/dotserver/tomcat-9.0.41/temp/admin-audit/customer-audit-export-east.csv"
+      ]
+    }
+  ]
+}
+
+
+
+

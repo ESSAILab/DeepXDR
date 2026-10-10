@@ -1,0 +1,206 @@
+{
+  "chain_id": "image_parser_container_escape_prep_001",
+  "ground_truth_type": "long_ttp_chain_level_from_step_annotations",
+  "matching_note": "Use parent-family matching when the experiment ignores MITRE sub-technique suffixes.",
+  "trigger_step_id": "S6",
+  "step_count": 6,
+  "technique_ids": [
+    "T1005",
+    "T1059.004",
+    "T1190",
+    "T1611",
+    "T1613"
+  ],
+  "techniques": [
+    {
+      "tech_id": "T1005",
+      "tech_name": "Data from Local System",
+      "tactic": "Collection"
+    },
+    {
+      "tech_id": "T1059.004",
+      "tech_name": "Unix Shell",
+      "tactic": "Execution"
+    },
+    {
+      "tech_id": "T1190",
+      "tech_name": "Exploit Public-Facing Application",
+      "tactic": "Initial Access"
+    },
+    {
+      "tech_id": "T1611",
+      "tech_name": "Escape to Host",
+      "tactic": "Privilege Escalation"
+    },
+    {
+      "tech_id": "T1613",
+      "tech_name": "Container and Resource Discovery",
+      "tactic": "Discovery"
+    }
+  ],
+  "tactic_names": [
+    "Collection",
+    "Discovery",
+    "Execution",
+    "Initial Access",
+    "Privilege Escalation"
+  ],
+  "steps": [
+    {
+      "step_id": "S1",
+      "name": "Upload a crafted image to the media transformer",
+      "attack_techniques": [
+        {
+          "tech_id": "T1190",
+          "tech_name": "Exploit Public-Facing Application",
+          "tactic": "Initial Access"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:d0400000-1001-4d04-8100-040101000001",
+        "openrasp:d0400000-2001-4d04-8200-040102000001",
+        "falco:d0400000-3001-4d04-8300-040103000001"
+      ],
+      "expected_signals": [
+        "path=/api/media/transform",
+        "signature=Crafted Image Parser Exploit",
+        "attack_params.exploit_vector=crafted_image_parser_rce",
+        "attack_params.public_facing_endpoint=true",
+        "attack_params.exploit_result=server_side_code_execution",
+        "attack_params.not_denial_of_service=true",
+        "deep_chain_id=image_parser_container_escape_prep_001",
+        "deep_step_id=S1",
+        "fd.name=/srv/dotserver/image_parser_container_escape_prep_001/stage-1-image_parser_container_escape_prep.json"
+      ]
+    },
+    {
+      "step_id": "S2",
+      "name": "Execute a Unix shell parser delegate in the media container",
+      "attack_techniques": [
+        {
+          "tech_id": "T1059.004",
+          "tech_name": "Unix Shell",
+          "tactic": "Execution"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:d0400000-1002-4d04-8100-040201000001",
+        "openrasp:d0400000-2002-4d04-8200-040202000001",
+        "falco:d0400000-3002-4d04-8300-040203000001"
+      ],
+      "expected_signals": [
+        "path=/internal/media/delegate",
+        "signature=Unix Shell Parser Delegate Execution",
+        "attack_params.command_interpreter=/bin/sh",
+        "attack_params.shell_family=unix_shell",
+        "attack_params.command=/bin/sh -c /opt/media/bin/image-delegate --probe /tmp/crafted.png",
+        "deep_chain_id=image_parser_container_escape_prep_001",
+        "deep_step_id=S2",
+        "fd.name=/srv/dotserver/image_parser_container_escape_prep_001/stage-2-image_parser_container_escape_prep.json"
+      ]
+    },
+    {
+      "step_id": "S3",
+      "name": "Enumerate container runtime and capabilities",
+      "attack_techniques": [
+        {
+          "tech_id": "T1613",
+          "tech_name": "Container and Resource Discovery",
+          "tactic": "Discovery"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:d0400000-1003-4d04-8100-040301000001",
+        "openrasp:d0400000-2003-4d04-8200-040302000001",
+        "falco:d0400000-3003-4d04-8300-040303000001"
+      ],
+      "expected_signals": [
+        "path=/internal/media/runtime",
+        "signature=Container Capability Discovery",
+        "deep_chain_id=image_parser_container_escape_prep_001",
+        "deep_step_id=S3",
+        "fd.name=/srv/dotserver/image_parser_container_escape_prep_001/stage-3-image_parser_container_escape_prep.json"
+      ]
+    },
+    {
+      "step_id": "S4",
+      "name": "Probe the mounted Docker socket",
+      "attack_techniques": [
+        {
+          "tech_id": "T1613",
+          "tech_name": "Container and Resource Discovery",
+          "tactic": "Discovery"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:d0400000-1004-4d04-8100-040401000001",
+        "openrasp:d0400000-2004-4d04-8200-040402000001",
+        "falco:d0400000-3004-4d04-8300-040403000001"
+      ],
+      "expected_signals": [
+        "path=/var/run/docker.sock",
+        "signature=Docker Socket Probe",
+        "deep_chain_id=image_parser_container_escape_prep_001",
+        "deep_step_id=S4",
+        "fd.name=/srv/dotserver/image_parser_container_escape_prep_001/stage-4-image_parser_container_escape_prep.json"
+      ]
+    },
+    {
+      "step_id": "S5",
+      "name": "Create a privileged escape workload specification",
+      "attack_techniques": [
+        {
+          "tech_id": "T1611",
+          "tech_name": "Escape to Host",
+          "tactic": "Privilege Escalation"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:d0400000-1005-4d04-8100-040501000001",
+        "openrasp:d0400000-2005-4d04-8200-040502000001",
+        "falco:d0400000-3005-4d04-8300-040503000001"
+      ],
+      "expected_signals": [
+        "path=/tmp/media-maintenance-container.json",
+        "signature=Docker Socket Privileged Host Mount Escape Preparation",
+        "attack_params.escape_method=docker_socket_privileged_host_mount",
+        "attack_params.docker_command=docker create --privileged -v /:/host --name media-maintenance media-tools:latest",
+        "attack_params.not_kubernetes_job=true",
+        "attack_params.not_scheduled_job=true",
+        "deep_chain_id=image_parser_container_escape_prep_001",
+        "deep_step_id=S5",
+        "fd.name=/srv/dotserver/image_parser_container_escape_prep_001/stage-5-image_parser_container_escape_prep.json"
+      ]
+    },
+    {
+      "step_id": "S6",
+      "name": "Read host SSH configuration through the mounted root",
+      "attack_techniques": [
+        {
+          "tech_id": "T1005",
+          "tech_name": "Data from Local System",
+          "tactic": "Collection"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:d0400000-1006-4d04-8100-040601000001",
+        "openrasp:d0400000-2006-4d04-8200-040602000001",
+        "falco:d0400000-3006-4d04-8300-040603000001"
+      ],
+      "expected_signals": [
+        "path=/host/root/.ssh/config",
+        "signature=Host SSH Configuration Collection",
+        "attack_params.host_mounted_root=true",
+        "attack_params.sensitive_file=/host/root/.ssh/config",
+        "attack_params.collection_from_local_host_file=true",
+        "deep_chain_id=image_parser_container_escape_prep_001",
+        "deep_step_id=S6",
+        "fd.name=/srv/dotserver/image_parser_container_escape_prep_001/stage-6-image_parser_container_escape_prep.json"
+      ]
+    }
+  ]
+}
+
+
+
+

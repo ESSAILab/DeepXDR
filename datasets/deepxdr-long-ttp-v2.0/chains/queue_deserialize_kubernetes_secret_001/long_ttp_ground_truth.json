@@ -1,0 +1,198 @@
+{
+  "chain_id": "queue_deserialize_kubernetes_secret_001",
+  "ground_truth_type": "long_ttp_chain_level_from_step_annotations",
+  "matching_note": "Use parent-family matching when the experiment ignores MITRE sub-technique suffixes.",
+  "trigger_step_id": "S6",
+  "step_count": 6,
+  "technique_ids": [
+    "T1048.003",
+    "T1059.004",
+    "T1190",
+    "T1528",
+    "T1552.007",
+    "T1613"
+  ],
+  "techniques": [
+    {
+      "tech_id": "T1048.003",
+      "tech_name": "Exfiltration Over Unencrypted Non-C2 Protocol",
+      "tactic": "Exfiltration"
+    },
+    {
+      "tech_id": "T1059.004",
+      "tech_name": "Unix Shell",
+      "tactic": "Execution"
+    },
+    {
+      "tech_id": "T1190",
+      "tech_name": "Exploit Public-Facing Application",
+      "tactic": "Initial Access"
+    },
+    {
+      "tech_id": "T1528",
+      "tech_name": "Steal Application Access Token",
+      "tactic": "Credential Access"
+    },
+    {
+      "tech_id": "T1552.007",
+      "tech_name": "Container API",
+      "tactic": "Credential Access"
+    },
+    {
+      "tech_id": "T1613",
+      "tech_name": "Container and Resource Discovery",
+      "tactic": "Discovery"
+    }
+  ],
+  "tactic_names": [
+    "Credential Access",
+    "Discovery",
+    "Execution",
+    "Exfiltration",
+    "Initial Access"
+  ],
+  "steps": [
+    {
+      "step_id": "S1",
+      "name": "Submit a crafted serialized queue message",
+      "attack_techniques": [
+        {
+          "tech_id": "T1190",
+          "tech_name": "Exploit Public-Facing Application",
+          "tactic": "Initial Access"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:d0900000-1001-4d09-8100-090101000001",
+        "openrasp:d0900000-2001-4d09-8200-090102000001",
+        "falco:d0900000-3001-4d09-8300-090103000001"
+      ],
+      "expected_signals": [
+        "path=/api/queue/messages",
+        "signature=Serialized Queue Payload Exploit",
+        "deep_chain_id=queue_deserialize_kubernetes_secret_001",
+        "deep_step_id=S1",
+        "fd.name=/srv/dotserver/queue_deserialize_kubernetes_secret_001/stage-1-queue_deserialize_kubernetes_secret.json"
+      ]
+    },
+    {
+      "step_id": "S2",
+      "name": "Spawn a shell in the queue worker",
+      "attack_techniques": [
+        {
+          "tech_id": "T1059.004",
+          "tech_name": "Unix Shell",
+          "tactic": "Execution"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:d0900000-1002-4d09-8100-090201000001",
+        "openrasp:d0900000-2002-4d09-8200-090202000001",
+        "falco:d0900000-3002-4d09-8300-090203000001"
+      ],
+      "expected_signals": [
+        "path=/internal/queue/worker",
+        "signature=Queue Worker Shell Execution",
+        "deep_chain_id=queue_deserialize_kubernetes_secret_001",
+        "deep_step_id=S2",
+        "fd.name=/srv/dotserver/queue_deserialize_kubernetes_secret_001/stage-2-queue_deserialize_kubernetes_secret.json"
+      ]
+    },
+    {
+      "step_id": "S3",
+      "name": "Read the mounted Kubernetes service account token",
+      "attack_techniques": [
+        {
+          "tech_id": "T1528",
+          "tech_name": "Steal Application Access Token",
+          "tactic": "Credential Access"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:d0900000-1003-4d09-8100-090301000001",
+        "openrasp:d0900000-2003-4d09-8200-090302000001",
+        "falco:d0900000-3003-4d09-8300-090303000001"
+      ],
+      "expected_signals": [
+        "path=/var/run/secrets/kubernetes.io/serviceaccount/token",
+        "signature=Kubernetes Service Account Token Theft",
+        "deep_chain_id=queue_deserialize_kubernetes_secret_001",
+        "deep_step_id=S3",
+        "fd.name=/srv/dotserver/queue_deserialize_kubernetes_secret_001/stage-3-queue_deserialize_kubernetes_secret.json"
+      ]
+    },
+    {
+      "step_id": "S4",
+      "name": "Enumerate namespaces and workloads",
+      "attack_techniques": [
+        {
+          "tech_id": "T1613",
+          "tech_name": "Container and Resource Discovery",
+          "tactic": "Discovery"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:d0900000-1004-4d09-8100-090401000001",
+        "openrasp:d0900000-2004-4d09-8200-090402000001",
+        "falco:d0900000-3004-4d09-8300-090403000001"
+      ],
+      "expected_signals": [
+        "path=/api/kubernetes/workloads",
+        "signature=Kubernetes Workload Enumeration",
+        "deep_chain_id=queue_deserialize_kubernetes_secret_001",
+        "deep_step_id=S4",
+        "fd.name=/srv/dotserver/queue_deserialize_kubernetes_secret_001/stage-4-queue_deserialize_kubernetes_secret.json"
+      ]
+    },
+    {
+      "step_id": "S5",
+      "name": "Collect production namespace secrets",
+      "attack_techniques": [
+        {
+          "tech_id": "T1552.007",
+          "tech_name": "Container API",
+          "tactic": "Credential Access"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:d0900000-1005-4d09-8100-090501000001",
+        "openrasp:d0900000-2005-4d09-8200-090502000001",
+        "falco:d0900000-3005-4d09-8300-090503000001"
+      ],
+      "expected_signals": [
+        "path=/api/kubernetes/secrets/prod",
+        "signature=Production Kubernetes Secret Collection",
+        "deep_chain_id=queue_deserialize_kubernetes_secret_001",
+        "deep_step_id=S5",
+        "fd.name=/srv/dotserver/queue_deserialize_kubernetes_secret_001/stage-5-queue_deserialize_kubernetes_secret.json"
+      ]
+    },
+    {
+      "step_id": "S6",
+      "name": "Return encoded secrets in queue task output",
+      "attack_techniques": [
+        {
+          "tech_id": "T1048.003",
+          "tech_name": "Exfiltration Over Unencrypted Non-C2 Protocol",
+          "tactic": "Exfiltration"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:d0900000-1006-4d09-8100-090601000001",
+        "openrasp:d0900000-2006-4d09-8200-090602000001",
+        "falco:d0900000-3006-4d09-8300-090603000001"
+      ],
+      "expected_signals": [
+        "path=/api/queue/results/download",
+        "signature=Queue Result Secret Exfiltration",
+        "deep_chain_id=queue_deserialize_kubernetes_secret_001",
+        "deep_step_id=S6",
+        "fd.name=/srv/dotserver/queue_deserialize_kubernetes_secret_001/stage-6-queue_deserialize_kubernetes_secret.json"
+      ]
+    }
+  ]
+}
+
+
+
+
