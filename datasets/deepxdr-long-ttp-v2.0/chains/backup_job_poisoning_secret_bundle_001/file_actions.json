@@ -1,0 +1,69 @@
+{
+  "chain_id": "backup_job_poisoning_secret_bundle_001",
+  "actions": [
+    {
+      "action_id": "prepare_backup_job_catalog_file",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/tomcat-9.0.41/webapps/ROOT/WEB-INF/classes/backup-job-catalog.json",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 0.3,
+      "content": "{\n  \"scope\": \"customer-case-east\",\n  \"jobs\": [\n    {\n      \"job\": \"customer-case-east-nightly\",\n      \"runner\": \"node-east-03\",\n      \"modules\": [\"credential-profile\", \"archive-build\", \"artifact-download\"],\n      \"cron\": \"0 15 2 * * *\"\n    }\n  ],\n  \"syncEndpoint\": \"/api/v1/admin/backup/job-sync\",\n  \"archiveRoot\": \"/srv/dotserver/tomcat-9.0.41/temp/backup-jobs\"\n}\n"
+    },
+    {
+      "action_id": "poison_backup_job_map_file",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/tomcat-9.0.41/webapps/ROOT/WEB-INF/classes/backup-job-map.properties",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 120.3,
+      "content": "backup.job.customer-case-east-nightly.runner=node-east-03\nbackup.job.customer-case-east-nightly.credential-profile=/internal/backup/credential-profile?job=customer-case-east-nightly&profile=customer-case-east-backup-auth&format=properties\nbackup.job.customer-case-east-nightly.archive-build=/internal/backup/archive-build?job=customer-case-east-nightly&artifact=customer-case-east-backup-stage\nbackup.job.customer-case-east-nightly.artifact-download=/internal/backup/download?artifact=customer-case-east-backup-stage\nbackup.job.customer-case-east-nightly.profile=/internal/backup/runner-profile?job=customer-case-east-nightly&verbose=true\njob.owner=backup_sync_admin\njob.policy=overwrite-nightly-route\n"
+    },
+    {
+      "action_id": "prepare_backup_runner_profile_cache",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/tomcat-9.0.41/temp/backup-jobs/customer-case-east-runner-profile.json",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 240.3,
+      "content": "{\n  \"job\": \"customer-case-east-nightly\",\n  \"runner\": \"node-east-03\",\n  \"runtime\": \"tomcat-9.0.41\",\n  \"cron\": \"0 15 2 * * *\",\n  \"archive_handler\": \"customer-case-east-backup-stage\",\n  \"credential_profile\": \"customer-case-east-backup-auth.properties\",\n  \"status\": \"enabled\"\n}\n"
+    },
+    {
+      "action_id": "prepare_backup_credential_profile_file",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/tomcat-9.0.41/temp/backup-jobs/customer-case-east-backup-auth.properties",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 360.3,
+      "content": "exporter.username=backup_exporter\nexporter.api_token=synthetic-token-backup-001\nexporter.signing_key_id=backup-customer-case-key-07\nexporter.secret_scope=customer-case-east\narchive.alias=customer-case-east-backup-stage\ncredential_profile=customer-case-east-backup-auth\n"
+    },
+    {
+      "action_id": "prepare_backup_archive_stage_file",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/tomcat-9.0.41/temp/backup-jobs/customer-case-east-backup-stage.tgz",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 480.3,
+      "content": "TGZ-STAGE: customer-case-east-backup-stage\ncustomer_name=Alice Chen\ncase_id=CASE-2026-08-104\nid_number=ID-EXAMPLE-001\nmobile=MOBILE-EXAMPLE-001\nsettlement_card=BANK-EXAMPLE-001\nregion=east\n"
+    },
+    {
+      "action_id": "prepare_backup_download_file",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/tomcat-9.0.41/temp/backup-jobs/customer-case-east-download.json",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 600.3,
+      "content": "{\n  \"artifact\": \"customer-case-east-backup-stage\",\n  \"customer_name\": \"Alice Chen\",\n  \"case_id\": \"CASE-2026-08-104\",\n  \"id_number\": \"ID-EXAMPLE-001\",\n  \"mobile\": \"MOBILE-EXAMPLE-001\",\n  \"settlement_card\": \"BANK-EXAMPLE-001\",\n  \"region\": \"east\"\n}\n"
+    }
+  ]
+}
+
+
+
+

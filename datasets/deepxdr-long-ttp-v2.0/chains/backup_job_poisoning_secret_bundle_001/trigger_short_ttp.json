@@ -1,0 +1,79 @@
+{
+  "id": "f15d464a-6827-4fdc-857f-51f2c9b4a2e7",
+  "created_at": "2026-08-31T01:10:00.000Z",
+  "end_at": "2026-08-31T01:10:00.400Z",
+  "ttps": [
+    {
+      "id": "cfcb8680-3ed9-4d1b-b520-4cc612a22b1f",
+      "name": "exfiltration",
+      "description": "战术: exfiltration",
+      "techniques": [
+        {
+          "tech_id": "T1048",
+          "tech_name": "Exfiltration Over Alternative Protocol",
+          "description": "Adversaries may steal data by exfiltrating it over a different protocol than that of the existing command and control channel. The data may also be sent to an alternate network location from the main command and control server.  \n\nAlternate protocols include FTP, SMTP, HTTP/S, DNS, SMB, or any other network protocol not being used as the main command and control channel. Adversaries may also opt to encrypt and/or obfuscate these alternate channels. \n\n[Exfiltration Over Alternative Protocol](https://attack.mitre.org/techniques/T1048) can be done using various common operating system utilities such as [Net](https://attack.mitre.org/software/S0039)/SMB or FTP.(Citation: Palo Alto OilRig Oct 2016) On macOS and Linux <code>curl</code> may be used to invoke protocols such as HTTP/S or FTP/S to exfiltrate data from a system.(Citation: 20 macOS Common Tools and Techniques)\n\nMany IaaS and SaaS platforms (such as Microsoft Exchange, Microsoft SharePoint, GitHub, and AWS S3) support the direct download of files, emails, source code, and other sensitive information via the web console or [Cloud API](https://attack.mitre.org/techniques/T1059/009).",
+          "procedures": [
+            "行为: Download backup archive via web job-download endpoint resulting in sensitive data leak；证据: 192.0.2.2:56106 -> 192.0.2.106:8080 GET /api/v1/admin/backup/job-download?artifact=customer-case-east-backup-stage, HTTP status 200; OpenRASP alert: attack_type=response, plugin_algorithm=response_dataLeak, plugin_message='PII leak detected in staged backup archive download response', request_id=backup-poison-chain-req-06, target=192.0.2.106, intercept_state=log; Suricata alert signature='ET WEB_SERVER Backup Archive HTTP Leak', category='Attempted Information Leak', signature_id=2903006"
+          ],
+          "event_ids": [
+            "3f6c5317-4b32-5731-8b2d-8a4cae9a29bd",
+            "74848cb5-0dde-598c-87f5-e02bc5210865",
+            "1848c1be-e140-5a91-bde5-169b68b51adb"
+          ]
+        }
+      ],
+      "event_ids": [
+        "3f6c5317-4b32-5731-8b2d-8a4cae9a29bd",
+        "74848cb5-0dde-598c-87f5-e02bc5210865",
+        "1848c1be-e140-5a91-bde5-169b68b51adb"
+      ]
+    }
+  ],
+  "confidence": 0.55,
+  "summary": "2026-08-31 09:10:00，攻击源 192.0.2.2 向目标 192.0.2.106:8080 发起 HTTP GET 请求，访问 /api/v1/admin/backup/job-download?artifact=customer-case-east-backup-stage，下载暂存备份归档。请求 Referer 为 http://192.0.2.106:8080/dotAdmin/#/backup/archive-center，User-Agent 为 Chrome/150.0.0.0。OpenRASP 检测到响应数据泄露（response_dataLeak，提示 staged backup archive download response 中存在 PII 泄露），Suricata 亦触发 ET WEB_SERVER Backup Archive HTTP Leak（Attempted Information Leak）告警，HTTP 状态码 200，表明备份归档内容已泄露。关联 request_id 为 backup-poison-chain-req-06，后端服务器为 3dcd6fd91463（Tomcat 9.0.41.0）。",
+  "event_count": 3,
+  "source_events": [
+    "3f6c5317-4b32-5731-8b2d-8a4cae9a29bd",
+    "74848cb5-0dde-598c-87f5-e02bc5210865",
+    "1848c1be-e140-5a91-bde5-169b68b51adb"
+  ],
+  "attacker_fingerprint": {
+    "primary_ip": "192.0.2.2",
+    "ip_list": [
+      "192.0.2.2"
+    ],
+    "user_agents": [],
+    "patterns": [],
+    "first_seen": "2026-08-31T01:10:00.000Z",
+    "last_seen": "2026-08-31T01:10:00.400Z"
+  },
+  "attacker_ip": "192.0.2.2",
+  "raw_event_count": 3,
+  "filtered_event_count": 2,
+  "ip_group_count": 1,
+  "filter_reason": "current window contains openrasp/suricata; falco events are ignored before offline DeepXDR analysis",
+  "selected_attacker_ip": "192.0.2.2",
+  "analyzed_ip_groups": [
+    {
+      "attacker_ip": "192.0.2.2",
+      "event_count": 2
+    }
+  ],
+  "latency_seconds": 46.668,
+  "event_ids": [
+    "3f6c5317-4b32-5731-8b2d-8a4cae9a29bd",
+    "74848cb5-0dde-598c-87f5-e02bc5210865",
+    "1848c1be-e140-5a91-bde5-169b68b51adb"
+  ],
+  "fixture_chain_id": "backup_job_poisoning_secret_bundle_001",
+  "fixture_step_id": "S6",
+  "fixture_event_ref_map": {
+    "suricata:9d20d001-2201-4b01-9020-b20000000c06": "3f6c5317-4b32-5731-8b2d-8a4cae9a29bd",
+    "openrasp:9d20d001-1101-4b01-9010-a20000000c06": "74848cb5-0dde-598c-87f5-e02bc5210865",
+    "falco:9d20d001-3301-4b01-9030-c20000000c06": "1848c1be-e140-5a91-bde5-169b68b51adb"
+  }
+}
+
+
+
+

@@ -1,0 +1,211 @@
+{
+  "chain_id": "backup_job_poisoning_secret_bundle_001",
+  "ground_truth_type": "long_ttp_chain_level_from_step_annotations",
+  "matching_note": "Use parent-family matching when the experiment ignores MITRE sub-technique suffixes.",
+  "trigger_step_id": "S6",
+  "step_count": 6,
+  "technique_ids": [
+    "T1048.003",
+    "T1053",
+    "T1518",
+    "T1552.001",
+    "T1560.001"
+  ],
+  "techniques": [
+    {
+      "tech_id": "T1048.003",
+      "tech_name": "Exfiltration Over Unencrypted Non-C2 Protocol",
+      "tactic": "Exfiltration"
+    },
+    {
+      "tech_id": "T1053",
+      "tech_name": "Scheduled Task/Job",
+      "tactic": "Persistence"
+    },
+    {
+      "tech_id": "T1518",
+      "tech_name": "Software Discovery",
+      "tactic": "Discovery"
+    },
+    {
+      "tech_id": "T1552.001",
+      "tech_name": "Credentials In Files",
+      "tactic": "Credential Access"
+    },
+    {
+      "tech_id": "T1560.001",
+      "tech_name": "Archive via Utility",
+      "tactic": "Collection"
+    }
+  ],
+  "tactic_names": [
+    "Collection",
+    "Credential Access",
+    "Discovery",
+    "Exfiltration",
+    "Persistence"
+  ],
+  "steps": [
+    {
+      "step_id": "S1",
+      "name": "Expose the backup workflow component inventory",
+      "attack_techniques": [
+        {
+          "tech_id": "T1518",
+          "tech_name": "Software Discovery",
+          "tactic": "Discovery"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:9d20d001-2201-4b01-9020-b20000000c01",
+        "openrasp:9d20d001-1101-4b01-9010-a20000000c01",
+        "falco:9d20d001-3301-4b01-9030-c20000000c01"
+      ],
+      "expected_signals": [
+        "path=/api/v1/admin/backup/job-catalog",
+        "plugin_algorithm=backup_workflow_component_inventory",
+        "alert.signature=ET WEB_SERVER Backup Workflow Component Inventory Exposure",
+        "scope=customer-case-east",
+        "job_name=customer-case-east-nightly",
+        "component=runner-profile",
+        "component=credential-profile",
+        "component=archive-build",
+        "fd.name=/srv/dotserver/tomcat-9.0.41/webapps/ROOT/WEB-INF/classes/backup-job-catalog.json"
+      ]
+    },
+    {
+      "step_id": "S2",
+      "name": "Persistently rebind the backup workflow route map",
+      "attack_techniques": [
+        {
+          "tech_id": "T1053",
+          "tech_name": "Scheduled Task/Job",
+          "tactic": "Persistence"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:9d20d001-2201-4b01-9020-b20000000c02",
+        "openrasp:9d20d001-1101-4b01-9010-a20000000c02",
+        "falco:9d20d001-3301-4b01-9030-c20000000c02"
+      ],
+      "expected_signals": [
+        "path=/api/v1/admin/backup/job-sync",
+        "attack_type=writeFile",
+        "plugin_algorithm=writeFile_backup_workflow_rebind",
+        "alert.signature=ET WEB_SERVER Persistent Backup Workflow Rebinding",
+        "fd.name=/srv/dotserver/tomcat-9.0.41/webapps/ROOT/WEB-INF/classes/backup-job-map.properties",
+        "job_name=customer-case-east-nightly",
+        "component=credential-profile",
+        "component=archive-build",
+        "component=artifact-download"
+      ]
+    },
+    {
+      "step_id": "S3",
+      "name": "Probe the poisoned backup runner profile",
+      "attack_techniques": [
+        {
+          "tech_id": "T1518",
+          "tech_name": "Software Discovery",
+          "tactic": "Discovery"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:9d20d001-2201-4b01-9020-b20000000c03",
+        "openrasp:9d20d001-1101-4b01-9010-a20000000c03",
+        "falco:9d20d001-3301-4b01-9030-c20000000c03"
+      ],
+      "expected_signals": [
+        "path=/api/v1/admin/backup/job-runner",
+        "plugin_algorithm=backup_runner_profile_probe",
+        "alert.signature=ET WEB_SERVER Backup Runner Profile Probe",
+        "target=runner-profile",
+        "runner=node-east-03",
+        "cron=0 15 2 * * *",
+        "archive_handler=customer-case-east-backup-stage",
+        "fd.name=/srv/dotserver/tomcat-9.0.41/temp/backup-jobs/customer-case-east-runner-profile.json"
+      ]
+    },
+    {
+      "step_id": "S4",
+      "name": "Read the backup credential profile",
+      "attack_techniques": [
+        {
+          "tech_id": "T1552.001",
+          "tech_name": "Credentials In Files",
+          "tactic": "Credential Access"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:9d20d001-2201-4b01-9020-b20000000c04",
+        "openrasp:9d20d001-1101-4b01-9010-a20000000c04",
+        "falco:9d20d001-3301-4b01-9030-c20000000c04"
+      ],
+      "expected_signals": [
+        "path=/api/v1/admin/backup/credential-profile",
+        "plugin_algorithm=backup_credential_profile_file_access",
+        "alert.signature=ET WEB_SERVER Backup Credential Profile File Access",
+        "target=backup-auth-profile",
+        "exporter.username=backup_exporter",
+        "exporter.api_token=synthetic-token-backup-001",
+        "signing_key_id=backup-customer-case-key-07",
+        "fd.name=/srv/dotserver/tomcat-9.0.41/temp/backup-jobs/customer-case-east-backup-auth.properties"
+      ]
+    },
+    {
+      "step_id": "S5",
+      "name": "Stage a backup archive via tar utility",
+      "attack_techniques": [
+        {
+          "tech_id": "T1560.001",
+          "tech_name": "Archive via Utility",
+          "tactic": "Collection"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:9d20d001-2201-4b01-9020-b20000000c05",
+        "openrasp:9d20d001-1101-4b01-9010-a20000000c05",
+        "falco:9d20d001-3301-4b01-9030-c20000000c05"
+      ],
+      "expected_signals": [
+        "path=/api/v1/admin/backup/archive-build",
+        "attack_type=command",
+        "plugin_algorithm=archive_via_utility",
+        "alert.signature=ET WEB_SERVER Archive Utility Backup Staging",
+        "artifact=customer-case-east-backup-stage",
+        "command=tar -czf",
+        "fd.name=/srv/dotserver/tomcat-9.0.41/temp/backup-jobs/customer-case-east-backup-stage.tgz"
+      ]
+    },
+    {
+      "step_id": "S6",
+      "name": "Download the staged backup artifact and leak customer data",
+      "attack_techniques": [
+        {
+          "tech_id": "T1048.003",
+          "tech_name": "Exfiltration Over Unencrypted Non-C2 Protocol",
+          "tactic": "Exfiltration"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:9d20d001-2201-4b01-9020-b20000000c06",
+        "openrasp:9d20d001-1101-4b01-9010-a20000000c06",
+        "falco:9d20d001-3301-4b01-9030-c20000000c06"
+      ],
+      "expected_signals": [
+        "path=/api/v1/admin/backup/job-download",
+        "plugin_algorithm=response_dataLeak",
+        "alert.signature=ET WEB_SERVER Backup Archive HTTP Leak",
+        "artifact=customer-case-east-backup-stage",
+        "Identity Card",
+        "Mobile Number",
+        "Bank Card",
+        "fd.name=/srv/dotserver/tomcat-9.0.41/temp/backup-jobs/customer-case-east-download.json"
+      ]
+    }
+  ]
+}
+
+
+
+

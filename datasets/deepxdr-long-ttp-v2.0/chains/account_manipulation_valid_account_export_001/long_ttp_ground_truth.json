@@ -1,0 +1,162 @@
+{
+  "chain_id": "account_manipulation_valid_account_export_001",
+  "ground_truth_type": "long_ttp_chain_level_from_step_annotations",
+  "matching_note": "Use parent-family matching when the experiment ignores MITRE sub-technique suffixes.",
+  "trigger_step_id": "S4",
+  "step_count": 4,
+  "technique_ids": [
+    "T1048.003",
+    "T1078",
+    "T1098",
+    "T1213"
+  ],
+  "techniques": [
+    {
+      "tech_id": "T1048.003",
+      "tech_name": "Exfiltration Over Unencrypted Non-C2 Protocol",
+      "tactic": "Exfiltration"
+    },
+    {
+      "tech_id": "T1078",
+      "tech_name": "Valid Accounts",
+      "tactic": "Defense Evasion"
+    },
+    {
+      "tech_id": "T1098",
+      "tech_name": "Account Manipulation",
+      "tactic": "Persistence"
+    },
+    {
+      "tech_id": "T1213",
+      "tech_name": "Data from Information Repositories",
+      "tactic": "Collection"
+    }
+  ],
+  "tactic_names": [
+    "Collection",
+    "Defense Evasion",
+    "Exfiltration",
+    "Persistence"
+  ],
+  "steps": [
+    {
+      "step_id": "S1",
+      "name": "Persistently grant durable customer-audit export privileges to support_sync",
+      "attack_techniques": [
+        {
+          "tech_id": "T1098",
+          "tech_name": "Account Manipulation",
+          "tactic": "Persistence"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:7c71a001-2201-4a01-9010-b10000000702",
+        "openrasp:6b60a001-1101-4a01-9010-a10000000702",
+        "falco:8d82b001-3301-4a01-9030-c10000000702"
+      ],
+      "expected_signals": [
+        "attack_type=writeFile",
+        "plugin_algorithm=writeFile_privilege_map",
+        "alert.signature=ET WEB_SERVER Durable Backend Export Privilege Grant for support_sync",
+        "path=/api/v1/admin/support/principal-privilege-sync",
+        "request_id=acct-persist-chain-req-02",
+        "attack_params.granted_principal=support_sync",
+        "attack_params.persistence_scope=durable backend export privilege grant",
+        "attack_params.preparation_goal=grant_support_sync_customer_audit_export_privileges",
+        "plugin_message=Persistent backend privilege assignment granted support_sync durable audit export privileges through backend-principal-privilege-map.properties",
+        "fd.name=/srv/dotserver/tomcat-9.0.41/webapps/ROOT/WEB-INF/classes/backend-principal-privilege-map.properties"
+      ]
+    },
+    {
+      "step_id": "S2",
+      "name": "Reuse granted support_sync backend credentials to access a protected customer-audit endpoint",
+      "attack_techniques": [
+        {
+          "tech_id": "T1078",
+          "tech_name": "Valid Accounts",
+          "tactic": "Defense Evasion"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:7c71a001-2201-4a01-9010-b10000000703",
+        "openrasp:6b60a001-1101-4a01-9010-a10000000703",
+        "falco:8d82b001-3301-4a01-9030-c10000000703"
+      ],
+      "expected_signals": [
+        "attack_type=web",
+        "plugin_algorithm=valid_backend_identity_indicator",
+        "alert.signature=ET WEB_SERVER Granted Backend Service Account Protected Customer Audit Access",
+        "path=/api/v1/admin/reports/customer-audit-access",
+        "request_id=acct-persist-chain-req-03",
+        "attack_params.principal_name=support_sync",
+        "attack_params.auth_material_type=basic-auth-backend-credential",
+        "attack_params.reuse_mode=granted_backend_credential_reuse",
+        "attack_params.access_mode=protected_customer_audit_access",
+        "plugin_message=Backend service account support_sync used previously granted business privileges to access protected customer-audit endpoint",
+        "fd.name=/srv/dotserver/tomcat-9.0.41/temp/admin-audit/customer-audit-access.log"
+      ]
+    },
+    {
+      "step_id": "S3",
+      "name": "Collect non-sensitive customer case repository preview metadata before final export",
+      "attack_techniques": [
+        {
+          "tech_id": "T1213",
+          "tech_name": "Data from Information Repositories",
+          "tactic": "Collection"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:7c71a001-2201-4a01-9010-b10000000704",
+        "openrasp:6b60a001-1101-4a01-9010-a10000000704",
+        "falco:8d82b001-3301-4a01-9030-c10000000704"
+      ],
+      "expected_signals": [
+        "attack_type=web",
+        "plugin_algorithm=repository_preview_access",
+        "alert.signature=ET WEB_SERVER Granted Backend Identity Customer Case Repository Preview",
+        "path=/api/v1/admin/reports/customer-case-repository-preview",
+        "request_id=acct-persist-chain-req-04",
+        "attack_params.preview_mode=non_sensitive_repository_preview",
+        "attack_params.preview_fields=case_id,status,last_review_date",
+        "plugin_message=Granted backend identity support_sync accessed non-sensitive customer case repository preview metadata before final export",
+        "fd.name=/srv/dotserver/tomcat-9.0.41/temp/admin-audit/customer-case-repository-preview-east.json"
+      ]
+    },
+    {
+      "step_id": "S4",
+      "name": "Export sensitive customer case repository data and return PII",
+      "attack_techniques": [
+        {
+          "tech_id": "T1213",
+          "tech_name": "Data from Information Repositories",
+          "tactic": "Collection"
+        },
+        {
+          "tech_id": "T1048.003",
+          "tech_name": "Exfiltration Over Unencrypted Non-C2 Protocol",
+          "tactic": "Exfiltration"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:7c71a001-2201-4a01-9010-b10000000705",
+        "openrasp:6b60a001-1101-4a01-9010-a10000000705",
+        "falco:8d82b001-3301-4a01-9030-c10000000705"
+      ],
+      "expected_signals": [
+        "attack_type=response",
+        "plugin_algorithm=response_dataLeak",
+        "alert.signature=ET WEB_SERVER Sensitive Customer Case Repository Export",
+        "path=/api/v1/admin/reports/customer-case-repository-export",
+        "request_id=acct-persist-chain-req-05",
+        "attack_params.repository_name=customer-case-repository-east",
+        "plugin_message=PII leak detected in customer case repository export response",
+        "fd.name=/srv/dotserver/tomcat-9.0.41/temp/admin-audit/customer-case-repository-east.json"
+      ]
+    }
+  ]
+}
+
+
+
+

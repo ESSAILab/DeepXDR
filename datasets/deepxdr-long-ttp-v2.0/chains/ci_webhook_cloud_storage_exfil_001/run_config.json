@@ -1,0 +1,27 @@
+{
+  "input_mode": "offline_es_fixture",
+  "trigger_short_ttp_file": "trigger_short_ttp.json",
+  "events_file": "events.jsonl",
+  "ground_truth_file": "long_ttp_ground_truth.json",
+  "variants": [
+    {
+      "name": "deepxdr_full",
+      "long_ttp_mode": "auto_full",
+      "description": "Full DeepXDR Long TTP workflow with event context, MITRE RAG, and MCP-backed investigation."
+    },
+    {
+      "name": "deepxdr_wo_mitre_rag",
+      "long_ttp_mode": "auto_wo_rag",
+      "description": "DeepXDR Long TTP workflow with MITRE RAG disabled."
+    },
+    {
+      "name": "deepxdr_wo_fs_grep",
+      "long_ttp_mode": "auto_wo_fs_grep",
+      "description": "DeepXDR Long TTP workflow with filesystem grep context disabled."
+    }
+  ]
+}
+
+
+
+

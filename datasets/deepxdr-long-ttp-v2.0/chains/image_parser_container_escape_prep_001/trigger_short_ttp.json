@@ -1,0 +1,79 @@
+{
+  "id": "b7e8bbf7-f5be-468a-88d5-a758efe6bc6a",
+  "created_at": "2026-09-09T01:30:00.000Z",
+  "end_at": "2026-09-09T01:30:00.400Z",
+  "ttps": [
+    {
+      "id": "971f7e56-b428-4588-8f92-aebc3d5ffcab",
+      "name": "collection",
+      "description": "战术: collection",
+      "techniques": [
+        {
+          "tech_id": "T1005",
+          "tech_name": "Data from Local System",
+          "description": "Adversaries may search local system sources, such as file systems, configuration files, local databases, virtual machine files, or process memory, to find files of interest and sensitive data prior to Exfiltration.\n\nAdversaries may do this using a [Command and Scripting Interpreter](https://attack.mitre.org/techniques/T1059), such as [cmd](https://attack.mitre.org/software/S0106) as well as a [Network Device CLI](https://attack.mitre.org/techniques/T1059/008), which have functionality to interact with the file system to gather information.(Citation: show_run_config_cmd_cisco) Adversaries may also use [Automated Collection](https://attack.mitre.org/techniques/T1119) on the local system.\n",
+          "procedures": [
+            "行为: Host SSH Configuration Collection via HTTP GET；证据: GET /host/root/.ssh/config from 192.0.2.61 to 192.0.2.106:8080 with plugin_algorithm image_parser_container_escape_prep_step_6, plugin_message Host SSH Configuration Collection, intercept_state log"
+          ],
+          "event_ids": [
+            "a9c4c53b-0a62-541e-a9ce-99816f8d019c",
+            "152be674-02a6-57c8-81e4-abf9855017fc",
+            "5d832934-1b62-5ccc-8de0-e1d097c004e6"
+          ]
+        }
+      ],
+      "event_ids": [
+        "a9c4c53b-0a62-541e-a9ce-99816f8d019c",
+        "152be674-02a6-57c8-81e4-abf9855017fc",
+        "5d832934-1b62-5ccc-8de0-e1d097c004e6"
+      ]
+    }
+  ],
+  "confidence": 0.55,
+  "summary": "在2026-09-09 09:30:00，攻击源IP 192.0.2.61 通过HTTP GET请求访问 http://192.0.2.106:8080/host/root/.ssh/config，试图收集目标主机SSH配置信息（插件消息：Host SSH Configuration Collection，算法：image_parser_container_escape_prep_step_6）。目标服务器为192.0.2.106:8080（主机名deep-app-d4，类型tomcat），Suricata检测到Web应用攻击，状态码200，请求被记录（intercept_state=log）。相关request_id为d4-image_parser_container_escape_prep-06，事件ID包括4f23c722-8533-4793-a7eb-bd70ef32d4a5和1a0f9465-58c4-4eda-8c9a-7f9f5090a8ce。",
+  "event_count": 3,
+  "source_events": [
+    "a9c4c53b-0a62-541e-a9ce-99816f8d019c",
+    "152be674-02a6-57c8-81e4-abf9855017fc",
+    "5d832934-1b62-5ccc-8de0-e1d097c004e6"
+  ],
+  "attacker_fingerprint": {
+    "primary_ip": "192.0.2.61",
+    "ip_list": [
+      "192.0.2.61"
+    ],
+    "user_agents": [],
+    "patterns": [],
+    "first_seen": "2026-09-09T01:30:00.000Z",
+    "last_seen": "2026-09-09T01:30:00.400Z"
+  },
+  "attacker_ip": "192.0.2.61",
+  "raw_event_count": 3,
+  "filtered_event_count": 2,
+  "ip_group_count": 1,
+  "filter_reason": "current window contains openrasp/suricata; falco events are ignored before offline DeepXDR analysis",
+  "selected_attacker_ip": "192.0.2.61",
+  "analyzed_ip_groups": [
+    {
+      "attacker_ip": "192.0.2.61",
+      "event_count": 2
+    }
+  ],
+  "latency_seconds": 46.245,
+  "event_ids": [
+    "a9c4c53b-0a62-541e-a9ce-99816f8d019c",
+    "152be674-02a6-57c8-81e4-abf9855017fc",
+    "5d832934-1b62-5ccc-8de0-e1d097c004e6"
+  ],
+  "fixture_chain_id": "image_parser_container_escape_prep_001",
+  "fixture_step_id": "S6",
+  "fixture_event_ref_map": {
+    "suricata:d0400000-1006-4d04-8100-040601000001": "a9c4c53b-0a62-541e-a9ce-99816f8d019c",
+    "openrasp:d0400000-2006-4d04-8200-040602000001": "152be674-02a6-57c8-81e4-abf9855017fc",
+    "falco:d0400000-3006-4d04-8300-040603000001": "5d832934-1b62-5ccc-8de0-e1d097c004e6"
+  }
+}
+
+
+
+

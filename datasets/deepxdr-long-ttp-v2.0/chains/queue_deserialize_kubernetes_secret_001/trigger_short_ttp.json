@@ -1,0 +1,104 @@
+{
+  "id": "ceb1fc9a-f8f8-402d-8a0e-b0b1aa3388e3",
+  "created_at": "2026-09-09T02:10:00.000Z",
+  "end_at": "2026-09-09T02:10:00.400Z",
+  "ttps": [
+    {
+      "id": "178dc7c6-7a50-4234-bac0-e9a93b642cb9",
+      "name": "credential-access",
+      "description": "战术: credential-access",
+      "techniques": [
+        {
+          "tech_id": "T1212",
+          "tech_name": "Exploitation for Credential Access",
+          "description": "Adversaries may exploit software vulnerabilities in an attempt to collect credentials. Exploitation of a software vulnerability occurs when an adversary takes advantage of a programming error in a program, service, or within the operating system software or kernel itself to execute adversary-controlled code. \n\nCredentialing and authentication mechanisms may be targeted for exploitation by adversaries as a means to gain access to useful credentials or circumvent the process to gain authenticated access to systems. One example of this is `MS14-068`, which targets Kerberos and can be used to forge Kerberos tickets using domain user permissions.(Citation: Technet MS14-068)(Citation: ADSecurity Detecting Forged Tickets) Another example of this is replay attacks, in which the adversary intercepts data packets sent between parties and then later replays these packets. If services don't properly validate authentication requests, these replayed packets may allow an adversary to impersonate one of the parties and gain unauthorized access or privileges.(Citation: Bugcrowd Replay Attack)(Citation: Comparitech Replay Attack)(Citation: Microsoft Midnight Blizzard Replay Attack)\n\nSuch exploitation has been demonstrated in cloud environments as well. For example, adversaries have exploited vulnerabilities in public cloud infrastructure that allowed for unintended authentication token creation and renewal.(Citation: Storm-0558 techniques for unauthorized email access)\n\nExploitation for credential access may also result in Privilege Escalation depending on the process targeted or credentials obtained.",
+          "procedures": [
+            "行为: Exploit queue deserialization to exfiltrate Kubernetes secret；证据: plugin_algorithm: queue_deserialize_kubernetes_secret_step_6, plugin_message: Queue Result Secret Exfiltration, attack_type: web, intercept_state: log, request_id: d9-queue_deserialize_kubernetes_secret-06"
+          ],
+          "event_ids": [
+            "90fcaf81-8455-53fa-807a-d0996b0388c1",
+            "8cb01624-7fa6-5285-abf9-da7cae066d16",
+            "32b499cf-721c-5172-9733-c0a3db6ab1ac"
+          ]
+        }
+      ],
+      "event_ids": [
+        "90fcaf81-8455-53fa-807a-d0996b0388c1",
+        "8cb01624-7fa6-5285-abf9-da7cae066d16",
+        "32b499cf-721c-5172-9733-c0a3db6ab1ac"
+      ]
+    },
+    {
+      "id": "562f9eee-4f18-43f6-b137-e0761063a7a5",
+      "name": "exfiltration",
+      "description": "战术: exfiltration",
+      "techniques": [
+        {
+          "tech_id": "T1048.003",
+          "tech_name": "Exfiltration Over Unencrypted Non-C2 Protocol",
+          "description": "Adversaries may steal data by exfiltrating it over an un-encrypted network protocol other than that of the existing command and control channel. The data may also be sent to an alternate network location from the main command and control server.(Citation: copy_cmd_cisco)\n\nAdversaries may opt to obfuscate this data, without the use of encryption, within network protocols that are natively unencrypted (such as HTTP, FTP, or DNS). This may include custom or publicly available encoding/compression algorithms (such as base64) as well as embedding data within protocol headers and fields. ",
+          "procedures": [
+            "行为: Perform HTTP GET request to queue results download endpoint on target server；证据: src_ip 192.0.2.61:51606 -> dest_ip 192.0.2.106:8080, GET /api/queue/results/download, HTTP/1.1, status 200, signature ET WEB_SERVER Queue Result Secret Exfiltration"
+          ],
+          "event_ids": [
+            "90fcaf81-8455-53fa-807a-d0996b0388c1",
+            "8cb01624-7fa6-5285-abf9-da7cae066d16",
+            "32b499cf-721c-5172-9733-c0a3db6ab1ac"
+          ]
+        }
+      ],
+      "event_ids": [
+        "90fcaf81-8455-53fa-807a-d0996b0388c1",
+        "8cb01624-7fa6-5285-abf9-da7cae066d16",
+        "32b499cf-721c-5172-9733-c0a3db6ab1ac"
+      ]
+    }
+  ],
+  "confidence": 0.6,
+  "summary": "2026-09-09 10:10:00，攻击源192.0.2.61通过HTTP GET请求访问目标192.0.2.106:8080的/api/queue/results/download。OpenRASP在deep-app-d9上检测到该请求为“Queue Result Secret Exfiltration”，插件算法为queue_deserialize_kubernetes_secret_step_6，请求ID为d9-queue_deserialize_kubernetes_secret-06，拦截状态为log，置信度96。Suricata同步记录该TCP流量（源端口51606）命中签名“ET WEB_SERVER Queue Result Secret Exfiltration”，HTTP响应状态为200，请求被放行。两个事件均关联deep_chain_id=queue_deserialize_kubernetes_secret_001及deep_step_id=S6，对应同一攻击链的后续阶段，涉嫌通过队列反序列化窃取Kubernetes Secret。",
+  "event_count": 3,
+  "source_events": [
+    "90fcaf81-8455-53fa-807a-d0996b0388c1",
+    "8cb01624-7fa6-5285-abf9-da7cae066d16",
+    "32b499cf-721c-5172-9733-c0a3db6ab1ac"
+  ],
+  "attacker_fingerprint": {
+    "primary_ip": "192.0.2.61",
+    "ip_list": [
+      "192.0.2.61"
+    ],
+    "user_agents": [],
+    "patterns": [],
+    "first_seen": "2026-09-09T02:10:00.000Z",
+    "last_seen": "2026-09-09T02:10:00.400Z"
+  },
+  "attacker_ip": "192.0.2.61",
+  "raw_event_count": 3,
+  "filtered_event_count": 2,
+  "ip_group_count": 1,
+  "filter_reason": "current window contains openrasp/suricata; falco events are ignored before offline DeepXDR analysis",
+  "selected_attacker_ip": "192.0.2.61",
+  "analyzed_ip_groups": [
+    {
+      "attacker_ip": "192.0.2.61",
+      "event_count": 2
+    }
+  ],
+  "latency_seconds": 49.391,
+  "event_ids": [
+    "90fcaf81-8455-53fa-807a-d0996b0388c1",
+    "8cb01624-7fa6-5285-abf9-da7cae066d16",
+    "32b499cf-721c-5172-9733-c0a3db6ab1ac"
+  ],
+  "fixture_chain_id": "queue_deserialize_kubernetes_secret_001",
+  "fixture_step_id": "S6",
+  "fixture_event_ref_map": {
+    "suricata:d0900000-1006-4d09-8100-090601000001": "90fcaf81-8455-53fa-807a-d0996b0388c1",
+    "openrasp:d0900000-2006-4d09-8200-090602000001": "8cb01624-7fa6-5285-abf9-da7cae066d16",
+    "falco:d0900000-3006-4d09-8300-090603000001": "32b499cf-721c-5172-9733-c0a3db6ab1ac"
+  }
+}
+
+
+
+

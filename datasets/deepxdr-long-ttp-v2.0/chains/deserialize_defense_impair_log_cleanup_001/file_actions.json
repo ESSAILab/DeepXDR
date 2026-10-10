@@ -1,0 +1,49 @@
+{
+  "chain_id": "deserialize_defense_impair_log_cleanup_001",
+  "actions": [
+    {
+      "action_id": "prepare_weakened_openrasp_policy",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/tomcat-9.0.41/rasp/conf/openrasp.yml",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 20.4,
+      "content": "plugin.timeout.millis: 100\nhooks.enable: true\nblock.status_code: 200\nlog.maxburst: 0\nsecurity.enforce.mode: monitor_only\nalgorithm.config:\n  response_dataLeak:\n    action: ignore\n  ssrf_userinput:\n    action: ignore\n  deserialization_transformer:\n    action: log\n"
+    },
+    {
+      "action_id": "prepare_truncated_access_log",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/tomcat-9.0.41/logs/localhost_access_log.2026-08-19.txt",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 40.4,
+      "content": "# deepxdr rotated access log\n2026-08-19T10:40:40+08:00 cleanup_marker=true\n"
+    },
+    {
+      "action_id": "prepare_rotated_audit_export_log",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/tomcat-9.0.41/logs/audit-export-access.log",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 40.5,
+      "content": "# deepxdr audit export log reset\n2026-08-19T10:40:40+08:00 no prior entries retained\n"
+    },
+    {
+      "action_id": "prepare_runtime_fingerprint_output",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/tomcat-9.0.41/temp/ops/runtime-fingerprint.txt",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 60.4,
+      "content": "12:memory:/docker/3dcd6fd91463\n11:cpu:/docker/3dcd6fd91463\ncontainer_hostname=3dcd6fd91463\nuid=65001(dotcms) gid=65001(dotcms)\n"
+    }
+  ]
+}
+
+
+
+

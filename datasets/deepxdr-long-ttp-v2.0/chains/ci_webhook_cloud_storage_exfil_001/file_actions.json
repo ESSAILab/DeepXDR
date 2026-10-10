@@ -1,0 +1,69 @@
+{
+  "chain_id": "ci_webhook_cloud_storage_exfil_001",
+  "actions": [
+    {
+      "action_id": "prepare_d1_step_1_artifact",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/ci_webhook_cloud_storage_exfil_001/stage-1-ci_webhook_cloud_pivot.json",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 0.3,
+      "content": "{\"dataset\": \"synthetic-deep-chain\", \"chain\": \"ci_webhook_cloud_storage_exfil_001\", \"step\": \"S1\", \"scenario\": \"Exploit exposed CI webhook with SSRF\"}\n"
+    },
+    {
+      "action_id": "prepare_d1_step_2_artifact",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/ci_webhook_cloud_storage_exfil_001/stage-2-ci_webhook_cloud_pivot.json",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 120.3,
+      "content": "{\"dataset\": \"synthetic-deep-chain\", \"chain\": \"ci_webhook_cloud_storage_exfil_001\", \"step\": \"S2\", \"scenario\": \"Read instance identity from cloud metadata\"}\n"
+    },
+    {
+      "action_id": "prepare_d1_step_3_artifact",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/ci_webhook_cloud_storage_exfil_001/stage-3-ci_webhook_cloud_pivot.json",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 240.3,
+      "content": "{\"dataset\": \"synthetic-deep-chain\", \"chain\": \"ci_webhook_cloud_storage_exfil_001\", \"step\": \"S3\", \"scenario\": \"Use temporary credentials to enumerate object storage\"}\n"
+    },
+    {
+      "action_id": "prepare_d1_step_4_artifact",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/ci_webhook_cloud_storage_exfil_001/stage-4-ci_webhook_cloud_pivot.json",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 360.3,
+      "content": "{\"dataset\": \"synthetic-deep-chain\", \"chain\": \"ci_webhook_cloud_storage_exfil_001\", \"step\": \"S4\", \"scenario\": \"Collect build artifacts from the release bucket\"}\n"
+    },
+    {
+      "action_id": "prepare_d1_step_5_artifact",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/ci_webhook_cloud_storage_exfil_001/stage-5-ci_webhook_cloud_pivot.json",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 480.3,
+      "content": "{\"dataset\": \"synthetic-deep-chain\", \"chain\": \"ci_webhook_cloud_storage_exfil_001\", \"step\": \"S5\", \"scenario\": \"Stage source maps and deployment manifests\"}\n"
+    },
+    {
+      "action_id": "prepare_d1_step_6_artifact",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/ci_webhook_cloud_storage_exfil_001/stage-6-ci_webhook_cloud_pivot.json",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 600.3,
+      "content": "{\"dataset\": \"synthetic-deep-chain\", \"chain\": \"ci_webhook_cloud_storage_exfil_001\", \"step\": \"S6\", \"scenario\": \"Download staged artifacts from target over HTTP diagnostics endpoint\", \"exfiltration_direction\": \"attacker_pull_from_target\", \"external_webhook_delivery\": false}\n"
+    }
+  ]
+}
+
+
+
+

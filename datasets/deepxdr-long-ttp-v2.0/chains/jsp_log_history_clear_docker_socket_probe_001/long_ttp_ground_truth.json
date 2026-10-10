@@ -1,0 +1,148 @@
+{
+  "chain_id": "jsp_log_history_clear_docker_socket_probe_001",
+  "ground_truth_type": "long_ttp_chain_level_from_step_annotations",
+  "matching_note": "Use parent-family matching when the experiment ignores MITRE sub-technique suffixes.",
+  "trigger_step_id": "S3",
+  "step_count": 3,
+  "technique_ids": [
+    "T1070.002",
+    "T1070.003",
+    "T1613"
+  ],
+  "techniques": [
+    {
+      "tech_id": "T1070.002",
+      "tech_name": "Clear Linux or Mac System Logs",
+      "tactic": "Defense Evasion"
+    },
+    {
+      "tech_id": "T1070.003",
+      "tech_name": "Clear Command History",
+      "tactic": "Defense Evasion"
+    },
+    {
+      "tech_id": "T1613",
+      "tech_name": "Container and Resource Discovery",
+      "tactic": "Discovery"
+    }
+  ],
+  "tactic_names": [
+    "Defense Evasion",
+    "Discovery"
+  ],
+  "steps": [
+    {
+      "step_id": "S1",
+      "name": "Clear bootstrap.log through JSP command execution",
+      "attack_techniques": [
+        {
+          "tech_id": "T1070.002",
+          "tech_name": "Clear Linux or Mac System Logs",
+          "tactic": "Defense Evasion"
+        }
+      ],
+      "expected_event_refs": [
+        "falco:3b0b2c46-fba3-4899-a33d-622a6d5de3ad",
+        "openrasp:29e909a0-fc32-42c4-a60c-e1d83370b6de",
+        "falco:063eda6b-9fbd-43eb-b434-30fc5a907e7b",
+        "openrasp:d48e2500-0c25-4f9d-8401-8231188aa595",
+        "falco:a144c4f4-c381-47a3-a3d6-f1bc27c14901"
+      ],
+      "expected_signals": [
+        "rule=Execve_Behavior_Collector",
+        "proc.cmdline=sh -c cd /tmp/ ;echo \"\" > /var/log/bootstrap.log > /dev/null ||true",
+        "proc.name=sh",
+        "container.name=app-dotcms",
+        "evt.type=execve",
+        "attack_type=command",
+        "plugin_algorithm=command_other",
+        "path=/test.jsp",
+        "request_id=82a17c35b03d4d55adc69c2a6cfe849c",
+        "plugin_message=Command execution - Logging all command execution by default, command is /bin/sh -c cd /tmp/ ;echo \"\" > /var/log/bootstrap.log > /dev/null ||true",
+        "attack_params.command=/bin/sh -c cd /tmp/ ;echo \"\" > /var/log/bootstrap.log > /dev/null ||true",
+        "evt.type=openat",
+        "fd.name=/var/log/bootstrap.log",
+        "evt.arg.flags=O_TRUNC|O_CREAT|O_WRONLY"
+      ]
+    },
+    {
+      "step_id": "S2",
+      "name": "Delete Bash history through JSP command execution",
+      "attack_techniques": [
+        {
+          "tech_id": "T1070.003",
+          "tech_name": "Clear Command History",
+          "tactic": "Defense Evasion"
+        }
+      ],
+      "expected_event_refs": [
+        "openrasp:0fd49fea-0fea-4a21-a7a6-aa08d913c133",
+        "falco:5d42cb29-6239-478c-91a8-77b62cfadec9",
+        "falco:ec74c26a-05c6-4d95-b855-6d4c4fbd0ad3",
+        "falco:2ecccaf4-03a4-4a50-8124-3d038f7ba413",
+        "falco:2f4f5012-f6ad-44c6-8b68-9bc9232fd882"
+      ],
+      "expected_signals": [
+        "rule=Delete Bash History",
+        "proc.cmdline=rm -f /srv/.bash_history",
+        "container.name=app-dotcms",
+        "evt.type=execve",
+        "rule=Execve_Behavior_Collector",
+        "proc.cmdline=sh -c cd /tmp/ ;rm -f ~/.bash_history",
+        "proc.name=sh",
+        "proc.name=rm",
+        "proc.exepath=/usr/bin/rm",
+        "proc.pname=sh",
+        "rule=Delete or rename shell history",
+        "evt.type=unlinkat",
+        "attack_type=command",
+        "plugin_algorithm=command_other",
+        "path=/test.jsp",
+        "request_id=921ca2349c304bd6bbdff4eb0c4c85be",
+        "plugin_message=Command execution - Logging all command execution by default, command is /bin/sh -c cd /tmp/ ;rm -f ~/.bash_history",
+        "http.url=http://192.0.2.157/test.jsp",
+        "attack_params.command=/bin/sh -c cd /tmp/ ;rm -f ~/.bash_history"
+      ]
+    },
+    {
+      "step_id": "S3",
+      "name": "Probe Docker socket through JSP command execution",
+      "attack_techniques": [
+        {
+          "tech_id": "T1613",
+          "tech_name": "Container and Resource Discovery",
+          "tactic": "Discovery"
+        }
+      ],
+      "expected_event_refs": [
+        "openrasp:404e8a6c-7ea5-4b2f-b4c2-bf5dd87a5e3f",
+        "falco:ef31b589-2104-444b-ae71-f8e7d020e8ec",
+        "falco:9a320aa4-27de-4f81-89fa-78074505e215",
+        "falco:09436a20-33a7-4ebf-8519-7d93822e46ca"
+      ],
+      "expected_signals": [
+        "rule=Execve_Behavior_Collector",
+        "proc.cmdline=sh -c cd /tmp/ ;ls -la /var/run/docker.sock 2>/dev/null",
+        "proc.name=sh",
+        "container.name=app-dotcms",
+        "evt.type=execve",
+        "rule=File_Write_Openat_Behavior_Collector",
+        "fd.name=/dev/null",
+        "evt.type=openat",
+        "proc.cmdline=ls -la /var/run/docker.sock",
+        "proc.name=ls",
+        "attack_type=command",
+        "plugin_algorithm=command_other",
+        "path=/test.jsp",
+        "request_id=cdb456e6240f4dcb84672a09bd076e91",
+        "plugin_message=Command execution - Logging all command execution by default, command is /bin/sh -c cd /tmp/ ;ls -la /var/run/docker.sock 2>/dev/null",
+        "http.url=http://192.0.2.157/test.jsp",
+        "attack_params.command=/bin/sh -c cd /tmp/ ;ls -la /var/run/docker.sock 2>/dev/null"
+      ]
+    }
+  ]
+}
+
+
+
+

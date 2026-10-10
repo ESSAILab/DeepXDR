@@ -1,0 +1,49 @@
+{
+  "chain_id": "ssrf_internal_audit_pii_001",
+  "actions": [
+    {
+      "action_id": "prepare_internal_audit_health_cache",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/tomcat-9.0.41/temp/proxy-cache/internal-audit-health.json",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 0.4,
+      "content": "{\"service\":\"internal-audit\",\"status\":\"ok\",\"version\":\"2.4.7\",\"build\":\"2026.08.13\",\"modules\":[\"topology\",\"customer-summary\",\"case-review\"],\"next_probe_hint\":\"/internal/audit/topology\",\"summary_url\":\"/internal/audit/customer-summary?region=east&format=csv\"}\n"
+    },
+    {
+      "action_id": "prepare_internal_audit_export_route_catalog_cache",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/tomcat-9.0.41/temp/proxy-cache/internal-audit-service-endpoints.json",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 20.4,
+      "content": "{\"service\":\"internal-audit\",\"internal_service_family\":\"/internal/audit/\",\"target_label\":\"service-endpoint-catalog\",\"internal_host\":\"127.0.0.1\",\"internal_port\":8080,\"network_scope\":\"loopback-service-interface\",\"service_endpoints\":[\"/internal/audit/customer-summary?region=east&format=csv\",\"/internal/audit/export-credential-bundle?scope=customer-summary-east\"],\"reachable_service_names\":[\"customer-summary\",\"export-credential-bundle\"],\"reachable_paths\":[\"/internal/audit/customer-summary?region=east&format=csv\",\"/internal/audit/export-credential-bundle?scope=customer-summary-east\"],\"supported_exports\":[\"customer-summary-east\",\"customer-summary-west\"],\"summary_endpoint\":\"/internal/audit/customer-summary?region=east&format=csv\",\"exporter_bundle\":\"/internal/audit/export-credential-bundle?scope=customer-summary-east\",\"notes\":\"public proxy callers must never enumerate loopback-reachable internal service endpoints, service names, or export interfaces on 127.0.0.1:8080\"}\n"
+    },
+    {
+      "action_id": "prepare_internal_audit_export_credential_bundle_cache",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/tomcat-9.0.41/temp/proxy-cache/internal-audit-export-credential-bundle.properties",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 40.4,
+      "content": "service=internal-audit\nbundle.name=customer-summary-east\nexporter.username=audit_exporter\nexporter.api_token=synthetic-token-audit-001\nexporter.signing_key_id=east-audit-signing-key-01\nexporter.secret_scope=customer-summary-east\nsummary.endpoint=/internal/audit/customer-summary?region=east&format=csv\nnotes=proxy endpoint must never expose export credential bundles to external callers\n"
+    },
+    {
+      "action_id": "prepare_internal_audit_customer_summary_cache",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/tomcat-9.0.41/temp/proxy-cache/customer-summary-region-east.csv",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 60.4,
+      "content": "customer_name,id_number,mobile,settlement_card,region,contract_id\nAlice Chen,ID-EXAMPLE-001,MOBILE-EXAMPLE-001,BANK-EXAMPLE-001,East,CTR-2026-Q3-104\n"
+    }
+  ]
+}
+
+
+
+

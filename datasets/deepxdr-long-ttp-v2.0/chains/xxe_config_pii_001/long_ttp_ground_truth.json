@@ -1,0 +1,214 @@
+{
+  "chain_id": "xxe_config_pii_001",
+  "ground_truth_type": "long_ttp_chain_level_from_step_annotations",
+  "matching_note": "Strict scoring uses parent-level ATT&CK technique IDs. Sub-technique suffixes are ignored during parent-family matching.",
+  "trigger_step_id": "S3",
+  "step_count": 3,
+  "technique_ids": [
+    "T1048",
+    "T1083",
+    "T1190",
+    "T1213"
+  ],
+  "techniques": [
+    {
+      "tech_id": "T1048",
+      "tech_name": "Exfiltration Over Alternative Protocol",
+      "tactic": "Exfiltration"
+    },
+    {
+      "tech_id": "T1083",
+      "tech_name": "File and Directory Discovery",
+      "tactic": "Discovery"
+    },
+    {
+      "tech_id": "T1190",
+      "tech_name": "Exploit Public-Facing Application",
+      "tactic": "Initial Access"
+    },
+    {
+      "tech_id": "T1213",
+      "tech_name": "Data from Information Repositories",
+      "tactic": "Collection"
+    }
+  ],
+  "acceptable_technique_ids": [
+    "T1005",
+    "T1048.003",
+    "T1074.001",
+    "T1087.001",
+    "T1213.004"
+  ],
+  "acceptable_techniques": [
+    {
+      "tech_id": "T1005",
+      "tech_name": "Data from Local System",
+      "tactic": "Collection",
+      "reason": "The chain reads local files via XXE, but the strict chain-level objective is public exploitation, discovery, repository collection, and HTTP exfiltration."
+    },
+    {
+      "tech_id": "T1048.003",
+      "tech_name": "Exfiltration Over Unencrypted Non-C2 Protocol",
+      "tactic": "Exfiltration",
+      "reason": "Accepted as a T1048 parent-family hit."
+    },
+    {
+      "tech_id": "T1074.001",
+      "tech_name": "Local Data Staging",
+      "tactic": "Collection",
+      "reason": "The audit-cache CSV is staging-like evidence, but it is not required for strict matching."
+    },
+    {
+      "tech_id": "T1087.001",
+      "tech_name": "Local Account",
+      "tactic": "Discovery",
+      "reason": "Reading /etc/passwd can support account discovery, but the strict S1 label remains T1190."
+    },
+    {
+      "tech_id": "T1213.004",
+      "tech_name": "Customer Relationship Management Software",
+      "tactic": "Collection",
+      "reason": "Accepted as a T1213 parent-family hit."
+    }
+  ],
+  "tactic_names": [
+    "Collection",
+    "Discovery",
+    "Exfiltration",
+    "Initial Access"
+  ],
+  "steps": [
+    {
+      "step_id": "S1",
+      "name": "Exploit public-facing legacy XML import parser with XXE payload",
+      "attack_techniques": [
+        {
+          "tech_id": "T1190",
+          "tech_name": "Exploit Public-Facing Application",
+          "tactic": "Initial Access"
+        }
+      ],
+      "expected_event_refs": [
+        "openrasp:1d4e2f81-7c1c-4a66-9df2-8b4d2a640101",
+        "suricata:6c4e7a45-5fb5-4e48-a5cb-56ee2f2d0101",
+        "falco:4f2e98f1-2d34-4a10-8f3a-8c7711aa0101"
+      ],
+      "expected_signals": [
+        "attack_type=xxe",
+        "plugin_algorithm=xxe_file",
+        "alert.signature=ET WEB_SERVER Public XML Import XXE Public-Facing Parser Exploit",
+        "http.url=/public/xml/legacy-audit-import.jsp",
+        "attack_params.entity=file:///etc/passwd",
+        "public_entrypoint=/public/xml/legacy-audit-import.jsp",
+        "parser_profile=legacy-dom4j-public-import",
+        "exploit_target=public-facing-xml-parser",
+        "path=/public/xml/legacy-audit-import.jsp",
+        "fd.name=/etc/passwd"
+      ]
+    },
+    {
+      "step_id": "S2",
+      "name": "Discover internal customer audit endpoint mapping via XXE",
+      "attack_techniques": [
+        {
+          "tech_id": "T1083",
+          "tech_name": "File and Directory Discovery",
+          "tactic": "Discovery"
+        }
+      ],
+      "acceptable_techniques": [
+        {
+          "tech_id": "T1005",
+          "tech_name": "Data from Local System",
+          "tactic": "Collection",
+          "reason": "The XXE request reads local configuration files, but the strict step objective is endpoint/configuration discovery."
+        }
+      ],
+      "expected_event_refs": [
+        "openrasp:1d4e2f81-7c1c-4a66-9df2-8b4d2a640102",
+        "suricata:6c4e7a45-5fb5-4e48-a5cb-56ee2f2d0102",
+        "falco:4f2e98f1-2d34-4a10-8f3a-8c7711aa0102",
+        "openrasp:1d4e2f81-7c1c-4a66-9df2-8b4d2a640104",
+        "suricata:6c4e7a45-5fb5-4e48-a5cb-56ee2f2d0104",
+        "falco:4f2e98f1-2d34-4a10-8f3a-8c7711aa0104"
+      ],
+      "expected_signals": [
+        "attack_type=xxe",
+        "plugin_algorithm=xxe_file",
+        "alert.signature=ET WEB_SERVER File and Directory Discovery via XXE Audit Config",
+        "alert.signature=ET WEB_SERVER File and Directory Discovery via XXE Audit Endpoint Map",
+        "http.url=/api/xml/legacy-audit-import.jsp",
+        "attack_params.entity=file:///srv/dotserver/tomcat-9.0.41/webapps/ROOT/WEB-INF/classes/customer-audit-service.properties",
+        "attack_params.entity=file:///srv/dotserver/tomcat-9.0.41/webapps/ROOT/WEB-INF/classes/customer-audit-endpoint-map.properties",
+        "path=/api/xml/legacy-audit-import.jsp",
+        "fd.name=/srv/dotserver/tomcat-9.0.41/webapps/ROOT/WEB-INF/classes/customer-audit-service.properties",
+        "fd.name=/srv/dotserver/tomcat-9.0.41/webapps/ROOT/WEB-INF/classes/customer-audit-endpoint-map.properties",
+        "discovery_scope=file-and-directory-layout",
+        "discovered_directories=/srv/dotserver/tomcat-9.0.41/webapps/ROOT/WEB-INF/classes/,/srv/dotserver/tomcat-9.0.41/temp/audit-cache/",
+        "route_map_file=/srv/dotserver/tomcat-9.0.41/webapps/ROOT/WEB-INF/classes/customer-audit-endpoint-map.properties",
+        "CUSTOMER_AUDIT_ENDPOINT=/api/v1/audit/customer-summary",
+        "CUSTOMER_AUDIT_CACHE_PATH=/srv/dotserver/tomcat-9.0.41/temp/audit-cache/",
+        "AUDIT_IMPORT_INTERNAL_XML=/api/xml/legacy-audit-import.jsp",
+        "AUDIT_IMPORT_PUBLIC_XML=/public/xml/legacy-audit-import.jsp",
+        "session_context=reuse-authenticated-audit-import-session",
+        "phase=post-compromise-discovery"
+      ]
+    },
+    {
+      "step_id": "S3",
+      "name": "Retrieve customer audit summary with PII in response",
+      "attack_techniques": [
+        {
+          "tech_id": "T1213",
+          "tech_name": "Data from Information Repositories",
+          "tactic": "Collection"
+        },
+        {
+          "tech_id": "T1048",
+          "tech_name": "Exfiltration Over Alternative Protocol",
+          "tactic": "Exfiltration"
+        }
+      ],
+      "acceptable_techniques": [
+        {
+          "tech_id": "T1048.003",
+          "tech_name": "Exfiltration Over Unencrypted Non-C2 Protocol",
+          "tactic": "Exfiltration",
+          "reason": "Accepted as a T1048 parent-family hit."
+        },
+        {
+          "tech_id": "T1213.004",
+          "tech_name": "Customer Relationship Management Software",
+          "tactic": "Collection",
+          "reason": "Accepted as a T1213 parent-family hit."
+        },
+        {
+          "tech_id": "T1074.001",
+          "tech_name": "Local Data Staging",
+          "tactic": "Collection",
+          "reason": "Staging-like cache evidence exists, but strict GT focuses on repository collection and exfiltration."
+        }
+      ],
+      "expected_event_refs": [
+        "openrasp:1d4e2f81-7c1c-4a66-9df2-8b4d2a640103",
+        "suricata:6c4e7a45-5fb5-4e48-a5cb-56ee2f2d0103",
+        "falco:4f2e98f1-2d34-4a10-8f3a-8c7711aa0103"
+      ],
+      "expected_signals": [
+        "attack_type=response",
+        "plugin_algorithm=response_dataLeak",
+        "alert.signature=ET WEB_SERVER Sensitive Customer Audit Summary Endpoint Access",
+        "http.url=/api/v1/audit/customer-summary?region=east&format=csv",
+        "path=/api/v1/audit/customer-summary",
+        "Identity Card",
+        "Mobile Number",
+        "Bank Card",
+        "fd.name=/srv/dotserver/tomcat-9.0.41/temp/audit-cache/customer-audit-region-east-2026Q3.csv"
+      ]
+    }
+  ]
+}
+
+
+
+

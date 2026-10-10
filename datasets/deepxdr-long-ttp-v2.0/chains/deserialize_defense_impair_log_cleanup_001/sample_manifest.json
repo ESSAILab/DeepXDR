@@ -1,0 +1,40 @@
+{
+  "dataset_type": "deepxdr_long_ttp_release_sample",
+  "chain_id": "deserialize_defense_impair_log_cleanup_001",
+  "source_chain_name": "OpenRASP lab: Deserialization -> Defense Impairment -> Log Cleanup -> Container Runtime Discovery",
+  "source_result_path": null,
+  "base_time": "2026-08-19T02:40:00Z",
+  "attacker_ip": "192.0.2.2",
+  "target_host": "192.0.2.106:8080",
+  "trigger_step_id": "S4",
+  "trigger_step_name": "Fingerprint container runtime identity for follow-on operations",
+  "trigger_short_ttp_id": "3c736916-5bdd-4aba-87f0-c90376362c72",
+  "event_count": 12,
+  "trigger_event_count": 3,
+  "step_count": 4,
+  "telemetry_sources": [
+    "openrasp",
+    "suricata",
+    "falco"
+  ],
+  "technique_ids": [
+    "T1033",
+    "T1059.004",
+    "T1070.002",
+    "T1082",
+    "T1562.001",
+    "T1613"
+  ],
+  "files": {
+    "trigger_short_ttp": "trigger_short_ttp.json",
+    "events": "events.jsonl",
+    "long_ttp_ground_truth": "long_ttp_ground_truth.json",
+    "event_id_map": "event_id_map.json",
+    "file_actions": "file_actions.json",
+    "run_config": "run_config.json",
+    "sample_manifest": "sample_manifest.json"
+  },
+  "release_version": "v2.0",
+  "legacy_chain_id": "openrasp_deserialize_defense_impair_log_cleanup_chain_001",
+  "display_name": "Deserialization to Defense Impairment and Log Cleanup"
+}

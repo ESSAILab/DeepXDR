@@ -1,0 +1,39 @@
+{
+  "dataset_type": "deepxdr_long_ttp_release_sample",
+  "chain_id": "backup_job_poisoning_secret_bundle_001",
+  "source_chain_name": "OpenRASP lab: Backup Workflow Component Discovery -> Persistent Backup Workflow Rebinding -> Backup Runner Profile Probe -> Backup Credential Profile Access -> Archive Utility Staging -> Backup Archive Leak",
+  "source_result_path": null,
+  "base_time": "2026-08-31T01:00:00Z",
+  "attacker_ip": "192.0.2.2",
+  "target_host": "192.0.2.106:8080",
+  "trigger_step_id": "S6",
+  "trigger_step_name": "Download the staged backup artifact and leak customer data",
+  "trigger_short_ttp_id": "f15d464a-6827-4fdc-857f-51f2c9b4a2e7",
+  "event_count": 18,
+  "trigger_event_count": 3,
+  "step_count": 6,
+  "telemetry_sources": [
+    "openrasp",
+    "suricata",
+    "falco"
+  ],
+  "technique_ids": [
+    "T1048.003",
+    "T1053",
+    "T1518",
+    "T1552.001",
+    "T1560.001"
+  ],
+  "files": {
+    "trigger_short_ttp": "trigger_short_ttp.json",
+    "events": "events.jsonl",
+    "long_ttp_ground_truth": "long_ttp_ground_truth.json",
+    "event_id_map": "event_id_map.json",
+    "file_actions": "file_actions.json",
+    "run_config": "run_config.json",
+    "sample_manifest": "sample_manifest.json"
+  },
+  "release_version": "v2.0",
+  "legacy_chain_id": "openrasp_backup_job_poisoning_secret_bundle_chain_001",
+  "display_name": "Backup Job Poisoning to Secret Bundle Access"
+}

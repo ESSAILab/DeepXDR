@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DeepXDR Long TTP Ground Truth",
+  "type": "object",
+  "required": ["chain_id", "technique_ids", "steps"],
+  "properties": {
+    "chain_id": {"type": "string", "minLength": 1},
+    "ground_truth_type": {"type": "string"},
+    "technique_ids": {
+      "type": "array",
+      "items": {"type": "string", "pattern": "^T[0-9]{4,}(\.[0-9]{3})?$"}
+    },
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["step_id", "name", "attack_techniques"],
+        "properties": {
+          "step_id": {"type": "string", "pattern": "^S[0-9]+$"},
+          "name": {"type": "string", "minLength": 1},
+          "attack_techniques": {"type": "array"}
+        }
+      }
+    }
+  }
+}
+
+
+

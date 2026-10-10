@@ -1,0 +1,79 @@
+{
+  "chain_id": "proxy_route_poisoning_internal_export_001",
+  "actions": [
+    {
+      "action_id": "prepare_public_proxy_route_catalog_file",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/tomcat-9.0.41/webapps/ROOT/WEB-INF/classes/public-proxy-route-catalog.json",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 0.3,
+      "content": "{\n  \"scope\": \"public-audit-mirror\",\n  \"publicLabels\": [\"service-profile\", \"module-catalog\", \"auth-profile\", \"customer-case-stage\", \"artifact-download\"],\n  \"downstreamTargetFamily\": \"/internal/customer-export/\",\n  \"adminSyncEndpoint\": \"/api/v1/admin/proxy/route-sync\",\n  \"supportedMirrorDomains\": [\"public-audit-mirror\", \"customer-case-mirror\"],\n  \"internalHost\": \"127.0.0.1\",\n  \"internalPort\": 8080,\n  \"serviceTargets\": [\n    \"/internal/customer-export/service-profile\",\n    \"/internal/customer-export/module-catalog\",\n    \"/internal/customer-export/auth-profile\",\n    \"/internal/customer-export/customer-case-stage\",\n    \"/internal/customer-export/download\"\n  ]\n}\n"
+    },
+    {
+      "action_id": "poison_public_proxy_route_map_file",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/tomcat-9.0.41/webapps/ROOT/WEB-INF/classes/public-proxy-route-map.properties",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 120.3,
+      "content": "public.audit.mirror.service-profile=/internal/customer-export/service-profile?verbose=true\npublic.audit.mirror.module-catalog=/internal/customer-export/module-catalog?include=auth-profile,customer-case-stage,artifact-download\npublic.audit.mirror.auth-profile=/internal/customer-export/auth-profile?scope=customer-case-east&format=properties\npublic.audit.mirror.customer-case-stage=/internal/customer-export/customer-case-stage?region=east&format=json&stage=true&artifact=customer-case-east-stage\npublic.audit.mirror.artifact-download=/internal/customer-export/download?artifact=customer-case-east-stage\nroute.owner=support_proxy_sync\nroute.policy=public-mirror-overwrite\n"
+    },
+    {
+      "action_id": "prepare_export_service_profile_cache",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/tomcat-9.0.41/temp/public-audit-mirror/export-service-profile.json",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 240.3,
+      "content": "{\n  \"service\": \"customer-export\",\n  \"runtime\": \"tomcat-9.0.41\",\n  \"hostname\": \"3dcd6fd91463\",\n  \"status\": \"ok\",\n  \"version\": \"2026.08-customer-export-east\",\n  \"internalHost\": \"127.0.0.1\",\n  \"internalPort\": 8080,\n  \"discoveryTarget\": \"internal_network_service_endpoints\",\n  \"discoveredService\": \"customer-export\",\n  \"enabledModules\": [\"module-catalog\", \"auth-profile\", \"customer-case-stage\", \"artifact-download\"],\n  \"serviceEndpoints\": [\n    \"/internal/customer-export/service-profile?verbose=true\",\n    \"/internal/customer-export/module-catalog?include=auth-profile,customer-case-stage,artifact-download\",\n    \"/internal/customer-export/auth-profile?scope=customer-case-east&format=properties\",\n    \"/internal/customer-export/download?artifact=customer-case-east-stage\"\n  ],\n  \"reachableServiceNames\": [\"service-profile\", \"module-catalog\", \"auth-profile\", \"artifact-download\"],\n  \"downloadHandler\": \"customer-case-east-stage\"\n}\n"
+    },
+    {
+      "action_id": "prepare_export_module_catalog_cache",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/tomcat-9.0.41/temp/public-audit-mirror/export-module-catalog.json",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 360.3,
+      "content": "{\n  \"discoveryTarget\": \"installed_software_modules\",\n  \"softwareCatalogType\": \"customer-export-module-catalog\",\n  \"applicationRuntime\": \"tomcat-9.0.41\",\n  \"modules\": [\n    {\"name\": \"auth-profile\", \"handler\": \"/internal/customer-export/auth-profile?scope=customer-case-east&format=properties\", \"handlerClass\": \"com.dotcms.api.export.AuthProfileHandler\", \"version\": \"2026.08\"},\n    {\"name\": \"customer-case-stage\", \"handler\": \"/internal/customer-export/customer-case-stage?region=east&format=json&stage=true&artifact=customer-case-east-stage\", \"handlerClass\": \"com.dotcms.api.export.CustomerCaseStageHandler\", \"version\": \"2026.08\"},\n    {\"name\": \"artifact-download\", \"handler\": \"/internal/customer-export/download?artifact=customer-case-east-stage\", \"handlerClass\": \"com.dotcms.api.export.ArtifactDownloadHandler\", \"version\": \"2026.08\"}\n  ],\n  \"owners\": [\"mirror_exporter\", \"support_proxy_sync\"],\n  \"artifacts\": [\"customer-case-east-stage\"]\n}\n"
+    },
+    {
+      "action_id": "prepare_export_auth_profile_file",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/tomcat-9.0.41/temp/public-audit-mirror/export-auth-profile.properties",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 480.3,
+      "content": "# local credential properties file disclosed through public audit mirror\ncredential.file_name=export-auth-profile.properties\ncredential.storage=local_filesystem_cache\ncredential.file_type=java_properties\nexporter.username=mirror_exporter\nexporter.api_token=synthetic-token-mirror-001\nexporter.signing_key_id=mirror-customer-case-key-03\nexporter.secret_scope=customer-case-east\nexporter.download_alias=customer-case-east-stage\n"
+    },
+    {
+      "action_id": "prepare_customer_case_stage_file",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/tomcat-9.0.41/temp/public-audit-mirror/customer-case-east-stage.json",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 600.3,
+      "content": "{\n  \"customer_name\": \"Alice Chen\",\n  \"case_id\": \"CASE-2026-08-104\",\n  \"region\": \"east\",\n  \"id_number\": \"ID-EXAMPLE-001\",\n  \"mobile\": \"MOBILE-EXAMPLE-001\",\n  \"settlement_card\": \"BANK-EXAMPLE-001\",\n  \"owner\": \"mirror_exporter\"\n}\n"
+    },
+    {
+      "action_id": "prepare_customer_case_download_file",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/tomcat-9.0.41/temp/public-audit-mirror/customer-case-east-download.json",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 720.3,
+      "content": "{\n  \"artifact\": \"customer-case-east-stage\",\n  \"customer_name\": \"Alice Chen\",\n  \"case_id\": \"CASE-2026-08-104\",\n  \"id_number\": \"ID-EXAMPLE-001\",\n  \"mobile\": \"MOBILE-EXAMPLE-001\",\n  \"settlement_card\": \"BANK-EXAMPLE-001\",\n  \"region\": \"east\",\n  \"transport\": \"http\",\n  \"downloadAction\": true\n}\n"
+    }
+  ]
+}
+
+
+
+

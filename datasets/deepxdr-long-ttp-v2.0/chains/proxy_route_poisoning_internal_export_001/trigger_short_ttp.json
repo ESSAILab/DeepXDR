@@ -1,0 +1,104 @@
+{
+  "id": "86c1ff81-e5cf-4703-be01-73cff4d7db02",
+  "created_at": "2026-08-28T01:12:00.000Z",
+  "end_at": "2026-08-28T01:12:00.400Z",
+  "ttps": [
+    {
+      "id": "e6b47825-3378-420f-bb97-8cc2286acf10",
+      "name": "exfiltration",
+      "description": "战术: exfiltration",
+      "techniques": [
+        {
+          "tech_id": "T1048",
+          "tech_name": "Exfiltration Over Alternative Protocol",
+          "description": "Adversaries may steal data by exfiltrating it over a different protocol than that of the existing command and control channel. The data may also be sent to an alternate network location from the main command and control server.  \n\nAlternate protocols include FTP, SMTP, HTTP/S, DNS, SMB, or any other network protocol not being used as the main command and control channel. Adversaries may also opt to encrypt and/or obfuscate these alternate channels. \n\n[Exfiltration Over Alternative Protocol](https://attack.mitre.org/techniques/T1048) can be done using various common operating system utilities such as [Net](https://attack.mitre.org/software/S0039)/SMB or FTP.(Citation: Palo Alto OilRig Oct 2016) On macOS and Linux <code>curl</code> may be used to invoke protocols such as HTTP/S or FTP/S to exfiltrate data from a system.(Citation: 20 macOS Common Tools and Techniques)\n\nMany IaaS and SaaS platforms (such as Microsoft Exchange, Microsoft SharePoint, GitHub, and AWS S3) support the direct download of files, emails, source code, and other sensitive information via the web console or [Cloud API](https://attack.mitre.org/techniques/T1059/009).",
+          "procedures": [
+            "行为: Attempted information leak via staged customer-case download endpoint；证据: Suricata alert: ET WEB_SERVER Staged Customer Case Download Leak (Attempted Information Leak); HTTP status 200; 18492 bytes to client"
+          ],
+          "event_ids": [
+            "d19dc7de-375c-5849-8089-6f95ee80fb7b",
+            "0a9e1ee2-8663-5406-ba50-9ae33415329d",
+            "725c2cc5-1bde-59f1-8801-6f1516bd35f3"
+          ]
+        }
+      ],
+      "event_ids": [
+        "d19dc7de-375c-5849-8089-6f95ee80fb7b",
+        "0a9e1ee2-8663-5406-ba50-9ae33415329d",
+        "725c2cc5-1bde-59f1-8801-6f1516bd35f3"
+      ]
+    },
+    {
+      "id": "4310db14-6bab-4171-b28d-24e1775f2eeb",
+      "name": "collection",
+      "description": "战术: collection",
+      "techniques": [
+        {
+          "tech_id": "T1074.002",
+          "tech_name": "Remote Data Staging",
+          "description": "Adversaries may stage data collected from multiple systems in a central location or directory on one system prior to Exfiltration. Data may be kept in separate files or combined into one file through techniques such as [Archive Collected Data](https://attack.mitre.org/techniques/T1560). Interactive command shells may be used, and common functionality within [cmd](https://attack.mitre.org/software/S0106) and bash may be used to copy data into a staging location.\n\nIn cloud environments, adversaries may stage data within a particular instance or virtual machine before exfiltration. An adversary may [Create Cloud Instance](https://attack.mitre.org/techniques/T1578/002) and stage data in that instance.(Citation: Mandiant M-Trends 2020)\n\nBy staging data on one system prior to Exfiltration, adversaries can minimize the number of connections made to their C2 server and better evade detection.",
+          "procedures": [
+            "行为: Sensitive data exposure via staged customer-case download API endpoint；证据: response_dataLeak: PII leak detected in staged customer-case download response; path=/api/v1/public/audit-mirror/download?artifact=customer-case-east-stage; intercept_state=log"
+          ],
+          "event_ids": [
+            "d19dc7de-375c-5849-8089-6f95ee80fb7b",
+            "0a9e1ee2-8663-5406-ba50-9ae33415329d",
+            "725c2cc5-1bde-59f1-8801-6f1516bd35f3"
+          ]
+        }
+      ],
+      "event_ids": [
+        "d19dc7de-375c-5849-8089-6f95ee80fb7b",
+        "0a9e1ee2-8663-5406-ba50-9ae33415329d",
+        "725c2cc5-1bde-59f1-8801-6f1516bd35f3"
+      ]
+    }
+  ],
+  "confidence": 0.6,
+  "summary": "2026-08-28 09:12:00，攻击源192.0.2.2通过HTTP GET请求访问目标192.0.2.106:8080的/api/v1/public/audit-mirror/download?artifact=customer-case-east-stage，下载分阶段客户案例工件。RASP检测到响应数据泄露（response_dataLeak，消息：PII leak detected in staged customer-case download response，拦截状态为log，置信度84），Suricata也产生Attempted Information Leak告警（ET WEB_SERVER Staged Customer Case Download Leak），HTTP状态200，服务器向客户端返回18492字节。关联服务器主机名3dcd6fd91463，Tomcat 9.0.41.0，请求ID为proxy-route-chain-req-07。",
+  "event_count": 3,
+  "source_events": [
+    "d19dc7de-375c-5849-8089-6f95ee80fb7b",
+    "0a9e1ee2-8663-5406-ba50-9ae33415329d",
+    "725c2cc5-1bde-59f1-8801-6f1516bd35f3"
+  ],
+  "attacker_fingerprint": {
+    "primary_ip": "192.0.2.2",
+    "ip_list": [
+      "192.0.2.2"
+    ],
+    "user_agents": [],
+    "patterns": [],
+    "first_seen": "2026-08-28T01:12:00.000Z",
+    "last_seen": "2026-08-28T01:12:00.400Z"
+  },
+  "attacker_ip": "192.0.2.2",
+  "raw_event_count": 3,
+  "filtered_event_count": 2,
+  "ip_group_count": 1,
+  "filter_reason": "current window contains openrasp/suricata; falco events are ignored before offline DeepXDR analysis",
+  "selected_attacker_ip": "192.0.2.2",
+  "analyzed_ip_groups": [
+    {
+      "attacker_ip": "192.0.2.2",
+      "event_count": 2
+    }
+  ],
+  "latency_seconds": 143.95,
+  "event_ids": [
+    "d19dc7de-375c-5849-8089-6f95ee80fb7b",
+    "0a9e1ee2-8663-5406-ba50-9ae33415329d",
+    "725c2cc5-1bde-59f1-8801-6f1516bd35f3"
+  ],
+  "fixture_chain_id": "proxy_route_poisoning_internal_export_001",
+  "fixture_step_id": "S7",
+  "fixture_event_ref_map": {
+    "suricata:9c10d001-2201-4a01-9020-b10000000b07": "d19dc7de-375c-5849-8089-6f95ee80fb7b",
+    "openrasp:9c10d001-1101-4a01-9010-a10000000b07": "0a9e1ee2-8663-5406-ba50-9ae33415329d",
+    "falco:9c10d001-3301-4a01-9030-c10000000b07": "725c2cc5-1bde-59f1-8801-6f1516bd35f3"
+  }
+}
+
+
+
+
