@@ -148,7 +148,7 @@ class ShortTTPGenerator:
         window_manager: DynamicEventWindowManager,
         min_events_per_window: int = 1,  # 降低要求，允许单个事件生成TTP
         max_analysis_interval: float = 5.0,
-        confidence_threshold: float = 0.5  # 降低置信度阈值
+        confidence_threshold: float = 0.5  # 防御处理门槛，不影响结果存储
     ):
         self.window_manager = window_manager
         self.min_events_per_window = min_events_per_window
@@ -476,11 +476,10 @@ class ShortTTPGenerator:
             logger.debug("[DEBUG] 生成的短期TTP完整结构:")
             logger.debug(json.dumps(short_ttp.model_dump(), indent=2, default=str, ensure_ascii=False))
 
-            # 验证置信度
-            if short_ttp.confidence >= self.confidence_threshold:
-                # 存储短期TTP
-                await self._store_short_ttp(short_ttp)
+            # 所有分析结果均保留以便追溯；置信度阈值只控制防御处理。
+            await self._store_short_ttp(short_ttp)
 
+            if short_ttp.confidence >= self.confidence_threshold:
                 # 执行自动防御措施
                 try:
                     defense_result = await self.defense_manager.process_short_ttp(short_ttp)
@@ -496,7 +495,7 @@ class ShortTTPGenerator:
 
                 logger.info(f"短期TTP生成成功，窗口ID:{window.window_id}, 攻击者IP:{attacker_ip}, short TTP ID: {short_ttp.id}")
             else:
-                logger.debug(f"短期TTP置信度不足: {short_ttp.confidence} < {self.confidence_threshold}")
+                logger.info(f"短期TTP已处理存储，跳过自动防御: {short_ttp.confidence} < {self.confidence_threshold}")
 
         except Exception as e:
             logger.error(f"[IP分析] 分析攻击者 {attacker_ip} 失败: {e}")
