@@ -5,8 +5,20 @@ TTP数据模型定义
 from __future__ import annotations
 
 from datetime import datetime
+import math
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
+
+
+def normalize_technique_confidence(value: Any) -> float:
+    """Treat missing or invalid model scores conservatively as zero."""
+    if isinstance(value, bool):
+        return 0.0
+    try:
+        score = float(value)
+    except (TypeError, ValueError, OverflowError):
+        return 0.0
+    return score if math.isfinite(score) and 0.0 <= score <= 1.0 else 0.0
 
 
 class Technique(BaseModel):
@@ -16,6 +28,7 @@ class Technique(BaseModel):
     description: str = Field(..., description="技术描述")
     procedures: List[str] = Field(..., description="关联的过程描述列表，需要引用具体事件字段作为证据，包含攻击者IP、行为特征、攻击的目标、攻击链等信息")
     event_ids: List[str] = Field(..., description="与该技术有关的事件ID列表，从而可以追溯到具体的事件数据")
+    confidence: Optional[float] = Field(None, ge=0, le=1, description="技术匹配置信度；历史数据可能缺失")
 
 
 class TTP(BaseModel):

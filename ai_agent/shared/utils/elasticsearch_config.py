@@ -74,7 +74,8 @@ STTP_ES_MAPPING = {
                             "tech_id": {"type": "keyword"},
                             "tech_name": {"type": "keyword"},
                             "description": {"type": "text"},
-                            "procedures": {"type": "text"}
+                            "procedures": {"type": "text"},
+                            "confidence": {"type": "float"}
                         }
                     }
                 }

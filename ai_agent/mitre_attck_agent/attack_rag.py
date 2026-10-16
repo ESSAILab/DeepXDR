@@ -14,6 +14,7 @@ import numpy as np
 from openai import AsyncOpenAI, OpenAI
 
 from mitreattack.stix20 import MitreAttackData
+from shared.models.ttp import normalize_technique_confidence
 
 logger = logging.getLogger(__name__)
 
@@ -795,9 +796,10 @@ class AttackRagService:
                 row["procedures"].append(behavior.behavior)
                 row["event_ids"].extend(behavior.event_ids)
                 row["event_ids"] = _dedupe(row["event_ids"], 20)
-                row["confidence"] = max(row["confidence"], float(match.get("confidence") or 0.0))
-                if match.get("reason"):
-                    row["reason"] = str(match["reason"])
+                score = normalize_technique_confidence(match.get("confidence"))
+                if score >= row["confidence"]:
+                    row["confidence"] = score
+                    row["reason"] = str(match.get("reason") or "")
                 accepted = True
             if not accepted:
                 unmapped.append(

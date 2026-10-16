@@ -235,7 +235,8 @@ def test_investigation_graph_runs_with_rag_nodes(monkeypatch):
     assert final_state["errors"] == []
 
 
-def test_map_report_to_techniques_dedupes_events_and_tracks_unmapped_behaviors():
+@pytest.mark.parametrize("second_score, expected", [(0.83, 0.83), ("bad", 0.61), (float("inf"), 0.61), (1.5, 0.61)])
+def test_map_report_to_techniques_dedupes_events_and_tracks_unmapped_behaviors(second_score, expected):
     technique = TechniqueDocument(
         attack_id="T1053.005",
         stix_id="attack-pattern--scheduled-task",
@@ -286,8 +287,8 @@ def test_map_report_to_techniques_dedupes_events_and_tracks_unmapped_behaviors()
             return [
                 {
                     "attack_id": "T1053.005",
-                    "confidence": 0.61 if behavior.evidence.startswith("created UpdateCheck") else 0.83,
-                    "reason": f"matched {behavior.behavior}",
+                    "confidence": 0.61 if behavior.evidence.startswith("created UpdateCheck") else second_score,
+                    "reason": f"matched {behavior.evidence}",
                 }
             ]
 
@@ -303,7 +304,9 @@ def test_map_report_to_techniques_dedupes_events_and_tracks_unmapped_behaviors()
 
     assert result["technique_ids"] == ["T1053.005"]
     confirmed = result["confirmed_techniques"][0]
-    assert confirmed["confidence"] == 0.83
+    assert confirmed["confidence"] == expected
+    selected_evidence = "created backup task" if expected == 0.83 else "created UpdateCheck task"
+    assert confirmed["reason"] == f"matched {selected_evidence}"
     assert confirmed["event_ids"] == ["evt-1", "evt-2"]
     assert result["technique_events"] == {"T1053.005": ["evt-1", "evt-2"]}
     assert result["technique_candidates"] == {
