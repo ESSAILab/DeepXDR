@@ -1,0 +1,28 @@
+{
+  "dataset_name": "DeepXDR Long TTP Offline Dataset",
+  "version": "v2.0",
+  "scope": "clean Long TTP chains only",
+  "application": "dotCMS",
+  "license": "CC BY 4.0",
+  "license_id": "CC-BY-4.0",
+  "license_url": "https://creativecommons.org/licenses/by/4.0/",
+  "code_license": "MIT",
+  "chain_count": 16,
+  "chains_directory": "chains/",
+  "required_files": [
+    "events.jsonl",
+    "trigger_short_ttp.json",
+    "long_ttp_ground_truth.json",
+    "file_actions.json",
+    "run_config.json",
+    "sample_manifest.json",
+    "event_id_map.json"
+  ],
+  "notes": [
+    "Public chain IDs use readable scenario names.",
+    "Legacy IDs are preserved in chain_id_mapping.json and per-sample manifests.",
+    "Noise experiments can combine events from multiple chain directories.",
+    "Trigger files are included only as Long TTP entry points."
+  ],
+  "source": "Synthetic laboratory fixtures generated from the DeepXDR dotCMS lab"
+}

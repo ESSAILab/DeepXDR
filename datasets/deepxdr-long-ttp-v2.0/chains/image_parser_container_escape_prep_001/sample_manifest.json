@@ -1,0 +1,39 @@
+{
+  "dataset_type": "deepxdr_long_ttp_release_sample",
+  "chain_id": "image_parser_container_escape_prep_001",
+  "source_chain_name": "OpenRASP lab: Image Parser Exploit -> Container Discovery -> Docker Socket Escape Preparation",
+  "source_result_path": null,
+  "base_time": "2026-09-09T01:20:00Z",
+  "attacker_ip": "192.0.2.61",
+  "target_host": "192.0.2.106:8080",
+  "trigger_step_id": "S6",
+  "trigger_step_name": "Read host SSH configuration through the mounted root",
+  "trigger_short_ttp_id": "b7e8bbf7-f5be-468a-88d5-a758efe6bc6a",
+  "event_count": 18,
+  "trigger_event_count": 3,
+  "step_count": 6,
+  "telemetry_sources": [
+    "suricata",
+    "openrasp",
+    "falco"
+  ],
+  "technique_ids": [
+    "T1005",
+    "T1059.004",
+    "T1190",
+    "T1611",
+    "T1613"
+  ],
+  "files": {
+    "trigger_short_ttp": "trigger_short_ttp.json",
+    "events": "events.jsonl",
+    "long_ttp_ground_truth": "long_ttp_ground_truth.json",
+    "event_id_map": "event_id_map.json",
+    "file_actions": "file_actions.json",
+    "run_config": "run_config.json",
+    "sample_manifest": "sample_manifest.json"
+  },
+  "release_version": "v2.0",
+  "legacy_chain_id": "openrasp_image_parser_container_escape_prep_chain_001",
+  "display_name": "Image Parser to Container Escape Preparation"
+}

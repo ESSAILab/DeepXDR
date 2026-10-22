@@ -1,0 +1,39 @@
+{
+  "chain_id": "xxe_config_pii_001",
+  "actions": [
+    {
+      "action_id": "prepare_customer_audit_service_config",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/tomcat-9.0.41/webapps/ROOT/WEB-INF/classes/customer-audit-service.properties",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 7.5,
+      "content": "CUSTOMER_AUDIT_FEATURE=enabled\nCUSTOMER_AUDIT_ENDPOINT=/api/v1/audit/customer-summary\nCUSTOMER_AUDIT_FORMAT=csv\nCUSTOMER_AUDIT_SCOPE=region-east\nCUSTOMER_AUDIT_CONFIG_DIR=/srv/dotserver/tomcat-9.0.41/webapps/ROOT/WEB-INF/classes/\nCUSTOMER_AUDIT_CACHE_PATH=/srv/dotserver/tomcat-9.0.41/temp/audit-cache/\nCUSTOMER_AUDIT_ROUTE_MAP_FILE=/srv/dotserver/tomcat-9.0.41/webapps/ROOT/WEB-INF/classes/customer-audit-endpoint-map.properties\nCUSTOMER_AUDIT_NOTE=legacy xml import should never expose service layout or config paths\n"
+    },
+    {
+      "action_id": "prepare_customer_audit_endpoint_map",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/tomcat-9.0.41/webapps/ROOT/WEB-INF/classes/customer-audit-endpoint-map.properties",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 18.9,
+      "content": "AUDIT_IMPORT_PROFILE=legacy-dom4j\nAUDIT_IMPORT_PUBLIC_XML=/public/xml/legacy-audit-import.jsp\nAUDIT_IMPORT_INTERNAL_XML=/api/xml/legacy-audit-import.jsp\nCUSTOMER_AUDIT_ENDPOINT=/api/v1/audit/customer-summary\nCUSTOMER_AUDIT_EXPORT_SCOPE=region-east\nCUSTOMER_AUDIT_SUMMARY_FORMAT=csv\nAUDIT_IMPORT_CONFIG_DIR=/srv/dotserver/tomcat-9.0.41/webapps/ROOT/WEB-INF/classes/\nAUDIT_IMPORT_CACHE_DIR=/srv/dotserver/tomcat-9.0.41/temp/audit-cache/\nAUDIT_IMPORT_ROUTE_MAP_FILE=/srv/dotserver/tomcat-9.0.41/webapps/ROOT/WEB-INF/classes/customer-audit-endpoint-map.properties\nAUDIT_IMPORT_NOTE=legacy xml import should never expose endpoint mapping, config files, or cache directories\n"
+    },
+    {
+      "action_id": "prepare_customer_audit_cache_file",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/tomcat-9.0.41/temp/audit-cache/customer-audit-region-east-2026Q3.csv",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 16.2,
+      "content": "customer_name,id_number,mobile,settlement_card,region,case_id\nAlice Chen,ID-EXAMPLE-001,MOBILE-EXAMPLE-001,BANK-EXAMPLE-001,East,AUD-2026-Q3-104\n"
+    }
+  ]
+}
+
+
+
+

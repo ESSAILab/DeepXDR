@@ -1,0 +1,40 @@
+{
+  "dataset_type": "deepxdr_long_ttp_release_sample",
+  "chain_id": "proxy_route_poisoning_internal_export_001",
+  "source_chain_name": "OpenRASP lab: Alias Catalog Exposure -> Route Map Poisoning -> Service Profile Probe -> Module Catalog Exposure -> Auth Profile Access -> Staged Case Leak",
+  "source_result_path": null,
+  "base_time": "2026-08-28T01:00:00Z",
+  "attacker_ip": "192.0.2.2",
+  "target_host": "192.0.2.106:8080",
+  "trigger_step_id": "S7",
+  "trigger_step_name": "Download the staged export and leak PII over HTTP",
+  "trigger_short_ttp_id": "86c1ff81-e5cf-4703-be01-73cff4d7db02",
+  "event_count": 21,
+  "trigger_event_count": 3,
+  "step_count": 7,
+  "telemetry_sources": [
+    "openrasp",
+    "suricata",
+    "falco"
+  ],
+  "technique_ids": [
+    "T1046",
+    "T1048.003",
+    "T1074.002",
+    "T1518",
+    "T1552.001",
+    "T1565.001"
+  ],
+  "files": {
+    "trigger_short_ttp": "trigger_short_ttp.json",
+    "events": "events.jsonl",
+    "long_ttp_ground_truth": "long_ttp_ground_truth.json",
+    "event_id_map": "event_id_map.json",
+    "file_actions": "file_actions.json",
+    "run_config": "run_config.json",
+    "sample_manifest": "sample_manifest.json"
+  },
+  "release_version": "v2.0",
+  "legacy_chain_id": "openrasp_proxy_route_poisoning_internal_export_chain_001",
+  "display_name": "Proxy Route Poisoning to Internal Export"
+}

@@ -1,0 +1,25 @@
+{
+  "event_id_map": {
+    "openrasp:1d4e2f81-7c1c-4a66-9df2-8b4d2a640101": "c640d22b-e209-54cc-b2e6-d247dbdfc837",
+    "suricata:6c4e7a45-5fb5-4e48-a5cb-56ee2f2d0101": "55f3afc6-4904-58c6-b607-87a9a0347920",
+    "falco:4f2e98f1-2d34-4a10-8f3a-8c7711aa0101": "12b28c70-ecf6-5c41-9ba6-b9383e560613",
+    "openrasp:1d4e2f81-7c1c-4a66-9df2-8b4d2a640102": "86a0427c-bbf6-57d3-b641-91ed570984ea",
+    "suricata:6c4e7a45-5fb5-4e48-a5cb-56ee2f2d0102": "ed401df0-bbb6-5061-a726-181badba3807",
+    "falco:4f2e98f1-2d34-4a10-8f3a-8c7711aa0102": "42a4a2cc-28ee-5522-b617-9bbe328e4af2",
+    "openrasp:1d4e2f81-7c1c-4a66-9df2-8b4d2a640104": "32f1508e-e4ac-54e3-84c6-617fdac157c5",
+    "suricata:6c4e7a45-5fb5-4e48-a5cb-56ee2f2d0104": "5857a640-917e-5ae1-96fc-e9bfdf72383b",
+    "falco:4f2e98f1-2d34-4a10-8f3a-8c7711aa0104": "2415b5f4-2d71-55a2-8882-81748ce3eac2",
+    "openrasp:1d4e2f81-7c1c-4a66-9df2-8b4d2a640103": "011b7134-8eb0-5702-a062-ae7a8251af2a",
+    "suricata:6c4e7a45-5fb5-4e48-a5cb-56ee2f2d0103": "ce00655e-85ea-598a-a139-c13ee2004092",
+    "falco:4f2e98f1-2d34-4a10-8f3a-8c7711aa0103": "f0fb6ae9-c47d-5984-a1c8-26efdc6ac369"
+  },
+  "trigger_event_id_map": {
+    "openrasp:1d4e2f81-7c1c-4a66-9df2-8b4d2a640103": "011b7134-8eb0-5702-a062-ae7a8251af2a",
+    "suricata:6c4e7a45-5fb5-4e48-a5cb-56ee2f2d0103": "ce00655e-85ea-598a-a139-c13ee2004092",
+    "falco:4f2e98f1-2d34-4a10-8f3a-8c7711aa0103": "f0fb6ae9-c47d-5984-a1c8-26efdc6ac369"
+  }
+}
+
+
+
+

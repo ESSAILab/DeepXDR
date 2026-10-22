@@ -1,0 +1,40 @@
+{
+  "dataset_type": "deepxdr_long_ttp_release_sample",
+  "chain_id": "ci_webhook_cloud_storage_exfil_001",
+  "source_chain_name": "OpenRASP lab: CI Webhook SSRF -> Cloud Metadata Credential Theft -> Object Storage Exfiltration",
+  "source_result_path": null,
+  "base_time": "2026-09-09T03:00:00Z",
+  "attacker_ip": "192.0.2.61",
+  "target_host": "192.0.2.106:8080",
+  "trigger_step_id": "S6",
+  "trigger_step_name": "Download staged artifacts from target over HTTP diagnostics endpoint",
+  "trigger_short_ttp_id": "3ecdc394-4cb8-4884-8a17-bcb1df351fb9",
+  "event_count": 18,
+  "trigger_event_count": 3,
+  "step_count": 6,
+  "telemetry_sources": [
+    "suricata",
+    "openrasp",
+    "falco"
+  ],
+  "technique_ids": [
+    "T1048.003",
+    "T1074.001",
+    "T1190",
+    "T1530",
+    "T1552.005",
+    "T1580"
+  ],
+  "files": {
+    "trigger_short_ttp": "trigger_short_ttp.json",
+    "events": "events.jsonl",
+    "long_ttp_ground_truth": "long_ttp_ground_truth.json",
+    "event_id_map": "event_id_map.json",
+    "file_actions": "file_actions.json",
+    "run_config": "run_config.json",
+    "sample_manifest": "sample_manifest.json"
+  },
+  "release_version": "v2.0",
+  "legacy_chain_id": "openrasp_ci_webhook_cloud_storage_exfil_chain_001",
+  "display_name": "CI Webhook to Cloud Storage Exfiltration"
+}

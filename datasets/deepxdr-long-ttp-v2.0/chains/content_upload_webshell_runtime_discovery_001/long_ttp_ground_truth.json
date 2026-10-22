@@ -1,0 +1,159 @@
+{
+  "chain_id": "content_upload_webshell_runtime_discovery_001",
+  "ground_truth_type": "long_ttp_chain_level_from_step_annotations",
+  "matching_note": "Use parent-family matching when the experiment ignores MITRE sub-technique suffixes.",
+  "trigger_step_id": "S3",
+  "step_count": 3,
+  "technique_ids": [
+    "T1033",
+    "T1059.004",
+    "T1082",
+    "T1083",
+    "T1505.003"
+  ],
+  "techniques": [
+    {
+      "tech_id": "T1033",
+      "tech_name": "System Owner/User Discovery",
+      "tactic": "Discovery"
+    },
+    {
+      "tech_id": "T1059.004",
+      "tech_name": "Unix Shell",
+      "tactic": "Execution"
+    },
+    {
+      "tech_id": "T1082",
+      "tech_name": "System Information Discovery",
+      "tactic": "Discovery"
+    },
+    {
+      "tech_id": "T1083",
+      "tech_name": "File and Directory Discovery",
+      "tactic": "Discovery"
+    },
+    {
+      "tech_id": "T1505.003",
+      "tech_name": "Web Shell",
+      "tactic": "Persistence"
+    }
+  ],
+  "tactic_names": [
+    "Discovery",
+    "Execution",
+    "Persistence"
+  ],
+  "steps": [
+    {
+      "step_id": "S1",
+      "name": "Upload a malicious JSP through the content API into the public ROOT directory",
+      "attack_techniques": [
+        {
+          "tech_id": "T1505.003",
+          "tech_name": "Web Shell",
+          "tactic": "Persistence"
+        }
+      ],
+      "expected_event_refs": [
+        "openrasp:22fbf232-9ee3-4619-abdd-474439165b86",
+        "falco:994dd454-91c5-45b4-b736-945626dad625",
+        "falco:771c6066-ff2c-4edd-8ad2-51e391f00b57"
+      ],
+      "expected_signals": [
+        "attack_type=writeFile",
+        "plugin_algorithm=writeFile_script",
+        "path=/api/content/",
+        "request_method=post",
+        "realpath=/srv/dotserver/tomcat-9.0.41/webapps/ROOT/test.jsp",
+        "content-type=multipart/form-data"
+      ]
+    },
+    {
+      "step_id": "S2",
+      "name": "Activate the uploaded JSP and generate Tomcat servlet artifacts",
+      "attack_techniques": [
+        {
+          "tech_id": "T1505.003",
+          "tech_name": "Web Shell",
+          "tactic": "Persistence"
+        }
+      ],
+      "expected_event_refs": [
+        "openrasp:2f4a5c10-1101-4a01-9010-a10000000201",
+        "suricata:3f4a5c10-2201-4a01-9020-b10000000201",
+        "falco:6ca7aa5b-9cd7-435b-8e4b-74d567add4f6",
+        "falco:c53d52ff-14bf-4590-8f43-58deb0d3803c",
+        "falco:4dfb930c-3548-4e8a-a6aa-7628f9f61e2d",
+        "falco:8e22cec8-3306-4be4-85f9-e02c48f28e2a"
+      ],
+      "expected_signals": [
+        "attack_type=webshell",
+        "plugin_algorithm=jsp_webshell_activation",
+        "path=/test.jsp",
+        "request_method=get",
+        "jsp_activation_context.jsp_path=/srv/dotserver/tomcat-9.0.41/webapps/ROOT/test.jsp",
+        "jsp_activation_context.generated_servlet=/srv/dotserver/tomcat-9.0.41/work/Catalina/localhost/ROOT/org/apache/jsp/test_jsp.java",
+        "suricata.signature=ET WEB_SERVER JSP Webshell Activation via Uploaded Test JSP",
+        "http.url=/test.jsp",
+        "http.status=200",
+        "rule=File_Write_Openat_Behavior_Collector",
+        "fd.name=/srv/dotserver/tomcat-9.0.41/work/Catalina/localhost/ROOT/org/apache/jsp/test_jsp.java",
+        "fd.name=/srv/dotserver/tomcat-9.0.41/work/Catalina/localhost/ROOT/org/apache/jsp/test_jsp$U.class",
+        "fd.name=/srv/dotserver/tomcat-9.0.41/work/Catalina/localhost/ROOT/org/apache/jsp/test_jsp.class",
+        "fd.name=/srv/dotserver/tomcat-9.0.41/work/Catalina/localhost/ROOT/org/apache/jsp/test_jsp.classtmp"
+      ]
+    },
+    {
+      "step_id": "S3",
+      "name": "Execute runtime discovery commands through the dropped JSP web shell",
+      "attack_techniques": [
+        {
+          "tech_id": "T1059.004",
+          "tech_name": "Unix Shell",
+          "tactic": "Execution"
+        },
+        {
+          "tech_id": "T1033",
+          "tech_name": "System Owner/User Discovery",
+          "tactic": "Discovery"
+        },
+        {
+          "tech_id": "T1082",
+          "tech_name": "System Information Discovery",
+          "tactic": "Discovery"
+        },
+        {
+          "tech_id": "T1083",
+          "tech_name": "File and Directory Discovery",
+          "tactic": "Discovery"
+        }
+      ],
+      "expected_event_refs": [
+        "openrasp:4946e1ac-08a0-4b0c-9fef-145b7bcd32eb",
+        "falco:f59bcb35-e51b-4cf9-b83b-cf5c992f6066",
+        "falco:4581aea2-5402-46c1-bbb2-90a61b7961fa",
+        "openrasp:6f22937b-39f9-4853-8062-1489ecb7bb9c",
+        "falco:a747cb2a-b3f5-4bad-a405-c64fa836b23a",
+        "falco:ac42cbe1-1fd6-4152-93ae-d007a9e43917",
+        "openrasp:0c83eee7-7f2a-4929-9170-787daa5ed978",
+        "falco:5c6f97fa-69c6-4f90-a823-a7c68730ef32",
+        "falco:30339081-199b-4577-9c4c-a06ed04454da"
+      ],
+      "expected_signals": [
+        "attack_type=command",
+        "plugin_algorithm=command_other",
+        "path=/test.jsp",
+        "attack_params.command=/bin/sh -c cd /tmp/ ;ls",
+        "attack_params.command=/bin/sh -c cd /tmp/ ;uname",
+        "attack_params.command=/bin/sh -c cd /tmp/ ;whoami",
+        "proc.cmdline=sh -c cd /tmp/ ;ls",
+        "proc.cmdline=sh -c cd /tmp/ ;uname",
+        "proc.cmdline=sh -c cd /tmp/ ;whoami"
+      ]
+    }
+  ]
+}
+
+
+
+

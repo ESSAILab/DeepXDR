@@ -1,0 +1,39 @@
+{
+  "dataset_type": "deepxdr_long_ttp_release_sample",
+  "chain_id": "path_traversal_multi_config_read_001",
+  "source_chain_name": "OpenRASP lab: Path Traversal -> Credential File Leak -> Export Mapping File Discovery -> Sensitive Report Export",
+  "source_result_path": null,
+  "base_time": "2026-08-26T01:00:00Z",
+  "attacker_ip": "192.0.2.23",
+  "target_host": "192.0.2.157:8080",
+  "trigger_step_id": "S3",
+  "trigger_step_name": "Export a sensitive backend business report",
+  "trigger_short_ttp_id": "bcde7265-8eb0-4b94-8d2f-a1215167191a",
+  "event_count": 9,
+  "trigger_event_count": 3,
+  "step_count": 3,
+  "telemetry_sources": [
+    "openrasp",
+    "suricata",
+    "falco"
+  ],
+  "technique_ids": [
+    "T1048.003",
+    "T1083",
+    "T1190",
+    "T1213",
+    "T1552.001"
+  ],
+  "files": {
+    "trigger_short_ttp": "trigger_short_ttp.json",
+    "events": "events.jsonl",
+    "long_ttp_ground_truth": "long_ttp_ground_truth.json",
+    "event_id_map": "event_id_map.json",
+    "file_actions": "file_actions.json",
+    "run_config": "run_config.json",
+    "sample_manifest": "sample_manifest.json"
+  },
+  "release_version": "v2.0",
+  "legacy_chain_id": "openrasp_path_traversal_multi_config_read_001",
+  "display_name": "Path Traversal to Multi-Configuration Read"
+}

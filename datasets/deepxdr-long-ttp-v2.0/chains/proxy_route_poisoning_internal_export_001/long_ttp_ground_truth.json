@@ -1,0 +1,262 @@
+{
+  "chain_id": "proxy_route_poisoning_internal_export_001",
+  "ground_truth_type": "long_ttp_chain_level_from_step_annotations",
+  "matching_note": "Use parent-family matching when the experiment ignores MITRE sub-technique suffixes.",
+  "trigger_step_id": "S7",
+  "step_count": 7,
+  "technique_ids": [
+    "T1046",
+    "T1048.003",
+    "T1074.002",
+    "T1518",
+    "T1552.001",
+    "T1565.001"
+  ],
+  "techniques": [
+    {
+      "tech_id": "T1046",
+      "tech_name": "Network Service Discovery",
+      "tactic": "Discovery"
+    },
+    {
+      "tech_id": "T1048.003",
+      "tech_name": "Exfiltration Over Unencrypted Non-C2 Protocol",
+      "tactic": "Exfiltration"
+    },
+    {
+      "tech_id": "T1074.002",
+      "tech_name": "Remote Data Staging",
+      "tactic": "Collection"
+    },
+    {
+      "tech_id": "T1518",
+      "tech_name": "Software Discovery",
+      "tactic": "Discovery"
+    },
+    {
+      "tech_id": "T1552.001",
+      "tech_name": "Credentials In Files",
+      "tactic": "Credential Access"
+    },
+    {
+      "tech_id": "T1565.001",
+      "tech_name": "Stored Data Manipulation",
+      "tactic": "Impact"
+    }
+  ],
+  "tactic_names": [
+    "Collection",
+    "Credential Access",
+    "Discovery",
+    "Exfiltration",
+    "Impact"
+  ],
+  "steps": [
+    {
+      "step_id": "S1",
+      "name": "Expose the export alias catalog",
+      "attack_techniques": [
+        {
+          "tech_id": "T1046",
+          "tech_name": "Network Service Discovery",
+          "tactic": "Discovery"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:9c10d001-2201-4a01-9020-b10000000b01",
+        "openrasp:9c10d001-1101-4a01-9010-a10000000b01",
+        "falco:9c10d001-3301-4a01-9030-c10000000b01"
+      ],
+      "expected_signals": [
+        "path=/api/v1/admin/proxy/route-catalog",
+        "plugin_algorithm=internal_network_service_endpoint_discovery",
+        "alert.signature=ET WEB_SERVER Internal Network Service Discovery via Proxy Route Catalog",
+        "discovery_target=internal_network_service_endpoints",
+        "discovery_operation=host_port_and_service_endpoint_enumeration",
+        "scope=public-audit-mirror",
+        "public_labels=service-profile,module-catalog,auth-profile,customer-case-stage,artifact-download",
+        "downstream_target_family=/internal/customer-export/",
+        "discovered_host=127.0.0.1",
+        "discovered_port=8080",
+        "discovered_protocol=http",
+        "internal_host=127.0.0.1",
+        "internal_port=8080",
+        "network_service_endpoint=127.0.0.1:8080",
+        "service_family=customer-export",
+        "network_service_endpoints=http://127.0.0.1:8080/internal/customer-export/service-profile,http://127.0.0.1:8080/internal/customer-export/module-catalog,http://127.0.0.1:8080/internal/customer-export/auth-profile,http://127.0.0.1:8080/internal/customer-export/customer-case-stage,http://127.0.0.1:8080/internal/customer-export/download",
+        "service_targets=/internal/customer-export/service-profile,/internal/customer-export/module-catalog,/internal/customer-export/auth-profile,/internal/customer-export/customer-case-stage,/internal/customer-export/download",
+        "fd.name=/srv/dotserver/tomcat-9.0.41/webapps/ROOT/WEB-INF/classes/public-proxy-route-catalog.json"
+      ]
+    },
+    {
+      "step_id": "S2",
+      "name": "Poison the public route map",
+      "attack_techniques": [
+        {
+          "tech_id": "T1565.001",
+          "tech_name": "Stored Data Manipulation",
+          "tactic": "Impact"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:9c10d001-2201-4a01-9020-b10000000b02",
+        "openrasp:9c10d001-1101-4a01-9010-a10000000b02",
+        "falco:9c10d001-3301-4a01-9030-c10000000b02"
+      ],
+      "expected_signals": [
+        "path=/api/v1/admin/proxy/route-sync",
+        "attack_type=writeFile",
+        "plugin_algorithm=writeFile_route_map",
+        "alert.signature=ET WEB_SERVER Customer Export Route Map Poisoning",
+        "fd.name=/srv/dotserver/tomcat-9.0.41/webapps/ROOT/WEB-INF/classes/public-proxy-route-map.properties",
+        "proxy_alias=service-profile",
+        "proxy_alias=module-catalog",
+        "proxy_alias=auth-profile",
+        "internal_target=/internal/customer-export/customer-case-stage?region=east&format=json&stage=true"
+      ]
+    },
+    {
+      "step_id": "S3",
+      "name": "Probe the customer-export service profile",
+      "attack_techniques": [
+        {
+          "tech_id": "T1046",
+          "tech_name": "Network Service Discovery",
+          "tactic": "Discovery"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:9c10d001-2201-4a01-9020-b10000000b03",
+        "openrasp:9c10d001-1101-4a01-9010-a10000000b03",
+        "falco:9c10d001-3301-4a01-9030-c10000000b03"
+      ],
+      "expected_signals": [
+        "path=/api/v1/public/audit-mirror",
+        "plugin_algorithm=export_service_profile_probe",
+        "alert.signature=ET WEB_SERVER Public Audit Mirror Internal Customer Export Network Service Endpoint Enumeration",
+        "target_label=service-profile",
+        "resolved_internal_target=/internal/customer-export/service-profile?verbose=true",
+        "discovery_target=internal_network_service_endpoints",
+        "discovered_service=customer-export",
+        "discovered_host=127.0.0.1",
+        "discovered_port=8080",
+        "reachable_service_endpoints=/internal/customer-export/service-profile?verbose=true,/internal/customer-export/module-catalog?include=auth-profile,customer-case-stage,artifact-download,/internal/customer-export/auth-profile?scope=customer-case-east&format=properties,/internal/customer-export/download?artifact=customer-case-east-stage",
+        "fd.name=/srv/dotserver/tomcat-9.0.41/temp/public-audit-mirror/export-service-profile.json"
+      ]
+    },
+    {
+      "step_id": "S4",
+      "name": "Enumerate the customer-export module catalog",
+      "attack_techniques": [
+        {
+          "tech_id": "T1518",
+          "tech_name": "Software Discovery",
+          "tactic": "Discovery"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:9c10d001-2201-4a01-9020-b10000000b04",
+        "openrasp:9c10d001-1101-4a01-9010-a10000000b04",
+        "falco:9c10d001-3301-4a01-9030-c10000000b04"
+      ],
+      "expected_signals": [
+        "path=/api/v1/public/audit-mirror",
+        "plugin_algorithm=export_module_catalog_access",
+        "alert.signature=ET WEB_SERVER Public Audit Mirror Installed Software Module and Handler Enumeration",
+        "target_label=module-catalog",
+        "discovery_target=installed_software_modules",
+        "software_modules=auth-profile,customer-case-stage,artifact-download",
+        "handler_class=com.dotcms.api.export.AuthProfileHandler,com.dotcms.api.export.CustomerCaseStageHandler,com.dotcms.api.export.ArtifactDownloadHandler",
+        "module_versions=auth-profile@2026.08,customer-case-stage@2026.08,artifact-download@2026.08",
+        "fd.name=/srv/dotserver/tomcat-9.0.41/temp/public-audit-mirror/export-module-catalog.json"
+      ]
+    },
+    {
+      "step_id": "S5",
+      "name": "Read the mirrored export auth profile",
+      "attack_techniques": [
+        {
+          "tech_id": "T1552.001",
+          "tech_name": "Credentials In Files",
+          "tactic": "Credential Access"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:9c10d001-2201-4a01-9020-b10000000b05",
+        "openrasp:9c10d001-1101-4a01-9010-a10000000b05",
+        "falco:9c10d001-3301-4a01-9030-c10000000b05"
+      ],
+      "expected_signals": [
+        "path=/api/v1/public/audit-mirror",
+        "plugin_algorithm=export_auth_profile_access",
+        "alert.signature=ET WEB_SERVER Public Audit Mirror Local Credential Properties File Disclosure",
+        "target_label=auth-profile",
+        "credential_file=export-auth-profile.properties",
+        "credential_file_path=/srv/dotserver/tomcat-9.0.41/temp/public-audit-mirror/export-auth-profile.properties",
+        "credential_file_type=java_properties",
+        "credential_storage=local_filesystem_cache",
+        "disclosed_fields=exporter.username,exporter.api_token,exporter.signing_key_id,exporter.secret_scope",
+        "fd.name=/srv/dotserver/tomcat-9.0.41/temp/public-audit-mirror/export-auth-profile.properties"
+      ]
+    },
+    {
+      "step_id": "S6",
+      "name": "Stage a sensitive customer-case export through the poisoned route",
+      "attack_techniques": [
+        {
+          "tech_id": "T1074.002",
+          "tech_name": "Remote Data Staging",
+          "tactic": "Collection"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:9c10d001-2201-4a01-9020-b10000000b06",
+        "openrasp:9c10d001-1101-4a01-9010-a10000000b06",
+        "falco:9c10d001-3301-4a01-9030-c10000000b06"
+      ],
+      "expected_signals": [
+        "path=/api/v1/public/audit-mirror",
+        "plugin_algorithm=mirror_export_stage",
+        "alert.signature=ET WEB_SERVER Internal Customer Case Export Staging",
+        "target_label=customer-case-stage",
+        "stage_mode=true",
+        "stage_artifact=customer-case-east-stage",
+        "fd.name=/srv/dotserver/tomcat-9.0.41/temp/public-audit-mirror/customer-case-east-stage.json"
+      ]
+    },
+    {
+      "step_id": "S7",
+      "name": "Download the staged export and leak PII over HTTP",
+      "attack_techniques": [
+        {
+          "tech_id": "T1048.003",
+          "tech_name": "Exfiltration Over Unencrypted Non-C2 Protocol",
+          "tactic": "Exfiltration"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:9c10d001-2201-4a01-9020-b10000000b07",
+        "openrasp:9c10d001-1101-4a01-9010-a10000000b07",
+        "falco:9c10d001-3301-4a01-9030-c10000000b07"
+      ],
+      "expected_signals": [
+        "path=/api/v1/public/audit-mirror/download",
+        "plugin_algorithm=response_dataLeak",
+        "alert.signature=ET WEB_SERVER Staged Customer Case HTTP Download Leak",
+        "target_label=artifact-download",
+        "artifact=customer-case-east-stage",
+        "transport=http",
+        "bytes_to_client=18492",
+        "download_action=true",
+        "Identity Card",
+        "Mobile Number",
+        "Bank Card",
+        "fd.name=/srv/dotserver/tomcat-9.0.41/temp/public-audit-mirror/customer-case-east-download.json"
+      ]
+    }
+  ]
+}
+
+
+
+

@@ -1,0 +1,104 @@
+{
+  "id": "3c736916-5bdd-4aba-87f0-c90376362c72",
+  "created_at": "2026-08-19T02:41:00.000Z",
+  "end_at": "2026-08-19T02:41:00.400Z",
+  "ttps": [
+    {
+      "id": "ded4be80-8243-42ef-8e9c-c9e70a90d843",
+      "name": "discovery",
+      "description": "战术: discovery",
+      "techniques": [
+        {
+          "tech_id": "T1613",
+          "tech_name": "Container and Resource Discovery",
+          "description": "Adversaries may attempt to discover containers and other resources that are available within a containers environment. Other resources may include images, deployments, pods, nodes, and other information such as the status of a cluster.\n\nThese resources can be viewed within web applications such as the Kubernetes dashboard or can be queried via the Docker and Kubernetes APIs.(Citation: Docker API)(Citation: Kubernetes API) In Docker, logs may leak information about the environment, such as the environment’s configuration, which services are available, and what cloud provider the victim may be utilizing. The discovery of these resources may inform an adversary’s next steps in the environment, such as how to perform lateral movement and which methods to utilize for execution. ",
+          "procedures": [
+            "行为: Container runtime discovery via legacy theme restore endpoint；证据: Suricata告警：src_ip 192.0.2.2，dest_ip 192.0.2.106，dest_port 8080，HTTP方法POST，URL /api/v1/admin/theme/legacy-restore，签名“ET WEB_SERVER Legacy Restore Container Runtime Discovery”，类别为Web Application Attack，状态码200。"
+          ],
+          "event_ids": [
+            "f26970da-350e-58f5-8c9c-5b853a52b299",
+            "95053175-a83f-50e0-840d-696ed0418385",
+            "e2b71828-1af2-5bed-b0d7-ed6f5ac41f70"
+          ]
+        }
+      ],
+      "event_ids": [
+        "f26970da-350e-58f5-8c9c-5b853a52b299",
+        "95053175-a83f-50e0-840d-696ed0418385",
+        "e2b71828-1af2-5bed-b0d7-ed6f5ac41f70"
+      ]
+    },
+    {
+      "id": "e275b981-368e-4ae5-9ef1-91b06cd0084e",
+      "name": "execution",
+      "description": "战术: execution",
+      "techniques": [
+        {
+          "tech_id": "T1059",
+          "tech_name": "Command and Scripting Interpreter",
+          "description": "Adversaries may abuse command and script interpreters to execute commands, scripts, or binaries. These interfaces and languages provide ways of interacting with computer systems and are a common feature across many different platforms. Most systems come with some built-in command-line interface and scripting capabilities, for example, macOS and Linux distributions include some flavor of [Unix Shell](https://attack.mitre.org/techniques/T1059/004) while Windows installations include the [Windows Command Shell](https://attack.mitre.org/techniques/T1059/003) and [PowerShell](https://attack.mitre.org/techniques/T1059/001).\n\nThere are also cross-platform interpreters such as [Python](https://attack.mitre.org/techniques/T1059/006), as well as those commonly associated with client applications such as [JavaScript](https://attack.mitre.org/techniques/T1059/007) and [Visual Basic](https://attack.mitre.org/techniques/T1059/005).\n\nAdversaries may abuse these technologies in various ways as a means of executing arbitrary commands. Commands and scripts can be embedded in [Initial Access](https://attack.mitre.org/tactics/TA0001) payloads delivered to victims as lure documents or as secondary payloads downloaded from an existing C2. Adversaries may also execute commands through interactive terminals/shells, as well as utilize various [Remote Services](https://attack.mitre.org/techniques/T1021) in order to achieve remote Execution.(Citation: Powershell Remote Commands)(Citation: Cisco IOS Software Integrity Assurance - Command History)(Citation: Remote Shell Execution in Python)",
+          "procedures": [
+            "行为: Command execution via deserialization probing container runtime identity；证据: POST /api/v1/admin/theme/legacy-restore 请求的json_data中包含Java序列化数据，payload以rO0ABXNyABFqYXZhLnV0aWwuQXJyYXlMaXN0A...开头，phase为runtime-probe；OpenRASP插件消息为“Command execution - probing container runtime identity through legacy theme restore deserialization”，plugin_algorithm为command_other，攻击源为192.0.2.2。"
+          ],
+          "event_ids": [
+            "f26970da-350e-58f5-8c9c-5b853a52b299",
+            "95053175-a83f-50e0-840d-696ed0418385",
+            "e2b71828-1af2-5bed-b0d7-ed6f5ac41f70"
+          ]
+        }
+      ],
+      "event_ids": [
+        "f26970da-350e-58f5-8c9c-5b853a52b299",
+        "95053175-a83f-50e0-840d-696ed0418385",
+        "e2b71828-1af2-5bed-b0d7-ed6f5ac41f70"
+      ]
+    }
+  ],
+  "confidence": 0.6,
+  "summary": "2026-08-19 10:41:00，攻击源192.0.2.2通过HTTP POST请求访问目标192.0.2.106:8080的/api/v1/admin/theme/legacy-restore接口，触发OpenRASP命令执行告警（attack_type: command，plugin_algorithm: command_other，置信度93，拦截状态为仅记录）。请求中包含带有Java序列化数据的payload（restoreToken为synthetic-restore-token-001，phase为runtime-probe），插件消息指出为通过旧版主题恢复反序列化探测容器运行时身份。目标资产为192.0.2.106上的Tomcat 9.0.41（服务器IP为198.51.64.3，主机名为3dcd6fd91463），请求ID为deserialize-defev-chain-req-04。同一时间Suricata也检测到相同请求，告警特征为“ET WEB_SERVER Legacy Restore Container Runtime Discovery”，动作允许，状态200。整体显示攻击者利用旧版主题恢复接口进行反序列化攻击并尝试发现容器运行时信息。",
+  "event_count": 3,
+  "source_events": [
+    "f26970da-350e-58f5-8c9c-5b853a52b299",
+    "95053175-a83f-50e0-840d-696ed0418385",
+    "e2b71828-1af2-5bed-b0d7-ed6f5ac41f70"
+  ],
+  "attacker_fingerprint": {
+    "primary_ip": "192.0.2.2",
+    "ip_list": [
+      "192.0.2.2"
+    ],
+    "user_agents": [],
+    "patterns": [],
+    "first_seen": "2026-08-19T02:41:00.000Z",
+    "last_seen": "2026-08-19T02:41:00.400Z"
+  },
+  "attacker_ip": "192.0.2.2",
+  "raw_event_count": 3,
+  "filtered_event_count": 2,
+  "ip_group_count": 1,
+  "filter_reason": "current window contains openrasp/suricata; falco events are ignored before offline DeepXDR analysis",
+  "selected_attacker_ip": "192.0.2.2",
+  "analyzed_ip_groups": [
+    {
+      "attacker_ip": "192.0.2.2",
+      "event_count": 2
+    }
+  ],
+  "latency_seconds": 53.653,
+  "event_ids": [
+    "f26970da-350e-58f5-8c9c-5b853a52b299",
+    "95053175-a83f-50e0-840d-696ed0418385",
+    "e2b71828-1af2-5bed-b0d7-ed6f5ac41f70"
+  ],
+  "fixture_chain_id": "deserialize_defense_impair_log_cleanup_001",
+  "fixture_step_id": "S4",
+  "fixture_event_ref_map": {
+    "suricata:5a61c102-1201-4c21-9120-d10000000104": "f26970da-350e-58f5-8c9c-5b853a52b299",
+    "openrasp:4a51b101-1101-4b11-9110-c10000000104": "95053175-a83f-50e0-840d-696ed0418385",
+    "falco:6a71d103-1301-4d31-9130-e10000000104": "e2b71828-1af2-5bed-b0d7-ed6f5ac41f70"
+  }
+}
+
+
+
+

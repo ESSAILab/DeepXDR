@@ -1,0 +1,197 @@
+{
+  "chain_id": "ssrf_internal_audit_pii_001",
+  "ground_truth_type": "long_ttp_chain_level_from_step_annotations",
+  "matching_note": "Use parent-family matching when the experiment ignores MITRE sub-technique suffixes.",
+  "trigger_step_id": "S4",
+  "step_count": 4,
+  "technique_ids": [
+    "T1046",
+    "T1048.003",
+    "T1190",
+    "T1213",
+    "T1552"
+  ],
+  "techniques": [
+    {
+      "tech_id": "T1046",
+      "tech_name": "Network Service Discovery",
+      "tactic": "Discovery"
+    },
+    {
+      "tech_id": "T1048.003",
+      "tech_name": "Exfiltration Over Unencrypted Non-C2 Protocol",
+      "tactic": "Exfiltration"
+    },
+    {
+      "tech_id": "T1190",
+      "tech_name": "Exploit Public-Facing Application",
+      "tactic": "Initial Access"
+    },
+    {
+      "tech_id": "T1213",
+      "tech_name": "Data from Information Repositories",
+      "tactic": "Collection"
+    },
+    {
+      "tech_id": "T1552",
+      "tech_name": "Unsecured Credentials",
+      "tactic": "Credential Access"
+    }
+  ],
+  "tactic_names": [
+    "Collection",
+    "Credential Access",
+    "Discovery",
+    "Exfiltration",
+    "Initial Access"
+  ],
+  "steps": [
+    {
+      "step_id": "S1",
+      "name": "Probe internal audit service fingerprint through the public proxy",
+      "attack_techniques": [
+        {
+          "tech_id": "T1190",
+          "tech_name": "Exploit Public-Facing Application",
+          "tactic": "Initial Access"
+        },
+        {
+          "tech_id": "T1046",
+          "tech_name": "Network Service Discovery",
+          "tactic": "Discovery"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:1b2c7302-9f05-4d80-82a6-4f000002b101",
+        "openrasp:9aab6101-8e94-4bfe-92e4-4f000001a101",
+        "falco:2c3d8403-af16-4e91-93b7-4f000003c101"
+      ],
+      "expected_signals": [
+        "attack_type=ssrf",
+        "plugin_algorithm=ssrf_common",
+        "alert.signature=ET WEB_SERVER Public Proxy SSRF Internal Audit Service Fingerprint Probe",
+        "http.url=/api/proxy/fetch?url=http%3A%2F%2F127.0.0.1%3A8080%2Finternal%2Faudit%2Fhealth%3Fverbose%3Dtrue",
+        "attack_params.url=http://127.0.0.1:8080/internal/audit/health?verbose=true",
+        "attack_params.function=httpclient",
+        "attack_params.hostname=127.0.0.1",
+        "plugin_confidence=100",
+        "path=/api/proxy/fetch",
+        "fd.name=/srv/dotserver/tomcat-9.0.41/temp/proxy-cache/internal-audit-health.json",
+        "next_probe_hint=/internal/audit/topology",
+        "modules=topology,customer-summary,case-review"
+      ]
+    },
+    {
+      "step_id": "S2",
+      "name": "Enumerate internal network service endpoints through the public proxy",
+      "attack_techniques": [
+        {
+          "tech_id": "T1190",
+          "tech_name": "Exploit Public-Facing Application",
+          "tactic": "Initial Access"
+        },
+        {
+          "tech_id": "T1046",
+          "tech_name": "Network Service Discovery",
+          "tactic": "Discovery"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:1b2c7302-9f05-4d80-82a6-4f000002b102",
+        "openrasp:9aab6101-8e94-4bfe-92e4-4f000001a102",
+        "falco:2c3d8403-af16-4e91-93b7-4f000003c102"
+      ],
+      "expected_signals": [
+        "attack_type=ssrf",
+        "plugin_algorithm=internal_audit_network_service_endpoint_probe",
+        "alert.signature=ET WEB_SERVER Public Proxy SSRF Internal Audit Network Service Endpoint Enumeration",
+        "http.url=/api/proxy/fetch?url=http%3A%2F%2F127.0.0.1%3A8080%2Finternal%2Faudit%2Fexport-route-catalog%3Finclude%3Dsummary%2Cexporter",
+        "attack_params.url=http://127.0.0.1:8080/internal/audit/export-route-catalog?include=summary,exporter",
+        "path=/api/proxy/fetch",
+        "fd.name=/srv/dotserver/tomcat-9.0.41/temp/proxy-cache/internal-audit-service-endpoints.json",
+        "internal_host=127.0.0.1",
+        "internal_port=8080",
+        "network_scope=loopback-service-interface",
+        "service_endpoints=/internal/audit/customer-summary?region=east&format=csv,/internal/audit/export-credential-bundle?scope=customer-summary-east",
+        "summary.endpoint=/internal/audit/customer-summary?region=east&format=csv",
+        "exporter.bundle=/internal/audit/export-credential-bundle?scope=customer-summary-east",
+        "supported_exports=customer-summary-east,customer-summary-west"
+      ]
+    },
+    {
+      "step_id": "S3",
+      "name": "Read export credential bundle through the public proxy",
+      "attack_techniques": [
+        {
+          "tech_id": "T1552",
+          "tech_name": "Unsecured Credentials",
+          "tactic": "Credential Access"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:1b2c7302-9f05-4d80-82a6-4f000002b103",
+        "openrasp:9aab6101-8e94-4bfe-92e4-4f000001a103",
+        "falco:2c3d8403-af16-4e91-93b7-4f000003c103"
+      ],
+      "expected_signals": [
+        "attack_type=ssrf",
+        "plugin_algorithm=ssrf_userinput",
+        "alert.signature=ET WEB_SERVER Public Proxy SSRF Local Credential File Properties File Disclosure",
+        "http.url=/api/proxy/fetch?url=http%3A%2F%2F127.0.0.1%3A8080%2Finternal%2Faudit%2Fexport-credential-bundle%3Fscope%3Dcustomer-summary-east",
+        "attack_params.url=http://127.0.0.1:8080/internal/audit/export-credential-bundle?scope=customer-summary-east",
+        "attack_params.credential_file=export-credential-bundle.properties",
+        "attack_params.credential_file_path=/srv/dotserver/tomcat-9.0.41/temp/proxy-cache/internal-audit-export-credential-bundle.properties",
+        "attack_params.credential_file_type=java_properties",
+        "attack_params.credential_storage=local_filesystem_cache",
+        "path=/api/proxy/fetch",
+        "fd.name=/srv/dotserver/tomcat-9.0.41/temp/proxy-cache/internal-audit-export-credential-bundle.properties",
+        "exporter.username=audit_exporter",
+        "exporter.api_token=synthetic-token-audit-001",
+        "exporter.signing_key_id=east-audit-signing-key-01",
+        "exporter.secret_scope=customer-summary-east",
+        "summary.endpoint=/internal/audit/customer-summary?region=east&format=csv"
+      ]
+    },
+    {
+      "step_id": "S4",
+      "name": "Retrieve sensitive internal customer audit summary through the proxy",
+      "attack_techniques": [
+        {
+          "tech_id": "T1190",
+          "tech_name": "Exploit Public-Facing Application",
+          "tactic": "Initial Access"
+        },
+        {
+          "tech_id": "T1213",
+          "tech_name": "Data from Information Repositories",
+          "tactic": "Collection"
+        },
+        {
+          "tech_id": "T1048.003",
+          "tech_name": "Exfiltration Over Unencrypted Non-C2 Protocol",
+          "tactic": "Exfiltration"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:1b2c7302-9f05-4d80-82a6-4f000002b104",
+        "openrasp:9aab6101-8e94-4bfe-92e4-4f000001a104",
+        "falco:2c3d8403-af16-4e91-93b7-4f000003c104"
+      ],
+      "expected_signals": [
+        "attack_type=response",
+        "plugin_algorithm=response_dataLeak",
+        "alert.signature=ET WEB_SERVER Public Proxy SSRF Sensitive Internal Audit Summary Access",
+        "http.url=/api/proxy/fetch?url=http%3A%2F%2F127.0.0.1%3A8080%2Finternal%2Faudit%2Fcustomer-summary%3Fregion%3Deast%26format%3Dcsv",
+        "path=/api/proxy/fetch",
+        "Identity Card",
+        "Mobile Number",
+        "Bank Card",
+        "fd.name=/srv/dotserver/tomcat-9.0.41/temp/proxy-cache/customer-summary-region-east.csv"
+      ]
+    }
+  ]
+}
+
+
+
+

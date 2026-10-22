@@ -1,0 +1,79 @@
+{
+  "id": "e090602a-b8c5-4a3d-af2f-31ed418a6957",
+  "created_at": "2026-08-26T03:01:00.000Z",
+  "end_at": "2026-08-26T03:01:00.400Z",
+  "ttps": [
+    {
+      "id": "188bc324-4013-426d-a502-d80a570bdec1",
+      "name": "collection",
+      "description": "战术: collection",
+      "techniques": [
+        {
+          "tech_id": "T1213.004",
+          "tech_name": "Customer Relationship Management Software",
+          "description": "Adversaries may leverage Customer Relationship Management (CRM) software to mine valuable information. CRM software is used to assist organizations in tracking and managing customer interactions, as well as storing customer data.\n\nOnce adversaries gain access to a victim organization, they may mine CRM software for customer data. This may include personally identifiable information (PII) such as full names, emails, phone numbers, and addresses, as well as additional details such as purchase histories and IT support interactions. By collecting this data, an adversary may be able to send personalized [Phishing](https://attack.mitre.org/techniques/T1566) emails, engage in SIM swapping, or otherwise target the organization’s customers in ways that enable financial gain or the compromise of additional organizations.(Citation: Bleeping Computer US Cellular Hack 2022)(Citation: Bleeping Computer Mint Mobile Hack 2021)(Citation: Bleeping Computer Bank Hack 2020)\n\nCRM software may be hosted on-premises or in the cloud. Information stored in these solutions may vary based on the specific instance or environment. Examples of CRM software include Microsoft Dynamics 365, Salesforce, Zoho, Zendesk, and HubSpot.",
+          "procedures": [
+            "行为: Sensitive PII data leak via proxied internal audit response；证据: PII leak detected in proxied internal audit customer summary: ID-EXAMPLE-001(Identity Card), MOBILE-EXAMPLE-001(Mobile Number), BANK-EXAMPLE-001(Bank Card)"
+          ],
+          "event_ids": [
+            "dcfb3930-47ad-5480-8a3c-94404b26204a",
+            "8710ba66-6c41-531c-bf5d-2cbb3d557ce6",
+            "038932ff-a27e-5495-842e-00955172a263"
+          ]
+        }
+      ],
+      "event_ids": [
+        "dcfb3930-47ad-5480-8a3c-94404b26204a",
+        "8710ba66-6c41-531c-bf5d-2cbb3d557ce6",
+        "038932ff-a27e-5495-842e-00955172a263"
+      ]
+    }
+  ],
+  "confidence": 0.55,
+  "summary": "2026-08-26 11:01:00，攻击源 192.0.2.2 通过公开代理接口 /api/proxy/fetch 发起 SSRF，请求内网地址 http://127.0.0.1:8080/internal/audit/customer-summary?region=east&format=csv，获取内部审计客户汇总数据。OpenRASP 检测到响应数据泄露（PII：身份证号 ID-EXAMPLE-001、手机号 MOBILE-EXAMPLE-001、银行卡号 BANK-EXAMPLE-001），拦截状态为 log；Suricata 同时告警“Public Proxy SSRF Sensitive Internal Audit Summary Access”（Attempted Information Leak），动作 allowed，HTTP 200，响应长度 18492 字节。网络连接为 192.0.2.2:51514 → 192.0.2.157:8080（TCP）。受影响资产为 192.0.2.157（Tomcat 9.0.41.0，主机名 3dcd6fd91463，服务器 IP 198.51.64.3），请求 ID ssrf-audit-chain-req-04。事件 ID：bc816971-b8eb-4ea3-801c-7fc6fd668bfb、bd32。",
+  "event_count": 3,
+  "source_events": [
+    "dcfb3930-47ad-5480-8a3c-94404b26204a",
+    "8710ba66-6c41-531c-bf5d-2cbb3d557ce6",
+    "038932ff-a27e-5495-842e-00955172a263"
+  ],
+  "attacker_fingerprint": {
+    "primary_ip": "192.0.2.2",
+    "ip_list": [
+      "192.0.2.2"
+    ],
+    "user_agents": [],
+    "patterns": [],
+    "first_seen": "2026-08-26T03:01:00.000Z",
+    "last_seen": "2026-08-26T03:01:00.400Z"
+  },
+  "attacker_ip": "192.0.2.2",
+  "raw_event_count": 3,
+  "filtered_event_count": 2,
+  "ip_group_count": 1,
+  "filter_reason": "current window contains openrasp/suricata; falco events are ignored before offline DeepXDR analysis",
+  "selected_attacker_ip": "192.0.2.2",
+  "analyzed_ip_groups": [
+    {
+      "attacker_ip": "192.0.2.2",
+      "event_count": 2
+    }
+  ],
+  "latency_seconds": 97.982,
+  "event_ids": [
+    "dcfb3930-47ad-5480-8a3c-94404b26204a",
+    "8710ba66-6c41-531c-bf5d-2cbb3d557ce6",
+    "038932ff-a27e-5495-842e-00955172a263"
+  ],
+  "fixture_chain_id": "ssrf_internal_audit_pii_001",
+  "fixture_step_id": "S4",
+  "fixture_event_ref_map": {
+    "suricata:1b2c7302-9f05-4d80-82a6-4f000002b104": "dcfb3930-47ad-5480-8a3c-94404b26204a",
+    "openrasp:9aab6101-8e94-4bfe-92e4-4f000001a104": "8710ba66-6c41-531c-bf5d-2cbb3d557ce6",
+    "falco:2c3d8403-af16-4e91-93b7-4f000003c104": "038932ff-a27e-5495-842e-00955172a263"
+  }
+}
+
+
+
+

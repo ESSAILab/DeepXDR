@@ -1,0 +1,104 @@
+{
+  "id": "bcde7265-8eb0-4b94-8d2f-a1215167191a",
+  "created_at": "2026-08-26T01:00:16.000Z",
+  "end_at": "2026-08-26T01:00:16.400Z",
+  "ttps": [
+    {
+      "id": "d7eee93a-19d3-4596-9791-2438a2a202a5",
+      "name": "exfiltration",
+      "description": "战术: exfiltration",
+      "techniques": [
+        {
+          "tech_id": "T1048.003",
+          "tech_name": "Exfiltration Over Unencrypted Non-C2 Protocol",
+          "description": "Adversaries may steal data by exfiltrating it over an un-encrypted network protocol other than that of the existing command and control channel. The data may also be sent to an alternate network location from the main command and control server.(Citation: copy_cmd_cisco)\n\nAdversaries may opt to obfuscate this data, without the use of encryption, within network protocols that are natively unencrypted (such as HTTP, FTP, or DNS). This may include custom or publicly available encoding/compression algorithms (such as base64) as well as embedding data within protocol headers and fields. ",
+          "procedures": [
+            "行为: Access sensitive admin export endpoint using HTTP GET；证据: GET /api/v1/admin/reports/export?report=customer-quarterly&format=csv&scope=region-east HTTP/1.1, host 192.0.2.157:8080, signature \"ET WEB_SERVER Sensitive Admin Export Endpoint Access\", category \"Attempted Information Leak\""
+          ],
+          "event_ids": [
+            "46812846-96af-57bc-a40b-49be27ff86c3",
+            "2b11f409-509e-5121-8823-2323a27d731f",
+            "50aa6742-3491-501d-a518-abd96cbd495d"
+          ]
+        }
+      ],
+      "event_ids": [
+        "46812846-96af-57bc-a40b-49be27ff86c3",
+        "2b11f409-509e-5121-8823-2323a27d731f",
+        "50aa6742-3491-501d-a518-abd96cbd495d"
+      ]
+    },
+    {
+      "id": "b7c80a77-c7f7-40f8-999e-b968fc6df294",
+      "name": "collection",
+      "description": "战术: collection",
+      "techniques": [
+        {
+          "tech_id": "T1213",
+          "tech_name": "Data from Information Repositories",
+          "description": "Adversaries may leverage information repositories to mine valuable information. Information repositories are tools that allow for storage of information, typically to facilitate collaboration or information sharing between users, and can store a wide variety of data that may aid adversaries in further objectives, such as Credential Access, Lateral Movement, or Defense Evasion, or direct access to the target information. Adversaries may also abuse external sharing features to share sensitive documents with recipients outside of the organization (i.e., [Transfer Data to Cloud Account](https://attack.mitre.org/techniques/T1537)). \n\nThe following is a brief list of example information that may hold potential value to an adversary and may also be found on an information repository:\n\n* Policies, procedures, and standards\n* Physical / logical network diagrams\n* System architecture diagrams\n* Technical system documentation\n* Testing / development credentials (i.e., [Unsecured Credentials](https://attack.mitre.org/techniques/T1552)) \n* Work / project schedules\n* Source code snippets\n* Links to network shares and other internal resources\n* Contact or other sensitive information about business partners and customers, including personally identifiable information (PII) \n\nInformation stored in a repository may vary based on the specific instance or environment. Specific common information repositories include the following:\n\n* Storage services such as IaaS databases, enterprise databases, and more specialized platforms such as customer relationship management (CRM) databases \n* Collaboration platforms such as SharePoint, Confluence, and code repositories\n* Messaging platforms such as Slack and Microsoft Teams \n\nIn some cases, information repositories have been improperly secured, typically by unintentionally allowing for overly-broad access by all users or even public access to unauthenticated users. This is particularly common with cloud-native or cloud-hosted services, such as AWS Relational Database Service (RDS), Redis, or ElasticSearch.(Citation: Mitiga)(Citation: TrendMicro Exposed Redis 2020)(Citation: Cybernews Reuters Leak 2022)",
+          "procedures": [
+            "行为: PII data leak from exported administrative report response；证据: plugin_message: \"PII leak detected in exported customer quarterly report: ID-EXAMPLE-001(Identity Card), MOBILE-EXAMPLE-001(Mobile Number), BANK-EXAMPLE-001(Bank Card)\", plugin_algorithm: response_dataLeak, attack_type: response, intercept_state: log"
+          ],
+          "event_ids": [
+            "46812846-96af-57bc-a40b-49be27ff86c3",
+            "2b11f409-509e-5121-8823-2323a27d731f",
+            "50aa6742-3491-501d-a518-abd96cbd495d"
+          ]
+        }
+      ],
+      "event_ids": [
+        "46812846-96af-57bc-a40b-49be27ff86c3",
+        "2b11f409-509e-5121-8823-2323a27d731f",
+        "50aa6742-3491-501d-a518-abd96cbd495d"
+      ]
+    }
+  ],
+  "confidence": 0.6,
+  "summary": "攻击源192.0.2.23于2026-08-10 10:15:51向目标192.0.2.157:8080发送GET请求，访问敏感管理后台导出端点/api/v1/admin/reports/export?report=customer-quarterly&format=csv&scope=region-east，Referer为http://192.0.2.157:8080/dotAdmin/#/reporting/export-center。Suricata产生告警“ET WEB_SERVER Sensitive Admin Export Endpoint Access”（Attempted Information Leak），HTTP状态200，返回18492字节。OpenRASP检测到响应存在PII数据泄露：导出的客户季度报表中包含身份证号ID-EXAMPLE-001、手机号MOBILE-EXAMPLE-001、银行卡号BANK-EXAMPLE-001，插件算法为response_dataLeak，处置为log。服务器为Tomcat 9.0.41.0（主机名3dcd6fd91463，服务IP 198.51.64.3），请求ID pt-chain-20260810-req-05，涉及事件ID 652fb9b2-f79f-4f5f-a1cc-d08ab49bd6f4和bb。",
+  "event_count": 3,
+  "source_events": [
+    "46812846-96af-57bc-a40b-49be27ff86c3",
+    "2b11f409-509e-5121-8823-2323a27d731f",
+    "50aa6742-3491-501d-a518-abd96cbd495d"
+  ],
+  "attacker_fingerprint": {
+    "primary_ip": "192.0.2.23",
+    "ip_list": [
+      "192.0.2.23"
+    ],
+    "user_agents": [],
+    "patterns": [],
+    "first_seen": "2026-08-26T01:00:16.000Z",
+    "last_seen": "2026-08-26T01:00:16.400Z"
+  },
+  "attacker_ip": "192.0.2.23",
+  "raw_event_count": 3,
+  "filtered_event_count": 2,
+  "ip_group_count": 1,
+  "filter_reason": "current window contains openrasp/suricata; falco events are ignored before offline DeepXDR analysis",
+  "selected_attacker_ip": "192.0.2.23",
+  "analyzed_ip_groups": [
+    {
+      "attacker_ip": "192.0.2.23",
+      "event_count": 2
+    }
+  ],
+  "latency_seconds": 55.644,
+  "event_ids": [
+    "46812846-96af-57bc-a40b-49be27ff86c3",
+    "2b11f409-509e-5121-8823-2323a27d731f",
+    "50aa6742-3491-501d-a518-abd96cbd495d"
+  ],
+  "fixture_chain_id": "path_traversal_multi_config_read_001",
+  "fixture_step_id": "S3",
+  "fixture_event_ref_map": {
+    "suricata:0a1f65d4-3a1d-49df-a67a-9671a1311201": "46812846-96af-57bc-a40b-49be27ff86c3",
+    "openrasp:7b660f17-a893-472a-9f56-7d2fb5db1201": "2b11f409-509e-5121-8823-2323a27d731f",
+    "falco:4f6d4b79-a25b-4bc9-a3f1-3cf8feba1201": "50aa6742-3491-501d-a518-abd96cbd495d"
+  }
+}
+
+
+
+

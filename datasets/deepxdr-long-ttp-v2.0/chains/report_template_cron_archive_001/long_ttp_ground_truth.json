@@ -1,0 +1,211 @@
+{
+  "chain_id": "report_template_cron_archive_001",
+  "ground_truth_type": "long_ttp_chain_level_from_step_annotations",
+  "matching_note": "Use parent-family matching when the experiment ignores MITRE sub-technique suffixes.",
+  "trigger_step_id": "S6",
+  "step_count": 6,
+  "technique_ids": [
+    "T1048.003",
+    "T1053.003",
+    "T1059.004",
+    "T1083",
+    "T1190",
+    "T1560.001"
+  ],
+  "techniques": [
+    {
+      "tech_id": "T1048.003",
+      "tech_name": "Exfiltration Over Unencrypted Non-C2 Protocol",
+      "tactic": "Exfiltration"
+    },
+    {
+      "tech_id": "T1053.003",
+      "tech_name": "Cron",
+      "tactic": "Persistence"
+    },
+    {
+      "tech_id": "T1059.004",
+      "tech_name": "Unix Shell",
+      "tactic": "Execution"
+    },
+    {
+      "tech_id": "T1083",
+      "tech_name": "File and Directory Discovery",
+      "tactic": "Discovery"
+    },
+    {
+      "tech_id": "T1190",
+      "tech_name": "Exploit Public-Facing Application",
+      "tactic": "Initial Access"
+    },
+    {
+      "tech_id": "T1560.001",
+      "tech_name": "Archive via Utility",
+      "tactic": "Collection"
+    }
+  ],
+  "tactic_names": [
+    "Collection",
+    "Discovery",
+    "Execution",
+    "Exfiltration",
+    "Initial Access",
+    "Persistence"
+  ],
+  "steps": [
+    {
+      "step_id": "S1",
+      "name": "Upload a server-side report template",
+      "attack_techniques": [
+        {
+          "tech_id": "T1190",
+          "tech_name": "Exploit Public-Facing Application",
+          "tactic": "Initial Access"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:d0800000-1001-4d08-8100-080101000001",
+        "openrasp:d0800000-2001-4d08-8200-080102000001",
+        "falco:d0800000-3001-4d08-8300-080103000001"
+      ],
+      "expected_signals": [
+        "path=/api/reports/templates/import",
+        "signature=Exploit Public-Facing Report Template Import",
+        "attack_params.exploit_vector=server_side_template_import",
+        "attack_params.public_facing_endpoint=true",
+        "attack_params.not_resource_development=true",
+        "deep_chain_id=report_template_cron_archive_001",
+        "deep_step_id=S1",
+        "fd.name=/srv/dotserver/report_template_cron_archive_001/stage-1-report_template_cron_archive.json"
+      ]
+    },
+    {
+      "step_id": "S2",
+      "name": "Execute commands during template rendering",
+      "attack_techniques": [
+        {
+          "tech_id": "T1059.004",
+          "tech_name": "Unix Shell",
+          "tactic": "Execution"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:d0800000-1002-4d08-8100-080201000001",
+        "openrasp:d0800000-2002-4d08-8200-080202000001",
+        "falco:d0800000-3002-4d08-8300-080203000001"
+      ],
+      "expected_signals": [
+        "path=/api/reports/render",
+        "signature=Unix Shell Command Execution During Report Template Rendering",
+        "attack_params.command_interpreter=/bin/sh",
+        "attack_params.shell_family=unix_shell",
+        "attack_params.command=/bin/sh -c /opt/reporting/bin/render_report.sh --template imported.tpl",
+        "deep_chain_id=report_template_cron_archive_001",
+        "deep_step_id=S2",
+        "fd.name=/srv/dotserver/report_template_cron_archive_001/stage-2-report_template_cron_archive.json"
+      ]
+    },
+    {
+      "step_id": "S3",
+      "name": "Install a recurring report export cron job",
+      "attack_techniques": [
+        {
+          "tech_id": "T1053.003",
+          "tech_name": "Cron",
+          "tactic": "Persistence"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:d0800000-1003-4d08-8100-080301000001",
+        "openrasp:d0800000-2003-4d08-8200-080302000001",
+        "falco:d0800000-3003-4d08-8300-080303000001"
+      ],
+      "expected_signals": [
+        "path=/etc/cron.d/report-export",
+        "signature=Report Export Cron Persistence",
+        "deep_chain_id=report_template_cron_archive_001",
+        "deep_step_id=S3",
+        "fd.name=/srv/dotserver/report_template_cron_archive_001/stage-3-report_template_cron_archive.json"
+      ]
+    },
+    {
+      "step_id": "S4",
+      "name": "Discover analytics warehouse configuration",
+      "attack_techniques": [
+        {
+          "tech_id": "T1083",
+          "tech_name": "File and Directory Discovery",
+          "tactic": "Discovery"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:d0800000-1004-4d08-8100-080401000001",
+        "openrasp:d0800000-2004-4d08-8200-080402000001",
+        "falco:d0800000-3004-4d08-8300-080403000001"
+      ],
+      "expected_signals": [
+        "path=/opt/reporting/conf/warehouse.yml",
+        "signature=File and Directory Discovery of Reporting Configuration Directory",
+        "attack_params.discovery_scope=/opt/reporting/conf/",
+        "attack_params.discovery_mode=file_directory_enumeration",
+        "attack_params.enumerated_files=warehouse.yml,export.yml,secrets.yml",
+        "deep_chain_id=report_template_cron_archive_001",
+        "deep_step_id=S4",
+        "fd.name=/srv/dotserver/report_template_cron_archive_001/stage-4-report_template_cron_archive.json"
+      ]
+    },
+    {
+      "step_id": "S5",
+      "name": "Archive analytics extracts into a report attachment",
+      "attack_techniques": [
+        {
+          "tech_id": "T1560.001",
+          "tech_name": "Archive via Utility",
+          "tactic": "Collection"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:d0800000-1005-4d08-8100-080501000001",
+        "openrasp:d0800000-2005-4d08-8200-080502000001",
+        "falco:d0800000-3005-4d08-8300-080503000001"
+      ],
+      "expected_signals": [
+        "path=/tmp/monthly-report-attachment.zip",
+        "signature=Archive Analytics Extracts via Zip Utility",
+        "attack_params.archive_utility=zip",
+        "attack_params.archive_format=zip",
+        "attack_params.command=zip -r /tmp/monthly-report-attachment.zip /var/lib/reporting/exports/",
+        "deep_chain_id=report_template_cron_archive_001",
+        "deep_step_id=S5",
+        "fd.name=/srv/dotserver/report_template_cron_archive_001/stage-5-report_template_cron_archive.json"
+      ]
+    },
+    {
+      "step_id": "S6",
+      "name": "Download the weaponized report attachment",
+      "attack_techniques": [
+        {
+          "tech_id": "T1048.003",
+          "tech_name": "Exfiltration Over Unencrypted Non-C2 Protocol",
+          "tactic": "Exfiltration"
+        }
+      ],
+      "expected_event_refs": [
+        "suricata:d0800000-1006-4d08-8100-080601000001",
+        "openrasp:d0800000-2006-4d08-8200-080602000001",
+        "falco:d0800000-3006-4d08-8300-080603000001"
+      ],
+      "expected_signals": [
+        "path=/api/reports/attachments/download",
+        "signature=Report Attachment Exfiltration",
+        "deep_chain_id=report_template_cron_archive_001",
+        "deep_step_id=S6",
+        "fd.name=/srv/dotserver/report_template_cron_archive_001/stage-6-report_template_cron_archive.json"
+      ]
+    }
+  ]
+}
+
+
+
+

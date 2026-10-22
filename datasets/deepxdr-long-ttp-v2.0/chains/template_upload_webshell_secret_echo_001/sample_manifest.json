@@ -1,0 +1,39 @@
+{
+  "dataset_type": "deepxdr_long_ttp_release_sample",
+  "chain_id": "template_upload_webshell_secret_echo_001",
+  "source_chain_name": "OpenRASP lab: Template Upload -> WebShell Drop -> Command Execution -> Local Secret Collection -> HTTP Echo Leak",
+  "source_result_path": null,
+  "base_time": "2026-08-14T08:20:00Z",
+  "attacker_ip": "192.0.2.2",
+  "target_host": "192.0.2.106:8080",
+  "trigger_step_id": "S5",
+  "trigger_step_name": "Echo the collected secret material back over HTTP",
+  "trigger_short_ttp_id": "8ed4e883-2acf-4e4f-8eec-0eb3b2fc06f3",
+  "event_count": 13,
+  "trigger_event_count": 3,
+  "step_count": 5,
+  "telemetry_sources": [
+    "openrasp",
+    "suricata",
+    "falco"
+  ],
+  "technique_ids": [
+    "T1033",
+    "T1048.003",
+    "T1059.004",
+    "T1505.003",
+    "T1552.001"
+  ],
+  "files": {
+    "trigger_short_ttp": "trigger_short_ttp.json",
+    "events": "events.jsonl",
+    "long_ttp_ground_truth": "long_ttp_ground_truth.json",
+    "event_id_map": "event_id_map.json",
+    "file_actions": "file_actions.json",
+    "run_config": "run_config.json",
+    "sample_manifest": "sample_manifest.json"
+  },
+  "release_version": "v2.0",
+  "legacy_chain_id": "openrasp_template_upload_webshell_secret_echo_chain_001",
+  "display_name": "Template Upload Webshell to Secret Echo"
+}

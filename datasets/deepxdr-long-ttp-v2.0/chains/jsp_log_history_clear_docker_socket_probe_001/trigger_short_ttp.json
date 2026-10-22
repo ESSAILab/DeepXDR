@@ -1,0 +1,84 @@
+{
+  "id": "6b61662e-f74d-4729-86e3-d3888bc42e21",
+  "created_at": "2026-09-01T01:03:07.713Z",
+  "end_at": "2026-09-01T01:03:08.688Z",
+  "ttps": [
+    {
+      "id": "55ae2fbb-015f-4658-b6e1-f269b077b688",
+      "name": "discovery",
+      "description": "战术: discovery",
+      "techniques": [
+        {
+          "tech_id": "T1613",
+          "tech_name": "Container and Resource Discovery",
+          "description": "Adversaries may attempt to discover containers and other resources that are available within a containers environment. Other resources may include images, deployments, pods, nodes, and other information such as the status of a cluster.\n\nThese resources can be viewed within web applications such as the Kubernetes dashboard or can be queried via the Docker and Kubernetes APIs.(Citation: Docker API)(Citation: Kubernetes API) In Docker, logs may leak information about the environment, such as the environment’s configuration, which services are available, and what cloud provider the victim may be utilizing. The discovery of these resources may inform an adversary’s next steps in the environment, such as how to perform lateral movement and which methods to utilize for execution. ",
+          "procedures": [
+            "行为: Command execution attempting to list Docker socket；证据: plugin_message: Command execution - Logging all command execution by default, command is /bin/sh -c cd /tmp/ ;ls -la /var/run/docker.sock 2>/dev/null"
+          ],
+          "event_ids": [
+            "c7766733-4159-5145-8c2d-0648a6f92863",
+            "0101d469-901f-53a5-b9a8-c995e83210d5",
+            "8ebe5910-d57c-5258-ba6a-e585e6f5ae04",
+            "d9483bdd-3941-5f48-b4d8-7177aa2cd9be"
+          ]
+        }
+      ],
+      "event_ids": [
+        "c7766733-4159-5145-8c2d-0648a6f92863",
+        "0101d469-901f-53a5-b9a8-c995e83210d5",
+        "8ebe5910-d57c-5258-ba6a-e585e6f5ae04",
+        "d9483bdd-3941-5f48-b4d8-7177aa2cd9be"
+      ]
+    }
+  ],
+  "confidence": 0.55,
+  "summary": "在2026-09-01 09:03:07，攻击源IP 192.0.2.7向目标服务器192.0.2.157:8080的/test.jsp发送POST请求，触发OpenRASP命令执行告警。攻击者通过命令注入执行了/bin/sh -c cd /tmp/ ;ls -la /var/run/docker.sock，尝试探测Docker socket。请求包含加密或编码的body，User-Agent为Firefox，服务器为Tomcat 9.0.41运行在容器内（server_hostname 65f8864ca821，server_ip 172.30.0.3）。RASP插件检测到命令执行，拦截状态为log（仅记录），置信度90。相关请求ID为cdb456e6240f4dcb84672a09bd076e91，事件ID为770e3a29-c694-4ae0-864d-87c5c38e1af0。",
+  "event_count": 4,
+  "source_events": [
+    "c7766733-4159-5145-8c2d-0648a6f92863",
+    "0101d469-901f-53a5-b9a8-c995e83210d5",
+    "8ebe5910-d57c-5258-ba6a-e585e6f5ae04",
+    "d9483bdd-3941-5f48-b4d8-7177aa2cd9be"
+  ],
+  "attacker_fingerprint": {
+    "primary_ip": "192.0.2.7",
+    "ip_list": [
+      "192.0.2.7"
+    ],
+    "user_agents": [],
+    "patterns": [],
+    "first_seen": "2026-09-01T01:03:07.713Z",
+    "last_seen": "2026-09-01T01:03:08.688Z"
+  },
+  "attacker_ip": "192.0.2.7",
+  "raw_event_count": 4,
+  "filtered_event_count": 1,
+  "ip_group_count": 1,
+  "filter_reason": "current window contains openrasp; falco events are ignored before offline DeepXDR analysis",
+  "selected_attacker_ip": "192.0.2.7",
+  "analyzed_ip_groups": [
+    {
+      "attacker_ip": "192.0.2.7",
+      "event_count": 1
+    }
+  ],
+  "latency_seconds": 12.57,
+  "event_ids": [
+    "c7766733-4159-5145-8c2d-0648a6f92863",
+    "0101d469-901f-53a5-b9a8-c995e83210d5",
+    "8ebe5910-d57c-5258-ba6a-e585e6f5ae04",
+    "d9483bdd-3941-5f48-b4d8-7177aa2cd9be"
+  ],
+  "fixture_chain_id": "jsp_log_history_clear_docker_socket_probe_001",
+  "fixture_step_id": "S3",
+  "fixture_event_ref_map": {
+    "openrasp:404e8a6c-7ea5-4b2f-b4c2-bf5dd87a5e3f": "c7766733-4159-5145-8c2d-0648a6f92863",
+    "falco:ef31b589-2104-444b-ae71-f8e7d020e8ec": "0101d469-901f-53a5-b9a8-c995e83210d5",
+    "falco:9a320aa4-27de-4f81-89fa-78074505e215": "8ebe5910-d57c-5258-ba6a-e585e6f5ae04",
+    "falco:09436a20-33a7-4ebf-8519-7d93822e46ca": "d9483bdd-3941-5f48-b4d8-7177aa2cd9be"
+  }
+}
+
+
+
+

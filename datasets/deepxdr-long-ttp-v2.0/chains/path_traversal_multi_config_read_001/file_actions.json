@@ -1,0 +1,39 @@
+{
+  "chain_id": "path_traversal_multi_config_read_001",
+  "actions": [
+    {
+      "action_id": "prepare_export_auth_secrets_file",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/tomcat-9.0.41/webapps/ROOT/WEB-INF/classes/admin-report-auth-secrets.properties",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": -5,
+      "content": "report.export.api.username=export_service\nreport.export.api.password=synthetic-password-001\nreport.export.api.token=exp-2026-internal-token\nreport.export.db.username=dotcmsdbuser\nreport.export.db.password=password\nreport.export.auth.realm=backend-reporting\nreport.export.auth.profile=admin-reporting\n"
+    },
+    {
+      "action_id": "prepare_export_route_config_file",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/tomcat-9.0.41/webapps/ROOT/WEB-INF/classes/admin-report-export-endpoint-map.properties",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 3.6,
+      "content": "report.export.endpoint=/api/v1/admin/reports/export\nreport.export.endpointLabel=admin-report-export\nreport.export.mappingType=file-discovery-index\nreport.export.discoveryScope=backend-reporting\nreport.export.allowedReports=customer-quarterly\nreport.export.defaultFormat=csv\nreport.export.scope=region-east\nreport.export.cachePath=/srv/dotserver/tomcat-9.0.41/temp/report-cache/\nreport.export.requireAudit=true\n"
+    },
+    {
+      "action_id": "prepare_export_cache_report_file",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/tomcat-9.0.41/temp/report-cache/customer-quarterly-region-east-2026Q3.csv",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 8.3,
+      "content": "customer_name,id_number,contract_id,region,mobile,billing_amount,settlement_card,last_payment_date\nAlice Chen,ID-EXAMPLE-001,CTR-2026-Q3-104,East,MOBILE-EXAMPLE-001,428800.00,BANK-EXAMPLE-001,2026-07-28\n"
+    }
+  ]
+}
+
+
+
+

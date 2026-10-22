@@ -1,0 +1,42 @@
+{
+  "dataset_type": "deepxdr_long_ttp_release_sample",
+  "chain_id": "sqli_session_hijack_report_001",
+  "source_chain_name": "OpenRASP lab: SQLi -> Admin Account Discovery -> Session Token Theft -> Hijacked Admin Report Access",
+  "source_result_path": null,
+  "base_time": "2026-08-18T01:00:00Z",
+  "attacker_ip": "192.0.2.62",
+  "target_host": "192.0.2.157:8080",
+  "trigger_step_id": "S4",
+  "trigger_step_name": "Retrieve a sensitive customer audit export with PII in the response",
+  "trigger_short_ttp_id": "51bb4b46-c001-45e4-8819-631e7cfe05d2",
+  "event_count": 13,
+  "trigger_event_count": 4,
+  "step_count": 4,
+  "telemetry_sources": [
+    "openrasp",
+    "suricata",
+    "falco"
+  ],
+  "technique_ids": [
+    "T1048.003",
+    "T1069",
+    "T1074.001",
+    "T1087",
+    "T1190",
+    "T1213",
+    "T1539",
+    "T1550.004"
+  ],
+  "files": {
+    "trigger_short_ttp": "trigger_short_ttp.json",
+    "events": "events.jsonl",
+    "long_ttp_ground_truth": "long_ttp_ground_truth.json",
+    "event_id_map": "event_id_map.json",
+    "file_actions": "file_actions.json",
+    "run_config": "run_config.json",
+    "sample_manifest": "sample_manifest.json"
+  },
+  "release_version": "v2.0",
+  "legacy_chain_id": "openrasp_sqli_session_hijack_report_001",
+  "display_name": "SQL Injection to Session Hijacking and Report Access"
+}

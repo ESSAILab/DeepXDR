@@ -1,0 +1,49 @@
+{
+  "chain_id": "account_manipulation_valid_account_export_001",
+  "actions": [
+    {
+      "action_id": "prepare_persistent_backend_privilege_map",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/tomcat-9.0.41/webapps/ROOT/WEB-INF/classes/backend-principal-privilege-map.properties",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 0.4,
+      "content": "# durable_backend_export_privilege_grant\nsupport_sync=support_ingest_operator|case_review_console|audit_export_runner\naudit_admin_east=case_review_console|case_repository_maintainer\nops_restore_admin=theme_restore_operator|security_ops_console\n"
+    },
+    {
+      "action_id": "prepare_granted_credential_access_log",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/tomcat-9.0.41/temp/admin-audit/customer-audit-access.log",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 45.4,
+      "content": "{\"principal_name\":\"support_sync\",\"principal_type\":\"backend-user\",\"auth_material_type\":\"basic-auth-backend-credential\",\"reuse_mode\":\"granted_backend_credential_reuse\",\"credential_origin\":\"backend-principal-privilege-map.properties\",\"endpoint\":\"/api/v1/admin/reports/customer-audit-access?region=east\",\"status\":200,\"access_mode\":\"protected_customer_audit_access\",\"granted_privileges\":[\"case_review_console\",\"audit_export_runner\"],\"request_id\":\"acct-persist-chain-req-03\"}\n"
+    },
+    {
+      "action_id": "prepare_case_repository_preview_response",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/tomcat-9.0.41/temp/admin-audit/customer-case-repository-preview-east.json",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 90.4,
+      "content": "{\"repository_name\":\"customer-case-repository-east\",\"preview_mode\":\"non_sensitive_repository_preview\",\"record_count_hint\":128,\"preview_fields\":[\"case_id\",\"status\",\"last_review_date\"],\"rows\":[{\"case_id\":\"CASE-2026-08-104\",\"status\":\"REVIEWED\",\"last_review_date\":\"2026-08-19\"},{\"case_id\":\"CASE-2026-08-115\",\"status\":\"OPEN\",\"last_review_date\":\"2026-08-20\"}]}\n"
+    },
+    {
+      "action_id": "prepare_case_repository_export_response",
+      "operation": "write_text_file",
+      "target_path": "/srv/dotserver/tomcat-9.0.41/temp/admin-audit/customer-case-repository-east.json",
+      "encoding": "utf-8",
+      "backup_suffix": ".deepxdr.bak",
+      "create_parents": true,
+      "mtime_offset_sec": 135.4,
+      "content": "{\"repository_name\":\"customer-case-repository-east\",\"rows\":[{\"customer_name\":\"Alice Chen\",\"id_number\":\"ID-EXAMPLE-001\",\"case_id\":\"CASE-2026-08-104\",\"mobile\":\"MOBILE-EXAMPLE-001\",\"settlement_card\":\"BANK-EXAMPLE-001\",\"case_owner\":\"support_sync\",\"region\":\"East\",\"last_review_date\":\"2026-08-19\"}]}\n"
+    }
+  ]
+}
+
+
+
+
