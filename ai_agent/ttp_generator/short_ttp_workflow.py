@@ -13,7 +13,7 @@ from shared.utils.timezone import ChinaTime
 from langgraph.graph import StateGraph, END
 
 from shared.models.events import SecurityEvent
-from shared.models.ttp import ShortTTP, TTP, Technique, AttackerFingerprint
+from shared.models.ttp import ShortTTP, TTP, Technique, AttackerFingerprint, normalize_technique_confidence
 
 logger = logging.getLogger(__name__)
 
@@ -192,7 +192,8 @@ class TTPAnalyzerNode:
                 tactic_groups[tactic_name].append({
                     "tech_id": tech_id,
                     "tech_name": tech_name,
-                    "description": tech.get("description", "")
+                    "description": tech.get("description", ""),
+                    "confidence": normalize_technique_confidence(tech.get("confidence")),
                 })
         return tactic_groups
 
@@ -214,6 +215,7 @@ class TTPAnalyzerNode:
                     tech_id=t["tech_id"],
                     tech_name=t["tech_name"],
                     description=t.get("description", ""),
+                    confidence=t.get("confidence"),
                     procedures=procedures,
                     event_ids=technique_events.get(t["tech_id"], [])
                 )
@@ -331,8 +333,9 @@ class TTPAnalyzerNode:
         # 构建攻击者指纹（从事件中提取）
         attacker_fingerprint = self._extract_attacker_fingerprint(events, state)
 
-        # 计算置信度（基于技术数量和证据充分程度）
-        confidence = min(0.5 + len(confirmed_techniques) * 0.05, 0.95)
+        # 每个确认技术只计一次，不因跨战术展示而重复加权；缺失/非法分数计为零。
+        scores = [normalize_technique_confidence(tech.get("confidence")) for tech in confirmed_techniques]
+        confidence = sum(scores) / len(scores) if scores else 0.0
 
         return ShortTTP(
             id=str(uuid4()),

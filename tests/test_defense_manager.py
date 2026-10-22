@@ -24,6 +24,21 @@ def make_short_ttp(**overrides):
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("score, should_execute", [(0.2, False), (0.79, False), (0.8, True), (0.95, True)])
+async def test_short_ttp_defense_has_independent_threshold(score, should_execute):
+    from unittest.mock import AsyncMock
+
+    manager = DefenseManager()
+    manager.enabled = True
+    manager.auto_block_threshold = 0.8
+    manager.check_mcp_health = AsyncMock(return_value=True)
+    manager._execute_short_ttp_defense = AsyncMock()
+    result = await manager.process_short_ttp(make_short_ttp(confidence=score))
+    assert result["status"] == "success"
+    assert manager._execute_short_ttp_defense.await_count == int(should_execute)
+
+
+@pytest.mark.asyncio
 async def test_short_ttp_blocks_attacker_ip_when_fingerprint_is_missing():
     manager = DefenseManager()
     blocked = []
